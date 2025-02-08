@@ -1833,14 +1833,17 @@ text-align: center;
        /* Asegura que los tooltips estén visibles encima de otros elementos */
    }
 
+        
         .titulos {
             font-family: "Helvetica Neue LT Std", Arial, sans-serif;
             font-weight: 900;
             color: #333333;
             font-size: 30px;
             line-height: 24px;
-            margin-left: 20px;
-            margin-top: 15px;
+            text-align: center; /* Centra el texto */
+            grid-column: 2; /* Coloca el título en la columna central del grid */
+            margin: 0 auto; /* Centra el texto horizontalmente dentro de la columna */
+            transform: translateX(-35%); /* Mueve el título ligeramente hacia la izquierda */
         }
 
         .titulos_encabezado {
@@ -1856,6 +1859,8 @@ text-align: center;
         }
         .gradient-bg-animation {
             width: 100%;
+            bottom: 0; /* Posiciona la línea en la parte inferior del encabezado */
+            position: absolute;
             height: 4px;
             border-radius: 2.5px;
             background: linear-gradient(26deg, #01448F 20%, #1E6BB8 40%, #3498DB 60%, #87CEFA 80%, #B0E0E6 100%);
@@ -1877,117 +1882,219 @@ text-align: center;
         }
          /* Estilos básicos */
 
-        .menu-hamburguesa button {
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 24px;
-        }
+             /* Estilos para el menú hamburguesa */
+.menu-hamburguesa {
+    position: relative;
+    z-index: 10000;
+    grid-column: 1; /* Coloca el menú en la primera columna */
+}
 
-        .menu-hamburguesa .menu-items {
-            display: none;
-            position: absolute;
-            top: 40px;
-            left: 0;
-            background-color: #fff;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            width: 150px;
-        }
+.menu-hamburguesa button {
+    background-color: #ffffff;
+    border: none;
+    padding: 10px 15px;
+    cursor: pointer;
+    z-index: 10001;
+}
 
-        .menu-hamburguesa .menu-items li {
-            padding: 10px;
-            border-bottom: 1px solid #ddd;
-        }
+.menu-sidebar {
+    position: fixed;
+    top: 0;
+    left: -250px;
+    width: 250px;
+    height: 100%;
+    background: #F4F4F4;
+    color: #fff;
+    transition: left 0.3s ease;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.5);
+    z-index: 10001;
+    display: flex;
+    flex-direction: column;
+}
 
-        .menu-hamburguesa .menu-items li:last-child {
-            border-bottom: none;
-        }
+.menu-sidebar.open {
+    left: 0;
+}
+/* Overlay (fondo oscuro al abrir menú) */
+.menu-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    z-index: 10000;
+}
 
-        .menu-hamburguesa .menu-items li a {
-            text-decoration: none;
-            color: #333;
-            display: block;
-        }
+.menu-overlay.active {
+    display: block;
+}
+/* Estilos de los ítems del menú */
+/* Estilos de los ítems del menú */
+.menu-items {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    flex-grow: 1;
+}
 
-        .menu-hamburguesa .menu-items li a:hover {
-            background-color: #f0f0f0;
-        }
+.menu-items li {
+    padding: 15px 20px;
+    border-bottom: 1px solid #CCCCCC;
+    transition: background 0.3s ease, transform 0.3s ease;
+    position: relative;
+}
 
-        .menu-hamburguesa .menu-items.active {
-            display: block;
-        }
- 
+.menu-items li a {
+    text-decoration: none;
+    color: #333;
+    display: flex;
+    align-items: center;
+    width: 210px;
+    height: 35px;
+    transition: color 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.menu-items li i {
+    margin-right: 10px;
+    font-size: 18px;
+    transition: transform 0.3s ease, color 0.3s ease;
+}
+
+/* Subrayado animado */
+.menu-items li a::after {
+    content: "";
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: #007bff;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s ease-in-out;
+}
+
+.menu-items li a:hover::after {
+    transform: scaleX(1);
+}
+
+.menu-items li:hover {
+    background: rgba(0, 123, 255, 0.1);
+    transform: scale(1.02);
+    border-radius: 5px;
+}
+
+.menu-items li a:hover {
+    color: #01579b;
+}
+
+.menu-items li a:hover i {
+    color: #007bff;
+    transform: rotate(10deg);
+}
+
+
+/* Imagen del icono */
+.menu-icon-image {
+    width: 34px; /* Tamaño del icono */
+    height: 34px;
+    margin-right: 5px; /* Espacio entre el icono y el texto */
+    object-fit: contain;
+}
+.menu-icon-imagen {
+    width: 25px; /* Tamaño del icono */
+    height: 25px;
+    margin-right: 11px; /* Espacio entre el icono y el texto */
+    margin-left: 3px;
+    object-fit: contain;
+}
+
+.logout-button {
+    border: none;
+    color: black;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+    padding: 0;
+}
+
+.logout-button i {
+    margin-right: 10px;
+}
+.menu-logo {
+    width: 220px;
+    height: auto;
+}
+/* Logo del menú */
+.menu-header {
+    padding: 20px;
+    background: #F4F4F4;
+    text-align: center;
+}
+.menu-hamburguesa .menu-icon img {
+    width: 34px;
+    height: 34px;
+}
+
+/* Sección de bienvenida */
+.welcome-section {
+    padding: 15px 20px;
+    background: #7cb8eb;
+    border-bottom: 1px solid #444;
+    color: black;
+
+}
+
+.welcome-section .user-name {
+    font-weight: bold;
+    font-size: 14px;
+    color: #33373b;
+}
+
+
 
 
 /* Modo responsive para pantallas pequeñas */
 .header-container {
-            display: flex;
-            align-items: center; /* Alinea verticalmente */
-            justify-content: space-between; /* Título y logo en lados opuestos */
-            flex-direction: row; /* Por defecto en horizontal */
-            width: 100%;
-            padding: 10px;
-            box-sizing: border-box;
-        }
-        .menu-hamburguesa {
-            position: relative;
-        }
-        .menu-items {
-    display: flex;
-    list-style: none;
-    margin: 0;
-    padding: 0;
-}
-
-.menu-items li {
-    margin: 0 10px;
+    position: fixed; /* Hace que el contenedor sea fijo */
+    top: 0; /* Lo fija en la parte superior de la pantalla */
+    left: 0; /* Lo fija al inicio del viewport horizontal */
+    width: 100%; /* Asegura que el encabezado abarque todo el ancho de la pantalla */
+    z-index: 1000; /* Coloca el encabezado por encima de otros elementos */
+    background-color: #ffffff; /* Añade un fondo para que no se superponga con otros elementos */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Añade una ligera sombra para destacarlo */
+    display: grid;
+    grid-template-columns: auto 1fr auto; /* Tres columnas: menú, título, espacio */
+    align-items: center;
+    padding: 10px;
+    box-sizing: border-box;
 }
 
 
 /* Estilo responsive para pantallas pequeñas */
 @media (max-width: 768px) {
     .header-container {
-        display: flex;
-        align-items: center;
-        justify-content: space-between; /* Ajusta el espacio entre los elementos */
-        padding: 5px;
+        grid-template-columns: 1fr; /* Una sola columna en pantallas pequeñas */
+        text-align: center; /* Centra todo en el eje horizontal */
     }
-
-    .menu-hamburguesa {
-        display: flex;
-        align-items: center;
+    body.menu-open .content {
+        transform: translateX(250px);
     }
-
-    .menu-hamburguesa button {
-        font-size: 24px; /* Tamaño del ícono del menú */
-        border: none;
-        background: none;
-        cursor: pointer;
+    body.menu-open .form-container-lower {
+        transform: translateX(250px);
     }
-    .menu-hamburguesa {
-        flex: 0 0 auto; /* Mantén el menú hamburguesa en su lugar */
-    }
-
-    .menu-items {
-        display: none; /* Ocultar el menú por defecto */
-        list-style: none;
-        margin: 0;
-        padding: 0;
-    }
-
-    .menu-items li {
-        margin: 5px 0;
-    }
-
-    
     .titulos {
-        flex: 1 1 auto; /* Permite que el título ocupe el espacio necesario */
-        text-align: center; /* Centra el texto horizontalmente */
-        font-size: 1.2rem; /* Ajusta el tamaño del título en responsive */
-        margin: -150px;
+        font-size: 20px;
+        transform: translateX(-165%); /* Elimina el desplazamiento lateral en pantallas pequeñas */
+    }
+    .menu-hamburguesa {
+        justify-self: start; /* Alinea el menú al inicio */
     }
     .logo{
         flex: 0 0 auto; /* Mantén el logo en su lugar */
@@ -1995,6 +2102,12 @@ text-align: center;
         width: 110px;
     }
    
+}
+@media (max-width: 375px) {
+    .titulos {
+        font-size: 20px;
+        transform: translateX(-135%); /* Elimina el desplazamiento lateral en pantallas pequeñas */
+    }
 }
 /* Contenedor principal */
 .document-pdf-container {
@@ -2101,23 +2214,123 @@ text-align: center;
     text-transform: uppercase;
 }
 
+/* Styles for the "Bienvenido" text */
+.welcome-section p:first-of-type {
+    font-size: 14px;
 
+    color: #333;
+    
+}
+body {
+    padding-top: 70px; /* Ajusta este valor al alto del encabezado */
+}
+.welcome-link {
+            display: block;
+            text-decoration: none;
+            color: #333;
+            font-family: 'Arial', sans-serif;
+            font-size: 14px;
+            
+            border: 1px solid transparent;
+            border-radius: 5px;
+            background-color: #7CB8EB;
+            transition: all 0.3s ease, transform 0.3s ease; /* Agregamos transición para transform */
+        }
+        
+        .welcome-link:hover {
+            color: black;
+            background-color: #7CB8EB;
+            border: 1px solid #7CB8EB;
+            text-decoration: none;
+            transform: scale(0.9); /* Aumenta el tamaño en un 10% */
+        }
 
     </style>
-        <!-- Encabezado -->
-        <div class="header-container">
+ <!-- Encabezado -->
+ <div class="header-container">
     <div class="menu-hamburguesa">
-        <button onclick="toggleMenu()">☰</button>
-        <ul class="menu-items">
-            <li><a href="{{ url('/') }}">Registro de Inventario</a></li>
-            <li><a href="{{ url('/inventario') }}">Inventario</a></li>
-        </ul>
-    </div>
-    <h1 class="titulos">Inventario</h1>
-    <img src="{{ asset('images/Medibuy.png') }}" alt="Logo" class="logo">
-</div>
-<div class="gradient-bg-animation"></div>
+        <!-- Botón de menú con icono personalizado -->
+        <button onclick="toggleMenu()" class="menu-icon">
+            <img src="{{ asset('images/menu.png') }}" alt="Menu Icon">
+        </button>
 
+        <!-- Menú lateral -->
+        <nav id="menu-sidebar" class="menu-sidebar">
+            <!-- Logo del proyecto -->
+            <div class="menu-header">
+                <img src="{{ asset('images/logomedy.png') }}" alt="Logo" class="menu-logo">
+            </div>
+
+            <!-- Bienvenida personalizada -->
+            @auth
+            <div class="welcome-section">
+                <a href="{{ route('auth.change-password') }}" class="welcome-link">
+                    <p>Bienvenido,</p>
+                    <p class="user-name">{{ Auth::user()->name }}</p>
+                </a>
+            </div>
+            @endauth
+
+            <!-- Ítems del menú -->
+            <ul class="menu-items">
+                <li>
+                    <a href="{{ url('/') }}">
+                        <img src="{{ asset('images/registro.png') }}" alt="Icono Registro de Inventario" class="menu-icon-image">
+                        Registro de Inventario
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url('/inventario') }}">
+                        <img src="{{ asset('images/inventario.png') }}" alt="Icono de Inventario" class="menu-icon-imagen">
+                        Inventario
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url('/cotizaciones') }}">
+                        <img src="{{ asset('images/cotizaciones.png') }}" alt="Icono de Cotizaciones" class="menu-icon-image">
+                        Cotizaciones
+                    </a>
+                </li>
+                <li>
+                        <a href="{{ url('/remisiones') }}">
+                            <img src="{{ asset('images/remisiones.png') }}" alt="Icono de remisiones" class="menu-icon-image">
+                            Remisiones
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url('/agenda') }}">
+                            <img src="{{ asset('images/agenda.png') }}" alt="Icono de agenda" class="menu-icon-imagen">
+                            Agenda
+                        </a>
+                    </li>
+                @auth
+                <li>
+                    <form action="{{ route('logout') }}" method="POST">
+                        @csrf
+                        <button type="submit" class="logout-button">
+                            <img src="{{ asset('images/cerrar.png') }}" alt="Icono Registro de Inventario" class="menu-icon-image">
+                            Cerrar Sesión
+                        </button>
+                    </form>
+                </li>
+                @else
+                <li>
+                    <a href="{{ route('login') }}">
+                        <i class="icon-class icon-login"></i> Iniciar Sesión
+                    </a>
+                </li>
+                @endauth
+            </ul>
+        </nav>
+        <!-- Overlay para cerrar el menú -->
+        <div id="menu-overlay" class="menu-overlay" onclick="closeMenu()"></div>
+    </div>
+
+    <h1 class="titulos">Inventario</h1>
+
+    <!-- Línea animada -->
+    <div class="gradient-bg-animation"></div>
+</div>
 
 
         <!-- Contenido Principal -->
@@ -2145,18 +2358,18 @@ text-align: center;
     </div>
 </div>
 
-<div class="form-group col-md-3">
-    <label for="Subtipo">Subtipo de Equipo</label>
-    <div class="form-group w-100">
-    <div class="d-flex align-items-center" style="width: 100%;">
-        <div class="icon-container">
-            <img src="{{ asset('images/producto.png') }}" alt="Subtipo de Equipo icon" class="icon">
+        <div class="form-group col-md-3">
+            <label for="Subtipo">Subtipo de Equipo</label>
+            <div class="form-group w-100">
+            <div class="d-flex align-items-center" style="width: 100%;">
+                <div class="icon-container">
+                    <img src="{{ asset('images/producto.png') }}" alt="Subtipo de Equipo icon" class="icon">
+                </div>
+                <input type="text" id="Subtipo" name="Subtipo"
+                    class="form-controln form-controlqueja-lb iconized" readonly>
+            </div>
         </div>
-        <input type="text" id="Subtipo" name="Subtipo"
-            class="form-controln form-controlqueja-lb iconized" readonly>
-    </div>
-</div>
-</div>
+        </div>
 
         <div class="form-group col-md-3">
             <label for="Serie">Serie</label>
@@ -2366,7 +2579,6 @@ text-align: center;
             </div>
         </div>
       
-
         <div class="form-container-lower">
     <div class="titulo-seccion">Lista de productos</div>
     <table id="example" class="stripe row-border order-column" style="width:100%">
@@ -2378,44 +2590,45 @@ text-align: center;
                 <th>Número de serie</th>
                 <th>Marca</th>
                 <th>Modelo</th>
+                <th>Fecha de creación</th> <!-- Nueva columna -->
                 <th>Detalles</th>
             </tr>
         </thead>
         <tbody>
             @foreach($productos as $producto)
                 <tr>
-                <td>
-    @if($isPdfExport ?? false)
-        {{-- Texto plano para PDF --}}
-        @if($producto->estado_actual == 1)
-            En Stock
-        @elseif($producto->estado_actual == 2)
-            Vendido
-        @else
-            Mantenimiento
-        @endif
-    @else
-        {{-- Etiquetas HTML para la vista web --}}
-        @if($producto->estado_actual == 1)
-            <span class="badge badge-success">En Stock</span>
-        @elseif($producto->estado_actual == 2)
-            <span class="badge badge-danger">Vendido</span>
-        @else
-            <span class="badge badge-warning">Mantenimiento</span>
-        @endif
-    @endif
-</td>
-
-
-
-
+                    <td>
+                    @if($isPdfExport ?? false)
+                {{-- Texto plano para PDF --}}
+                @if($producto->estado_actual == 1)
+                    En Stock
+                @elseif($producto->estado_actual == 2)
+                    Vendido
+                @elseif($producto->estado_actual == 3)
+                    Mantenimiento
+                @elseif($producto->estado_actual == 4)
+                    Defectuoso
+                @endif
+            @else
+                {{-- Etiquetas HTML para la vista web --}}
+                @if($producto->estado_actual == 1)
+                    <span class="badge badge-success">En Stock</span>
+                @elseif($producto->estado_actual == 2)
+                    <span class="badge badge-danger">Vendido</span>
+                @elseif($producto->estado_actual == 3)
+                    <span class="badge badge-warning">Mantenimiento</span>
+                @elseif($producto->estado_actual == 4)
+                    <span class="badge badge-secondary">Defectuoso</span>
+                @endif
+            @endif
+                    </td>
                     <td>{{ $producto->tipo_equipo }}</td>
                     <td>{{ $producto->subtipo_equipo ?? 'N/A' }}</td>
                     <td>{{ $producto->numero_serie }}</td>
                     <td>{{ $producto->marca }}</td>
                     <td>{{ $producto->modelo }}</td>
-                  
-                    <td><button class="btn btn-info"  data-id="{{ $producto->id }}"><i class="fa fa-eye"></i></button></td>
+                    <td>{{ $producto->created_at->format('d/m/Y H:i') }}</td> <!-- Mostrar la fecha de creación -->
+                    <td><button class="btn btn-info" data-id="{{ $producto->id }}"><i class="fa fa-eye"></i></button></td>
                 </tr>
             @endforeach
         </tbody>
@@ -2427,6 +2640,7 @@ text-align: center;
                 <th>Número de serie</th>
                 <th>Marca</th>
                 <th>Modelo</th>
+                <th>Fecha de creación</th> <!-- Nueva columna -->
                 <th>Detalles</th>
             </tr>
         </tfoot>
@@ -2689,12 +2903,7 @@ function applyRowStyling() {
 
      
 
-        <script>
-        function toggleMenu() {
-            const menu = document.querySelector('.menu-hamburguesa .menu-items');
-            menu.classList.toggle('active');
-        }
-    </script>
+ 
 <script>
 document.getElementById('viewFilesButton').addEventListener('click', function () {
     const imageElements = document.querySelectorAll('#fileContainer img');
@@ -2821,6 +3030,51 @@ document.getElementById('viewFilesButton').addEventListener('click', function ()
         }
     });
 });
+
+
+</script>
+<script>
+
+   let startX;
+
+function toggleMenu() {
+    const menu = document.getElementById('menu-sidebar');
+    const overlay = document.getElementById('menu-overlay');
+    const body = document.body;
+
+    if (menu.classList.contains('open')) {
+        closeMenu();
+    } else {
+        menu.classList.add('open');
+        overlay.classList.add('active');
+        body.classList.add('menu-open');
+    }
+}
+
+function closeMenu() {
+    const menu = document.getElementById('menu-sidebar');
+    const overlay = document.getElementById('menu-overlay');
+    const body = document.body;
+
+    menu.classList.remove('open');
+    overlay.classList.remove('active');
+    body.classList.remove('menu-open');
+}
+
+// Manejo de gestos en pantallas táctiles
+document.addEventListener('touchstart', function (e) {
+    startX = e.touches[0].clientX;
+});
+
+document.addEventListener('touchmove', function (e) {
+    const currentX = e.touches[0].clientX;
+    const menu = document.getElementById('menu-sidebar');
+
+    if (startX > currentX && startX - currentX > 50 && menu.classList.contains('open')) {
+        closeMenu();
+    }
+});
+
 
 
 </script>

@@ -22,12 +22,12 @@ class RegistroController extends Controller
         'Modelo' => 'required|string|max:255',
         'Año' => 'nullable|string|max:4', // El año es opcional
         'descripcion' => 'required|string',
-        'estado_actual' => 'required|in:1,2,3', // En Stock (1), Vendido (2), En Mantenimiento (3)
+        'estado_actual' => 'required|in:1,2,3,4', // En Stock (1), Vendido (2), En Mantenimiento (3)
         'fecha_inicial' => 'required|date',
         'fecha_mantenimiento' => 'required|date',
         'proximo_mantenimiento' => 'required|date',
         'evidencia' => 'nullable|array|max:3', // Máximo 3 imágenes
-        'evidencia.*' => 'image|mimes:jpg,jpeg,png,gif|max:2048', // Cada imagen debe ser válida
+        'evidencia.*' => 'image|mimes:jpg,jpeg,png,gif|max:5120', // Cada imagen debe ser válida
         'video-evidencia' => 'nullable|file|mimetypes:video/mp4,video/avi,video/mpeg|max:51200',
         'documentoPDF' => 'nullable|file|mimes:pdf|max:10240', // Agregar validación para PDF (máximo 10 MB)
         'observaciones' => 'nullable|string',
@@ -152,6 +152,7 @@ class RegistroController extends Controller
             1 => 'En Stock',
             2 => 'Vendido',
             3 => 'En Mantenimiento',
+            4 => 'Defectuoso',
         ];
     
         // Obtener el estado legible basado en el ID de movimiento

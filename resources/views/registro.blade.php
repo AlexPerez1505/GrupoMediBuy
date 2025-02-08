@@ -15,8 +15,10 @@
             color: #333333;
             font-size: 30px;
             line-height: 24px;
-            margin-left: 20px;
-            margin-top: 15px;
+            text-align: center; /* Centra el texto */
+            grid-column: 2; /* Coloca el título en la columna central del grid */
+            margin: 0 auto; /* Centra el texto horizontalmente dentro de la columna */
+            transform: translateX(-10%); /* Mueve el título ligeramente hacia la izquierda */
         }
 
         .titulos_encabezado {
@@ -29,6 +31,8 @@
         /* Linea de encabezado*/
         .gradient-bg-animation {
             width: 100%;
+            bottom: 0; /* Posiciona la línea en la parte inferior del encabezado */
+            position: absolute;
             height: 4px;
             border-radius: 2.5px;
             background: linear-gradient(26deg, #01448F 20%, #1E6BB8 40%, #3498DB 60%, #87CEFA 80%, #B0E0E6 100%);
@@ -66,7 +70,9 @@
             width: 85%;
             height: auto;
             margin-top: 25px;
+            transition: transform 0.3s ease;
         }
+   
          /* Botones */
         .form-grupo  {
             margin-bottom: 35px;
@@ -177,33 +183,49 @@
             height: auto;
         }
         .header-container {
-            display: flex;
-            align-items: center; /* Alinea verticalmente */
-            justify-content: space-between; /* Título y logo en lados opuestos */
-            flex-direction: row; /* Por defecto en horizontal */
-            width: 100%;
+            position: fixed; /* Hace que el contenedor sea fijo */
+            top: 0; /* Lo fija en la parte superior de la pantalla */
+            left: 0; /* Lo fija al inicio del viewport horizontal */
+            width: 100%; /* Asegura que el encabezado abarque todo el ancho de la pantalla */
+            z-index: 1000; /* Coloca el encabezado por encima de otros elementos */
+            background-color: #ffffff; /* Añade un fondo para que no se superponga con otros elementos */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Añade una ligera sombra para destacarlo */
+            display: grid;
+            grid-template-columns: auto 1fr auto; /* Tres columnas: menú, título, espacio */
+            align-items: center;
             padding: 10px;
             box-sizing: border-box;
         }
+        body {
+    padding-top: 70px; /* Ajusta este valor al alto del encabezado */
+}
         /* Logo de encabezado */
         .logo {
             width: 230px; /* Tamaño del logo en pantallas grandes */
             height: auto;
         }
+    
         /* Media query para pantallas pequeñas */
         @media (max-width: 768px) {
-            .header-container {
-                flex-direction: column;
-                align-items: center;
-                gap: 10px;
-            }
+            body.menu-open .contenedor_general {
+        transform: translateX(250px);
+    }
+       
+    .header-container {
+        grid-template-columns: 1fr; /* Una sola columna en pantallas pequeñas */
+        text-align: center; /* Centra todo en el eje horizontal */
+    }
+    .menu-hamburguesa {
+        justify-self: start; /* Alinea el menú al inicio en pantallas pequeñas */
+    }
             .logo {
                 width: 180px;
                 order: -1;
             }
             .titulos {
-                font-size: 20px;
-            }
+        font-size: 20px;
+        transform: translateX(-45%); /* Elimina el desplazamiento lateral en pantallas pequeñas */
+    }
             .custom-margin {
                 margin-left: 0;
             }
@@ -613,69 +635,187 @@
             padding-left: 35px; /* Asegura que no haya padding a la izquierda */
             width: 90%; /* Asegura que los elementos ocupen todo el ancho disponible */
         }
-        /* Estilos básicos */
-        .menu-hamburguesa {
-                    position: relative;
-        }
+       /* Estilos para el menú hamburguesa */
+.menu-hamburguesa {
+    position: relative;
+    z-index: 10000;
+    grid-column: 1; /* Coloca el menú en la primera columna */
+}
 
-        .menu-hamburguesa button {
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 24px;
-        }
+.menu-hamburguesa button {
+    background-color: #ffffff;
 
-        .menu-hamburguesa .menu-items {
-            display: none;
-            position: absolute;
-            top: 40px;
-            left: 0;
-            background-color: #fff;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            width: 150px;
-        }
+    border: none;
+    padding: 10px 15px;
+    cursor: pointer;
+    z-index: 10001;
+}
 
-        .menu-hamburguesa .menu-items li {
-            padding: 10px;
-            border-bottom: 1px solid #ddd;
-        }
+.menu-sidebar {
+    position: fixed;
+    top: 0;
+    left: -250px;
+    width: 250px;
+    height: 100%;
+    background: #F4F4F4;
+    color: #fff;
 
-        .menu-hamburguesa .menu-items li:last-child {
-            border-bottom: none;
-        }
+    transition: left 0.3s ease;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.5);
+    z-index: 10001;
+    display: flex;
+    flex-direction: column;
+}
 
-        .menu-hamburguesa .menu-items li a {
-            text-decoration: none;
-            color: #333;
-            display: block;
-        }
+.menu-sidebar.open {
+    left: 0;
+}
+/* Overlay (fondo oscuro al abrir menú) */
+.menu-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    z-index: 10000;
+}
 
-        .menu-hamburguesa .menu-items li a:hover {
-            background-color: #f0f0f0;
-        }
+.menu-overlay.active {
+    display: block;
+}
+/* Estilos de los ítems del menú */
+/* Estilos de los ítems del menú */
+.menu-items {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    flex-grow: 1;
+}
 
-        .menu-hamburguesa .menu-items.active {
-            display: block;
-        }
-        /* General Modal Styles */
-        .modal-content {
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-            border: none;
-        }
+.menu-items li {
+    padding: 15px 20px;
+    border-bottom: 1px solid #CCCCCC;
+    transition: background 0.3s ease, transform 0.3s ease;
+    position: relative;
+}
 
-        .modal-header {
-                background-color: #1e6bb8;
-                color: white;
-                padding: 20px;
-                text-align: center;
-                font-size: 1.5rem;
-                font-weight: bold;
-        }
+.menu-items li a {
+    text-decoration: none;
+    color: #333;
+    display: flex;
+    align-items: center;
+    width: 210px;
+    height: 35px;
+    transition: color 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.menu-items li i {
+    margin-right: 10px;
+    font-size: 18px;
+    transition: transform 0.3s ease, color 0.3s ease;
+}
+
+/* Subrayado animado */
+.menu-items li a::after {
+    content: "";
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: #007bff;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s ease-in-out;
+}
+
+.menu-items li a:hover::after {
+    transform: scaleX(1);
+}
+
+.menu-items li:hover {
+    background: rgba(0, 123, 255, 0.1);
+    transform: scale(1.02);
+    border-radius: 5px;
+}
+
+.menu-items li a:hover {
+    color: #01579b;
+}
+
+.menu-items li a:hover i {
+    color: #007bff;
+    transform: rotate(10deg);
+}
+
+
+/* Imagen del icono */
+.menu-icon-image {
+    width: 34px; /* Tamaño del icono */
+    height: 34px;
+    margin-right: 5px; /* Espacio entre el icono y el texto */
+    object-fit: contain;
+}
+.menu-icon-imagen {
+    width: 25px; /* Tamaño del icono */
+    height: 25px;
+    margin-right: 11px; /* Espacio entre el icono y el texto */
+    margin-left: 3px;
+    object-fit: contain;
+}
+
+.logout-button {
+    border: none;
+    color: black;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+    padding: 0;
+}
+
+.logout-button i {
+    margin-right: 10px;
+}
+.menu-logo {
+    width: 220px;
+    height: auto;
+}
+/* Logo del menú */
+.menu-header {
+    padding: 20px;
+    background: #F4F4F4;
+    text-align: center;
+}
+.menu-hamburguesa .menu-icon img {
+    width: 34px;
+    height: 34px;
+}
+
+/* Sección de bienvenida */
+.welcome-section {
+    padding: 15px 20px;
+    background: #7cb8eb;
+    border-bottom: 1px solid #444;
+    color: black;
+    font-size: 14px;
+}
+
+.welcome-section .user-name {
+    font-weight: bold;
+    color: #33373b;
+}
+
+/* Estilo para ocultar el contenido al moverlo */
+
+
+
+
 
 .modal-title {
     margin: 0;
@@ -793,24 +933,117 @@
         width: 100%;
     }
 }
-
-
+.welcome-link {
+            display: block;
+            text-decoration: none;
+            color: #333;
+            font-family: 'Arial', sans-serif;
+            font-size: 14px;
+            
+            border: 1px solid transparent;
+            border-radius: 5px;
+            background-color: #7CB8EB;
+            transition: all 0.3s ease, transform 0.3s ease; /* Agregamos transición para transform */
+        }
+        
+        .welcome-link:hover {
+            color: black;
+            background-color: #7CB8EB;
+            border: 1px solid #7CB8EB;
+            text-decoration: none;
+            transform: scale(0.9); /* Aumenta el tamaño en un 10% */
+        }
+@media (max-width: 375px) {
+    .titulos {
+        font-size: 20px;
+        transform: translateX(-30%); /* Elimina el desplazamiento lateral en pantallas pequeñas */
+    }
+}
     </style>
 </head>
 <body>
 <div class="header-container">
-        <div class="menu-hamburguesa">
-            <button onclick="toggleMenu()">☰</button>
-            <ul class="menu-items">
-                <li><a href="{{ url('/') }}">Registro de Inventario</a></li>
-                <li><a href="{{ url('/inventario') }}">Inventario</a></li>
-            </ul>
-        </div>
-        <h1 class="titulos">Registro de Inventario</h1>
-        <img src="{{ asset('images/Medibuy.png') }}" alt="Logo" class="logo">
-    </div>
-    <div class="gradient-bg-animation"></div>
+<div class="menu-hamburguesa">
+    <!-- Botón de menú con icono personalizado -->
+    <button onclick="toggleMenu()" class="menu-icon">
+    <img src="{{ asset('images/menu.png') }}" alt="Menu Icon">
+    </button>
 
+    <!-- Menú lateral -->
+    <nav id="menu-sidebar" class="menu-sidebar">
+        <!-- Logo del proyecto -->
+        <div class="menu-header">
+            <img src="{{ asset('images/logomedy.png') }}" alt="Logo" class="menu-logo">
+        </div>
+
+<!-- Bienvenida personalizada -->
+@auth
+<div class="welcome-section">
+    <a href="{{ route('auth.change-password') }}" class="welcome-link">
+        <p>Bienvenido,</p>
+        <p class="user-name">{{ Auth::user()->name }}</p>
+    </a>
+</div>
+@endauth
+
+
+
+        <!-- Ítems del menú -->
+        <ul class="menu-items">
+            <li>
+                <a href="{{ url('/') }}">
+                <img src="{{ asset('images/registro.png') }}" alt="Icono Registro de Inventario" class="menu-icon-image"></i> Registro de Inventario
+                </a>
+            </li>
+            <li>
+                <a href="{{ url('/inventario') }}">
+                <img src="{{ asset('images/inventario.png') }}" alt="Icono de Inventario" class="menu-icon-imagen"></i> Inventario
+                </a>
+            </li>
+            <li>
+                    <a href="{{ url('/cotizaciones') }}">
+                        <img src="{{ asset('images/cotizaciones.png') }}" alt="Icono de Cotizaciones" class="menu-icon-image">
+                        Cotizaciones
+                    </a>
+                </li>
+                <li>
+                        <a href="{{ url('/remisiones') }}">
+                            <img src="{{ asset('images/remisiones.png') }}" alt="Icono de remisiones" class="menu-icon-image">
+                            Remisiones
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url('/agenda') }}">
+                            <img src="{{ asset('images/agenda.png') }}" alt="Icono de agenda" class="menu-icon-imagen">
+                            Agenda
+                        </a>
+                    </li>
+            @auth
+            <li>
+                <form action="{{ route('logout') }}" method="POST">
+                    @csrf
+                    <button type="submit" class="logout-button">
+                    <img src="{{ asset('images/cerrar.png') }}" alt="Icono Registro de Inventario" class="menu-icon-imagen"></i> Cerrar Sesión
+                    </button>
+                </form>
+            </li>
+            @else
+            <li>
+                <a href="{{ route('login') }}">
+                    <i class="icon-class icon-login"></i> Iniciar Sesión
+                </a>
+            </li>
+            @endauth
+        </ul>
+    </nav>
+    <!-- Overlay para cerrar el menú -->
+    <div id="menu-overlay" class="menu-overlay" onclick="closeMenu()"></div>
+</div>
+        <h1 class="titulos">Registro de Inventario</h1>
+        <!-- <img src="{{ asset('images/Medibuy.png') }}" alt="Logo" class="logo">-->
+    
+    <div class="gradient-bg-animation"></div>
+    </div>
     <!-- Contenedor para centrar -->
     <div class="contenedor-wrapper">
         <div class="contenedor_general">
@@ -986,9 +1219,11 @@
             <option value="1" {{ old('estado_actual') == 1 ? 'selected' : '' }}>En Stock</option>
             <option value="2" {{ old('estado_actual') == 2 ? 'selected' : '' }}>Vendido</option>
             <option value="3" {{ old('estado_actual') == 3 ? 'selected' : '' }}>En Mantenimiento</option>
+            <option value="4" {{ old('estado_actual') == 4 ? 'selected' : '' }}>Defectuoso</option> <!-- Nueva opción -->
         </select>
     </div>
 </div>
+
 
 
 
@@ -1580,6 +1815,49 @@ document.addEventListener('DOMContentLoaded', () => {
         const fileName = input.files.length > 0 ? input.files[0].name : 'Sin selección';
         document.getElementById('file-input-text').innerText = fileName;
     }
+</script>
+<script>
+   let startX;
+
+function toggleMenu() {
+    const menu = document.getElementById('menu-sidebar');
+    const overlay = document.getElementById('menu-overlay');
+    const body = document.body;
+
+    if (menu.classList.contains('open')) {
+        closeMenu();
+    } else {
+        menu.classList.add('open');
+        overlay.classList.add('active');
+        body.classList.add('menu-open');
+    }
+}
+
+function closeMenu() {
+    const menu = document.getElementById('menu-sidebar');
+    const overlay = document.getElementById('menu-overlay');
+    const body = document.body;
+
+    menu.classList.remove('open');
+    overlay.classList.remove('active');
+    body.classList.remove('menu-open');
+}
+
+// Manejo de gestos en pantallas táctiles
+document.addEventListener('touchstart', function (e) {
+    startX = e.touches[0].clientX;
+});
+
+document.addEventListener('touchmove', function (e) {
+    const currentX = e.touches[0].clientX;
+    const menu = document.getElementById('menu-sidebar');
+
+    if (startX > currentX && startX - currentX > 50 && menu.classList.contains('open')) {
+        closeMenu();
+    }
+});
+
+
 </script>
 
 
