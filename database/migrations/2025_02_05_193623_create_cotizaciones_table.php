@@ -9,29 +9,19 @@ return new class extends Migration {
     {
         Schema::create('cotizaciones', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('cliente_id')->constrained('clientes')->onDelete('cascade');
-            $table->date('fecha');
+            $table->string('cliente');
+            $table->json('productos'); // Guardar productos en formato JSON
             $table->decimal('subtotal', 10, 2);
             $table->decimal('descuento', 10, 2)->default(0);
-            $table->decimal('impuesto', 10, 2)->default(0);
+            $table->decimal('iva', 10, 2)->default(0);
             $table->decimal('total', 10, 2);
+            $table->string('tipo_pago');
+            $table->json('plan_pagos')->nullable();
             $table->text('nota')->nullable();
-            $table->timestamps();
-        });
-
-        Schema::create('cotizacion_producto', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('cotizacion_id')->constrained('cotizaciones')->onDelete('cascade');
-            $table->foreignId('producto_id')->constrained('productos')->onDelete('cascade');
-            $table->integer('cantidad');
-            $table->decimal('subtotal', 10, 2);
+            $table->date('valido_hasta');
+            $table->string('lugar_cotizacion');
             $table->timestamps();
         });
     }
-
-    public function down()
-    {
-        Schema::dropIfExists('cotizacion_producto');
-        Schema::dropIfExists('cotizaciones');
-    }
+    
 };

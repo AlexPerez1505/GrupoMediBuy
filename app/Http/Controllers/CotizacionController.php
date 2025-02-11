@@ -12,106 +12,61 @@ use Illuminate\Support\Facades\Log;
 
 class CotizacionController extends Controller
 {
-    public function index()
+    public function store(Request $request)
     {
-        return view('cotizaciones');
-    }
-
-    /**
-     * Buscar registros en la base de datos por tipo_equipo, modelo o número de serie.
-     */
-    public function buscarRegistros(Request $request)
-    {
-        // Validar que se envíe el parámetro de búsqueda
-        if (!$request->has('q') || empty($request->q)) {
-            return response()->json(['message' => 'No se proporcionó una consulta'], 400);
-        }
-
-        Log::info('🔍 Búsqueda de registros con el término: ' . $request->q);
-
-        // Realizar la búsqueda con LIKE y OR
-        $registros = Registro::where('tipo_equipo', 'like', '%' . $request->q . '%')
-            ->orWhere('modelo', 'like', '%' . $request->q . '%')
-            ->orWhere('numero_serie', 'like', '%' . $request->q . '%')
-            ->get();
-
-        // Si no hay resultados, retornar mensaje
-        if ($registros->isEmpty()) {
-            return response()->json(['message' => 'No se encontraron registros'], 404);
-        }
-
-        return response()->json($registros);
-    }
-
-    public function guardarCotizacion(Request $request)
-    {
-        // Validar los datos recibidos
         $request->validate([
-            'cliente' => 'required|string|max:255',
-            'telefono' => 'required|string|max:20',
-            'subtotal' => 'required|numeric|min:0',
-            'iva' => 'required|numeric|min:0',
-            'total' => 'required|numeric|min:0',
-            'productos' => 'required|array',
-            'productos.*.id' => 'required|exists:productos,id',
-            'productos.*.cantidad' => 'required|integer|min:1',
-            'productos.*.subtotal' => 'required|numeric|min:0',
+            'cliente' => 'nullable|string',
+            'productos' => 'nullable|array',
+            'subtotal' => 'nullable|numeric',
+            'descuento' => 'nullable|numeric',
+            'iva' => 'nullable|numeric',
+            'total' => 'nullable|numeric',
+            'tipo_pago' => 'nullable|string',
+            'plan_pagos' => 'nullable|array',
+            'nota' => 'nullable|string',
+            'valido_hasta' => 'nullable|date',
+            'lugar_cotizacion' => 'nullable|string',
         ]);
-
-        try {
-            // Crear la cotización
-            $cotizacion = Cotizacion::create([
-                'cliente' => $request->cliente,
-                'telefono' => $request->telefono,
-                'subtotal' => $request->subtotal,
-                'iva' => $request->iva,
-                'total' => $request->total,
-            ]);
-
-              // Agregar los productos a la cotización
-        foreach ($request->productos as $producto) {
-            $cotizacion->productos()->attach($producto['id'], [
-                'cantidad' => $producto['cantidad'],
-                'subtotal' => $producto['subtotal'],
-            ]);
-        }
-
-        // Retornar la respuesta con la cotización y los productos
-        return response()->json(['mensaje' => 'Cotización guardada con éxito', 'cotizacion' => $cotizacion]);
-
-    } catch (\Exception $e) {
-        Log::error("Error al guardar la cotización: " . $e->getMessage());
-        return response()->json(['error' => 'Ocurrió un error al guardar la cotización'], 500);
+        
+    
+        $cotizacion = Cotizacion::create([
+            'cliente' => $request->cliente,
+            'productos' => json_encode($request->productos),
+            'subtotal' => $request->subtotal,
+            'descuento' => $request->descuento,
+            'iva' => $request->iva,
+            'total' => $request->total,
+            'tipo_pago' => $request->tipo_pago,
+            'plan_pagos' => json_encode($request->plan_pagos),
+            'nota' => $request->nota,
+            'valido_hasta' => $request->valido_hasta,
+            'lugar_cotizacion' => $request->lugar_cotizacion,
+        ]);
+    
+        return response()->json(['mensaje' => 'Cotización guardada', 'id' => $cotizacion->id]);
     }
-}
 
-
-public function generarCotizacionPDF(Request $request)
-{
-    // Datos que recibes del frontend
-    $cliente = $request->cliente;
-    $telefono = $request->telefono;
-    $subtotal = $request->subtotal;
-    $iva = $request->iva;
-    $total = $request->total;
-    $productos = $request->productos;
-
-    // Crea los datos que serán pasados a la vista
-    $data = [
-        'cliente' => $cliente,
-        'telefono' => $telefono,
-        'subtotal' => $subtotal,
-        'iva' => $iva,
-        'total' => $total,
-        'productos' => $productos,
-    ];
-
-    // Cargar la vista y generar el PDF
-    $pdf = PDF::loadView('cotizaciones.pdf', $data);
-
-    // Descargar el archivo PDF
-    return $pdf->download('cotizacion.pdf');
-}
+    public function descargarPDF($id)
+    {
+        $cotizacion = Cotizacion::findOrFail($id);
+    
+        // Decodificar los productos asegurando que sea un array
+        $productos = json_decode($cotizacion->productos, true);
+    
+        if (!is_array($productos)) {
+            $productos = []; // Evitar errores si hay algún problema con el JSON
+        }
+     // Si cliente está almacenado como JSON
+    $cliente = json_decode($cotizacion->cliente, true); 
+        // Generar el PDF con la vista y los datos
+        $pdf = PDF::loadView('cotizacion.pdf', [
+            'cotizacion' => $cotizacion, 
+            'productos' => $productos
+        ]);
+    
+        return $pdf->download('cotizacion_' . $cotizacion->id . '.pdf');
+    }
+    
 
 
 

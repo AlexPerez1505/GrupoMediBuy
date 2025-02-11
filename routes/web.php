@@ -76,4 +76,6 @@ Route::post('/generar-cotizacion-pdf', [CotizacionController::class, 'generarCot
 
 
 Route::get('/cotizacion/prueba', [CotizacionController::class, 'generarPDF'])->name('cotizacion.prueba');
+Route::post('/guardar-cotizacion', [CotizacionController::class, 'store']);
 
+Route::get('/descargar-cotizacion/{id}', [CotizacionController::class, 'descargarPDF']);

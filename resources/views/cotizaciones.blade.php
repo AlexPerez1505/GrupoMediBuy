@@ -60,7 +60,7 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-heade">
-                    <h5 class="modal-title" id="exampleModalLabel">Registrar Producto</h5>
+                    <h5 class="modal-title" id="exampleModalLabel">Registrar Equipo</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -182,6 +182,7 @@
             
             <div class="d-flex gap-2 mt-3">
                 <button id="generate-pdf" class="btn btn-primary">Generar PDF</button>
+                <button onclick="descargarPDF(10)" class="btn btn-danger">Descargar PDF</button>
                 <button class="btn btn-secondary">Cancelar</button>
             </div>
         </div>
@@ -229,22 +230,41 @@
 
     <hr>
 
-    <!-- Tarjeta de Cotización -->
-    <div class="card modern-card mb-3">
-        <div class="card-header modern-heade">Cotización válida hasta</div>
-        <div class="card-body">
-            <input type="date" class="form-control modern-input">
-        </div>
+   <!-- Tarjeta de Cotización -->
+<div class="card modern-card mb-3">
+    <div class="card-header modern-heade">Cotización válida hasta</div>
+    <div class="card-body">
+        <input type="date" id="validoHasta" class="form-control modern-input">
     </div>
+</div>
 
-    <hr>
+<hr>
 
-    <!-- Tarjeta de Nota al Cliente -->
-    <div class="card modern-card">
-        <div class="card-header modern-heade">Nota al Cliente</div>
-        <div class="card-body">
-            <textarea class="form-control modern-textarea" rows="4" placeholder="Escribe una nota..."></textarea>
-        </div>
+<!-- Selección de Lugar -->
+<div class="card modern-card mb-3">
+    <div class="card-header modern-heade">Lugar de la Cotización</div>
+    <div class="card-body">
+        <select id="lugarCotizacion" class="form-control modern-select">
+            <option value="">Selecciona un lugar...</option>
+            <option value="AMCG ECOS INTERNACIONAL DE CIRUGIA GENERAL">AMCG ECOS INTERNACIONAL DE CIRUGIA GENERAL</option>
+            <option value="AMCG CONGRESO INTERNACIONAL DE CIRUGIA GENERA">AMCG CONGRESO INTERNACIONAL DE CIRUGIA GENERAL</option>
+            <option value="AMCE CONGRESO INTERNACIONAL DE CIRUGIA ENDOSCOPICA">AMCE CONGRESO INTERNACIONAL DE CIRUGIA ENDOSCOPICA</option>
+            <option value="AMECRA XXIX CONGRESO INTERNACIONAL DE ASOCIACIÓN MEX DE CIRUGIA RECONS, ARTICULAR Y ARTROSCOPICA">AMECRA XXIX CONGRESO INTERNACIONAL DE ASOCIACIÓN MEX DE CIRUGIA RECONS, ARTICULAR Y ARTROSCOPICA</option>
+            <option value="CVDL CONGRESO DE VETERINARIA">CVDL CONGRESO DE VETERINARIA</option>
+            <option value="AMG ECOS INTERNACIONALES DE GASTROENTEROLOGIA">AMG ECOS INTERNACIONALES DE GASTROENTEROLOGIA</option>
+            <option value="AMG SEMANA NACIONAL GASTRO">AMG SEMANA NACIONAL GASTRO</option>
+            <option value="otro">Otro</option>
+        </select>
+    </div>
+</div>
+
+<hr>
+
+<!-- Tarjeta de Nota al Cliente -->
+<div class="card modern-card">
+    <div class="card-header modern-heade">Nota al Cliente</div>
+    <div class="card-body">
+        <textarea id="notaCliente" class="form-control modern-textarea" rows="4" placeholder="Escribe una nota..."></textarea>
     </div>
 </div>
 
@@ -284,8 +304,8 @@
           </div>
 
           <div class="mb-3">
-            <label for="comentarios" class="form-label">Comentarios</label>
-            <textarea id="comentarios" name="comentarios" class="form-control" placeholder="Agrega información adicional de tu cliente"></textarea>
+            <label for="comentarios" class="form-label">Dirección</label>
+            <textarea id="comentarios" name="comentarios" class="form-control" placeholder="Agrega información de tu cliente"></textarea>
           </div>
         </div>
 
@@ -781,61 +801,61 @@ document.getElementById('plazoCredito').addEventListener('input', actualizarTota
 
 
 <script>
-  document.getElementById('generatePdfButton').addEventListener("click", function () {
-    // Asegúrate de que estos elementos existen y contienen los valores correctos
-    const cliente = document.getElementById('searchInput').value;  // Aquí debes tomar el valor del input de cliente
-    const telefono = '1234567890';  // Aquí deberías tomar el teléfono si está disponible
-    const subtotalElement = document.getElementById('subtotalElement');  // Reemplaza con el id correcto del subtotal
-    const ivaElement = document.getElementById('ivaElement');  // Reemplaza con el id correcto del IVA
-    const totalElement = document.getElementById('totalElement');  // Reemplaza con el id correcto del total
+document.getElementById('generate-pdf').addEventListener('click', function () {
+    let searchClient = document.getElementById('search-client')?.value || '';
+    let descuento = parseFloat(document.getElementById('descuento')?.value) || 0;
+    let aplicarIva = document.getElementById('aplicarIva')?.checked ? 1 : 0;
+    let tipoPago = document.getElementById('tipoPago')?.value || 'estatico';
+    let validoHasta = document.getElementById('validoHasta')?.value || '';
+    let lugarCotizacion = document.getElementById('lugarCotizacion')?.value || '';
+    let notaCliente = document.getElementById('notaCliente')?.value || '';
 
-    const subtotal = parseFloat(subtotalElement.textContent);
-    const iva = parseFloat(ivaElement.textContent);
-    const total = parseFloat(totalElement.textContent);
-
-    // Asegúrate de que productosSeleccionados está definido y contiene los productos correctos
-    const productosSeleccionados = [
-        { nombre: 'Producto 1', cantidad: 2, precio: 50 },
-        { nombre: 'Producto 2', cantidad: 1, precio: 30 }
-    ];
-
-    const productos = productosSeleccionados.map(producto => ({
-        nombre: producto.nombre,
-        cantidad: producto.cantidad,
-        subtotal: producto.precio * producto.cantidad,
+    let productos = productosSeleccionados.map(p => ({
+        id: p.id,
+        tipo_equipo: p.tipo_equipo, // Agregando tipo de equipo
+        modelo: p.modelo, // Agregando modelo
+        marca: p.marca, // Agregando marca
+        imagen: p.imagen, // Agregando imagen
+        cantidad: p.cantidad,
+        subtotal: p.subtotal
     }));
 
-    // Define la variable cotizacionData correctamente
-    const cotizacionData = {
-        cliente: cliente,
-        telefono: telefono,
+    let planPagos = Array.from(document.getElementById('plan-pagos')?.children || []).map(p => p.textContent);
+
+    let data = {
+        cliente: searchClient,
         productos: productos,
-        subtotal: subtotal,
-        iva: iva,
-        total: total
+        subtotal: parseFloat(document.getElementById('subtotal')?.textContent.replace('$', '')) || 0,
+        descuento: descuento,
+        iva: parseFloat(document.getElementById('iva')?.textContent.replace('$', '')) || 0,
+        total: parseFloat(document.getElementById('total')?.textContent.replace('$', '')) || 0,
+        tipo_pago: tipoPago,
+        plan_pagos: planPagos,
+        nota: notaCliente,
+        valido_hasta: validoHasta,
+        lugar_cotizacion: lugarCotizacion
     };
 
-    // Ahora se puede enviar cotizacionData al servidor
-    fetch('/generar-cotizacion-pdf', {
+    fetch('/guardar-cotizacion', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
         },
-        body: JSON.stringify(cotizacionData)
+        body: JSON.stringify(data)
     })
-    .then(response => response.blob())
-    .then(blob => {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'cotizacion.pdf';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+    .then(response => response.json())
+    .then(data => {
+        if (data.id) {
+            alert('Cotización guardada con éxito. Generando PDF...');
+            window.location.href = `/cotizacion/${data.id}/pdf`;
+        } else {
+            alert('Error al guardar la cotización.');
+        }
     })
-    .catch(error => console.error('Error al generar el PDF:', error));
+    .catch(error => console.error('Error al guardar la cotización:', error));
 });
+
 
 </script>
 <script>
@@ -856,6 +876,11 @@ document.getElementById('plazoCredito').addEventListener('input', actualizarTota
     }
 });
 
+</script>
+<script>
+    function descargarPDF(id) {
+        window.location.href = `/descargar-cotizacion/${id}`;
+    }
 </script>
 
 @endsection

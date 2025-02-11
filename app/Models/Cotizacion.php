@@ -8,18 +8,24 @@ class Cotizacion extends Model
 {
     use HasFactory;
 
+    protected $table = 'cotizaciones'; // Asegura que use la tabla correcta
+
     protected $fillable = [
         'cliente',
-        'telefono',
+        'productos',
         'subtotal',
+        'descuento',
         'iva',
         'total',
+        'tipo_pago',
+        'plan_pagos',
+        'nota',
+        'valido_hasta',
+        'lugar_cotizacion'
     ];
 
-    public function productos()
-    {
-        return $this->belongsToMany(Producto::class, 'cotizacion_producto')
-                    ->withPivot('cantidad', 'precio', 'subtotal')
-                    ->withTimestamps();
-    }
+    protected $casts = [
+        'productos' => 'array',
+        'plan_pagos' => 'array',
+    ];
 }
