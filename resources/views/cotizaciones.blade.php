@@ -142,13 +142,13 @@
     </div>
 </div>
 
-<div class="d-flex">
+<div class="d-flex flex-column flex-md-row">
     <!-- Contenedor de totales -->
-    <div class="card modern-card mt-3 w-50">
+    <div class="card modern-card mt-3 w-100 w-md-50">
         <div class="card-header modern-header">Resumen</div>
         <div class="card-body">
             <p>Subtotal: <span id="subtotal" class="modern-value">0.00</span></p>
-            <p>Descuento: 
+            <p>Descuento:
                 <input type="number" id="descuento" class="form-control modern-input w-25 d-inline-block" value="0">
             </p>
             <p>IVA (16%): <span id="iva" class="modern-value">0.00</span></p>
@@ -158,7 +158,7 @@
                 </label>
             </p>
             <p><strong>Total: <span id="total" class="modern-value">0.00</span></strong></p>
-            
+
             <div>
                 <label>Selecciona Plan:</label>
                 <select id="tipoPago" class="form-control modern-input w-50">
@@ -167,33 +167,32 @@
                     <option value="credito">Plan a Crédito</option>
                 </select>
             </div>
-            
+
             <div id="opcionesDinamicas" style="display: none;">
                 <label>Pago Inicial:</label>
                 <input type="number" id="pagoInicial" class="form-control modern-input w-50">
             </div>
-            
+
             <div id="opcionesCredito" style="display: none;">
                 <label>Pago Inicial:</label>
                 <input type="number" id="pagoCreditoInicial" class="form-control modern-input w-50">
                 <label>Plazo (meses):</label>
                 <input type="number" id="plazoCredito" class="form-control modern-input w-50" value="6">
             </div>
-            
+
             <div class="d-flex gap-2 mt-3">
                 <button id="generate-pdf" class="btn btn-primary">Generar PDF</button>
-                <button onclick="descargarPDF(10)" class="btn btn-danger">Descargar PDF</button>
+                 <!-- <button onclick="descargarPDF(13)" class="btn btn-danger">Descargar PDF</button> -->
                 <button class="btn btn-secondary">Cancelar</button>
             </div>
         </div>
     </div>
-    
     <!-- Contenedor de Plan de Pagos -->
-    <div class="card modern-card mt-3 w-50 ms-3">
-        <div class="card-header modern-header">Detalles del Financiamiento</div>
-        <div class="card-body" id="plan-pagos"></div>
+        <div class="card modern-card mt-3 w-100 w-md-50 ms-md-3">
+            <div class="card-header modern-header">Detalles del Financiamiento</div>
+            <div class="card-body" id="plan-pagos"></div>
+        </div>
     </div>
-</div>
 </div>
 
 
@@ -346,17 +345,25 @@
 </div>
 
 
-{{-- Modal de descarga PDF --}}
+
+<!-- Modal de Confirmación -->
 <div class="modal fade" id="modalPdf" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Cotización Generada</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <div class="modal-header encabezado_modal text-center">
+                <h5 class="modal-title titulo_modal">¡Cotización Generada Exitosamente!</h5>
             </div>
             <div class="modal-body">
-                <p>La cotización ha sido creada con éxito.</p>
-                <a id="descargarPdf" class="btn btn-success" href="#">Descargar PDF</a>
+                <div class="text-center">
+                    <img src="{{ asset('images/confirmar.jpeg') }}" alt="Logo de encabezado" class="logo-modal">
+                </div>
+                <p class="text-center mensaje-modal">
+                Su cotización ha sido registrada correctamente en el sistema.  
+                La descarga comenzará en breve.  
+                    <b>Grupo MediBuy</b>.
+                </p>
+            </div>
+                <button id="btnDescargarPDF" class="btn btn-danger" style="display: none;">Descargar PDF</button>
             </div>
         </div>
     </div>
@@ -383,10 +390,14 @@ function cerrarModal() {
 
 
 <script>
- document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", function () {
   const createClientButton = document.querySelector('.dropdown-item[onclick="openCreateClientModal()"]');
-  const modalFormulario = new bootstrap.Modal(document.getElementById("modal_formulario"));
-  const modalExito = new bootstrap.Modal(document.getElementById("cliente_creado")); // Modal de éxito
+  const modalFormularioElement = document.getElementById("modal_formulario");
+  const modalExitoElement = document.getElementById("cliente_creado");
+
+  // Inicializar modales
+  const modalFormulario = new bootstrap.Modal(modalFormularioElement);
+  const modalExito = new bootstrap.Modal(modalExitoElement);
 
   createClientButton.addEventListener("click", function () {
     modalFormulario.show();
@@ -396,15 +407,15 @@ function cerrarModal() {
   const form = document.getElementById("form-cliente");
 
   form.addEventListener("submit", function (event) {
-    event.preventDefault(); // Prevenir el envío tradicional del formulario
+    event.preventDefault();
 
     // Limpiar mensajes de error previos
     const errorTelefono = document.getElementById("error-telefono");
     const errorEmail = document.getElementById("error-email");
     errorTelefono.style.display = "none";
     errorEmail.style.display = "none";
-    errorTelefono.textContent = ""; // Limpiar texto previo
-    errorEmail.textContent = ""; // Limpiar texto previo
+    errorTelefono.textContent = "";
+    errorEmail.textContent = "";
 
     // Obtener datos del formulario
     const nombre = document.getElementById("nombre").value.trim();
@@ -426,10 +437,7 @@ function cerrarModal() {
         "Content-Type": "application/json",
         "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content,
       },
-      body: JSON.stringify({
-        telefono: telefono,
-        email: email,
-      }),
+      body: JSON.stringify({ telefono, email }),
     })
       .then((response) => response.json())
       .then((data) => {
@@ -441,24 +449,19 @@ function cerrarModal() {
               "Content-Type": "application/json",
               "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content,
             },
-            body: JSON.stringify({
-              nombre: nombre,
-              apellido: apellido,
-              telefono: telefono,
-              email: email,
-              comentarios: comentarios,
-            }),
+            body: JSON.stringify({ nombre, apellido, telefono, email, comentarios }),
           })
             .then((response) => response.json())
             .then((data) => {
               if (data.success) {
-                // Cerrar el primer modal (modal_formulario)
-                const modalFormularioElement = document.getElementById("modal_formulario");
+                // Cerrar el primer modal
                 const bsModalFormulario = bootstrap.Modal.getInstance(modalFormularioElement);
-                bsModalFormulario.hide(); // Esto debería cerrar el primer modal
+                bsModalFormulario.hide();
 
-                // Asegurarse de que el modal de éxito se muestre después de cerrar el primero
-                modalExito.show();
+                // Esperar a que el primer modal se cierre completamente antes de abrir el segundo
+                modalFormularioElement.addEventListener("hidden.bs.modal", function () {
+                  modalExito.show();
+                }, { once: true });
 
                 // Restablecer formulario
                 form.reset();
@@ -474,12 +477,12 @@ function cerrarModal() {
           // Mostrar mensajes de error en el formulario
           if (data.error_telefono) {
             errorTelefono.textContent = data.error_telefono;
-            errorTelefono.style.display = "block";  // Asegura que se muestre
+            errorTelefono.style.display = "block";
           }
 
           if (data.error_email) {
             errorEmail.textContent = data.error_email;
-            errorEmail.style.display = "block";  // Asegura que se muestre
+            errorEmail.style.display = "block";
           }
         }
       })
@@ -488,13 +491,13 @@ function cerrarModal() {
         alert("Error al verificar la existencia del teléfono o correo.");
       });
   });
+
+  // Detectar cuando el modal de éxito se cierre para recargar la página
+  modalExitoElement.addEventListener("hidden.bs.modal", function () {
+    location.reload();
+  });
 });
 
-// Función para cerrar el modal de éxito
-function cerrarModal() {
-  const modalExito = new bootstrap.Modal(document.getElementById("cliente_creado"));
-  modalExito.hide(); // Cerrar el modal de éxito
-}
 
 </script>
 
@@ -800,6 +803,7 @@ document.getElementById('plazoCredito').addEventListener('input', actualizarTota
 </script>
 
 
+
 <script>
 document.getElementById('generate-pdf').addEventListener('click', function () {
     let searchClient = document.getElementById('search-client')?.value || '';
@@ -812,10 +816,10 @@ document.getElementById('generate-pdf').addEventListener('click', function () {
 
     let productos = productosSeleccionados.map(p => ({
         id: p.id,
-        tipo_equipo: p.tipo_equipo, // Agregando tipo de equipo
-        modelo: p.modelo, // Agregando modelo
-        marca: p.marca, // Agregando marca
-        imagen: p.imagen, // Agregando imagen
+        tipo_equipo: p.tipo_equipo,
+        modelo: p.modelo,
+        marca: p.marca,
+        imagen: p.imagen,
         cantidad: p.cantidad,
         subtotal: p.subtotal
     }));
@@ -847,8 +851,14 @@ document.getElementById('generate-pdf').addEventListener('click', function () {
     .then(response => response.json())
     .then(data => {
         if (data.id) {
-            alert('Cotización guardada con éxito. Generando PDF...');
-            window.location.href = `/cotizacion/${data.id}/pdf`;
+            // Mostrar modal de confirmación
+            let modalPdf = new bootstrap.Modal(document.getElementById('modalPdf'));
+            modalPdf.show();
+
+            // Esperar unos segundos y descargar el PDF
+            setTimeout(() => {
+                descargarPDF(data.id);
+            }, 1000);
         } else {
             alert('Error al guardar la cotización.');
         }
@@ -856,8 +866,27 @@ document.getElementById('generate-pdf').addEventListener('click', function () {
     .catch(error => console.error('Error al guardar la cotización:', error));
 });
 
-
+// Función para descargar el PDF sin abrir otra página
+function descargarPDF(id) {
+    fetch(`/descargar-cotizacion/${id}`, {
+        method: 'GET',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        }
+    })
+    .then(response => response.blob())
+    .then(blob => {
+        let link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `cotizacion_${id}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    })
+    .catch(error => console.error('Error al descargar el PDF:', error));
+}
 </script>
+
 <script>
      document.getElementById('image-upload').addEventListener('change', function(event) {
     const file = event.target.files[0];

@@ -7,6 +7,7 @@ use App\Models\Registro;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 
 
 
@@ -46,29 +47,36 @@ class CotizacionController extends Controller
         return response()->json(['mensaje' => 'Cotización guardada', 'id' => $cotizacion->id]);
     }
 
+  
     public function descargarPDF($id)
     {
         $cotizacion = Cotizacion::findOrFail($id);
     
-        // Decodificar los productos asegurando que sea un array
-        $productos = json_decode($cotizacion->productos, true);
+        $productos = json_decode($cotizacion->productos, true) ?? [];
     
-        if (!is_array($productos)) {
-            $productos = []; // Evitar errores si hay algún problema con el JSON
+        $createdAt = Carbon::parse($cotizacion->created_at);
+        $vigencia = Carbon::parse($cotizacion->valido_hasta);
+        $diasRestantes = $createdAt->diffInDays($vigencia);
+
+        // Si la fecha de vigencia ya pasó, se puede ajustar el mensaje
+        if ($diasRestantes < 0) {
+            $diasRestantes = 'Vencido';
+        } else {
+            // Redondear los días a un número entero
+            $diasRestantes = round($diasRestantes); // Usar round() para redondear al entero más cercano
         }
-     // Si cliente está almacenado como JSON
-    $cliente = json_decode($cotizacion->cliente, true); 
-        // Generar el PDF con la vista y los datos
+
+    
         $pdf = PDF::loadView('cotizacion.pdf', [
-            'cotizacion' => $cotizacion, 
-            'productos' => $productos
+            'cotizacion' => $cotizacion,
+            'productos' => $productos,
+            'diasRestantes' => $diasRestantes
         ]);
     
-        return $pdf->download('cotizacion_' . $cotizacion->id . '.pdf');
+        return response($pdf->output(), 200)
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'attachment; filename="cotizacion_'.$cotizacion->id.'.pdf"');
     }
     
-
-
-
 }
 

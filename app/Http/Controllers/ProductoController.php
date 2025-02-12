@@ -23,7 +23,7 @@ class ProductoController extends Controller
             'modelo' => 'required|string|max:255',  // Ahora el modelo es obligatorio
             'marca' => 'required|string|max:255',   // Marca también es obligatorio
             'precio' => 'required|numeric|min:0',   // Precio sigue siendo obligatorio
-            'imagen' => 'required|image|max:2048',  // Imagen también es obligatoria
+            'imagen' => 'nullable|mimes:jpeg,png,jpg,gif,webp,heic|max:4096', // Ahora acepta más formatos
         ]);
     
         // Si hay una imagen

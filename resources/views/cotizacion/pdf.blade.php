@@ -194,16 +194,18 @@
 
 
 
-    <!-- Información de la Cotización -->
+   
     <div class="info-box">
     <p>
-        <span style="float: right;"><strong>Fecha de Validez:</strong> {{ $cotizacion->valido_hasta }}</span>
+        <span style="float: right;"><strong>VIGENCIA:</strong> {{ $diasRestantes }} DÍAS</span>
     </p>
-    <p><strong>Cliente:</strong> {{ $cliente['nombre'] ?? 'Desconocido' }}</p>
-    <p><strong>Teléfono:</strong> {{ $cliente['telefono'] ?? 'No disponible' }}</p>
+    <p><strong>CLIENTE:</strong> {{ $cotizacion['cliente'] ?? 'Desconocido' }}</p>
+    <p><strong>FECHA:</strong> {{ \Carbon\Carbon::parse($cotizacion['created_at'])->format('Y-m-d') ?? 'Desconocido' }}</p>
+
+     <!--<p><strong>Teléfono:</strong> {{ $cliente['telefono'] ?? 'No disponible' }}</p>
     <p><strong>Email:</strong> {{ $cliente['email'] ?? 'No disponible' }}</p>
-    <p><strong>Ubicación:</strong> {{ $cliente['comentarios'] ?? 'No disponible' }}</p>
-    <p><strong>Lugar de Cotización:</strong> {{ $cotizacion->lugar_cotizacion }}</p>
+    <p><strong>Ubicación:</strong> {{ $cliente['comentarios'] ?? 'No disponible' }}</p>-->
+    <p><strong>LLUGAR DE COTIZACIÓN:</strong> {{ $cotizacion->lugar_cotizacion }}</p>
 </div>
 <!-- Tabla de Productos -->
 <div class="table-container">
