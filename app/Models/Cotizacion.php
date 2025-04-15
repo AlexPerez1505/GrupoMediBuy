@@ -3,6 +3,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon; // Importar Carbon para trabajar con fechas
 
 class Cotizacion extends Model
 {
@@ -16,16 +17,29 @@ class Cotizacion extends Model
         'subtotal',
         'descuento',
         'iva',
+        'envio',  // Nuevo campo agregado
         'total',
         'tipo_pago',
         'plan_pagos',
         'nota',
         'valido_hasta',
-        'lugar_cotizacion'
+        'lugar_cotizacion',
+        'registrado_por' // Campo agregado
     ];
 
     protected $casts = [
         'productos' => 'array',
         'plan_pagos' => 'array',
     ];
+
+    // Asegurarnos de que la fecha 'valido_hasta' se establezca al crear el registro
+    protected static function booted()
+    {
+        static::creating(function ($cotizacion) {
+            // Si 'valido_hasta' no tiene un valor, se le asigna 10 días a partir de la fecha actual
+            if (!$cotizacion->valido_hasta) {
+                $cotizacion->valido_hasta = Carbon::now()->addDays(11); // Fecha 10 días después
+            }
+        });
+    }
 }

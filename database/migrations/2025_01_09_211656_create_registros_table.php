@@ -21,11 +21,19 @@ class CreateRegistrosTable extends Migration
             $table->date('fecha_adquisicion');
             $table->date('ultimo_mantenimiento')->nullable();
             $table->date('proximo_mantenimiento')->nullable();
-            $table->text('evidencia')->nullable(); // Almacena varias imágenes como JSON
+
+            // En lugar de almacenar un JSON, ahora tenemos 3 columnas separadas
+            $table->string('evidencia1')->nullable();
+            $table->string('evidencia2')->nullable();
+            $table->string('evidencia3')->nullable();
+
             $table->string('video')->nullable(); // Almacena la URL del video
             $table->string('documentoPDF')->nullable();
             $table->text('observaciones')->nullable();
             $table->string('firma_digital')->nullable(); // URL de la firma
+
+            // Columna para almacenar el nombre del usuario que crea el registro
+            $table->string('user_name'); // Almacena el nombre del usuario
             $table->timestamps();
         });
     }

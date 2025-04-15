@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+       <link rel="icon" type="image/png" href="{{ asset('images/logoai.png') }}?v=1">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 
     <title>Registro</title>
@@ -64,14 +66,16 @@
 
         .contenedor_general {
             background-color: white;
-            padding: 1rem;
-            border-radius: 5px;
-            box-shadow: -4px 1px 16px rgba(0, 0, 0, 0.1);
-            width: 85%;
-            height: auto;
-            margin-top: 25px;
-            transition: transform 0.3s ease;
-        }
+    padding: 1rem;
+    border-radius: 5px;
+    box-shadow: -4px 1px 16px rgba(0, 0, 0, 0.1);
+    width: 100%; /* Aseguramos que ocupe el 100% en pantallas pequeñas */
+    max-width: 85%; /* Limita el ancho máximo a 85% en pantallas grandes */
+    height: auto;
+    margin-top: 25px;
+    transition: transform 0.3s ease;
+    box-sizing: border-box; /* Asegura que el padding no afecte el ancho total */
+}
    
          /* Botones */
         .form-grupo  {
@@ -210,7 +214,15 @@
             body.menu-open .contenedor_general {
         transform: translateX(250px);
     }
-       
+    .form-grupo {
+        width: 100%;
+        margin-top: 0 !important; /* Elimina la superposición */
+    }
+
+    .image-preview-container,
+    #video-preview-container {
+        width: 100%;
+    }
     .header-container {
         grid-template-columns: 1fr; /* Una sola columna en pantallas pequeñas */
         text-align: center; /* Centra todo en el eje horizontal */
@@ -245,11 +257,7 @@
                 flex-wrap: wrap;
                 justify-content: center; /* Centrar las imágenes */
             }
-            .image-preview-container {
-                width: calc(50% - 10px); /* Dos imágenes en una fila */
-                margin-right: 5px;
-                margin-bottom: 10px;
-            }
+         
             .preview-contenedor {
                 max-width: 100%; /* No limitar el ancho en pantallas pequeñas */
                 padding: 10px;
@@ -259,11 +267,7 @@
                 font-size: 14px; /* Reducir el tamaño del texto para pantallas más pequeñas */
                 height: 40px; /* Reducir la altura para ajustarse mejor en pantallas pequeñas */
             }
-            .preview-container {
-            padding: 10px; /* Reducir el padding en pantallas pequeñas */
-            border-radius: 5px; /* Redondear más los bordes en pantallas pequeñas */
-            max-width: 100%; /* Asegurar que el contenedor ocupe todo el ancho */
-            }
+           
             .video-preview video {
                 max-width: 100%; /* Asegurar que el video no se desborde */
                 height: 280px; /* Mantener la proporción */
@@ -523,14 +527,10 @@
             justify-content: center; /* Centrar horizontalmente */
         }
         .preview-container {
-            border: 1px solid #ccc;
-            padding: 15px;
-            border-radius: 8px;
-            background-color: #F9F9F9;
-            max-width: 320px; /* Máximo ancho para una apariencia más ordenada */
-            margin: 0 auto; /* Centrar el contenedor */
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
+            display: flex;
+    flex-direction: column; /* Asegura que las imágenes se apilen verticalmente */
+    gap: 10px;
+}
         .video-preview video {
             border: 2px solid #ccc;
             border-radius: 5px;
@@ -548,7 +548,7 @@
             display: flex;
             flex-wrap: wrap;
             justify-content: space-between; /* Alinea las imágenes de forma ordenada */
-        }
+}
 
         .preview-contenedor {
             border: 1px solid #ccc;
@@ -561,31 +561,49 @@
         }
 
         .image-preview-container {
-            position: relative;
-            display: inline-block;
-            margin-right: 10px;
-            margin-bottom: 10px;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            border-radius: 5px;
-        }
+            display: flex;
+    flex-wrap: wrap; /* Permite que las imágenes se ajusten si hay muchas */
+    justify-content: center;
+    gap: 10px;
+    overflow-x: auto; /* Habilita el scroll horizontal si hay muchas imágenes */
+    max-width: 100%;
+    padding: 10px 0;
+    box-sizing: border-box;
+
+}
+
 
         /* Estilo de la imagen */
         .image-preview-container img {
-            width: 100px;
-            height: 100px;
-            object-fit: cover;
-            border-radius: 5px;
-            transition: transform 0.3s ease;
-        }
+            max-width: 100px;
+    height: auto;
+    margin: 5px;
+    border-radius: 8px; /* Bordes redondeados */
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
 
-        /* Efecto hover aplicado individualmente a cada contenedor de imagen */
-        .image-preview-container:hover img {
-            transform: scale(1.1); /* Escalar la imagen individual al pasar el ratón */
-        }
+       /* Ampliación de la imagen al pasar el ratón */
+.image-preview-container img:hover {
+    transform: scale(1.1); /* Escalar la imagen individual al pasar el ratón */
 
-        .image-preview-container:hover {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); /* Agregar sombra al contenedor de la imagen */
-        }
+}
+
+/* Ajustes en pantallas pequeñas */
+@media screen and (max-width: 600px) {
+    .contenedor_general {
+        width: 100%; /* Se asegura que ocupe el 100% del contenedor padre */
+    }
+
+    .image-preview-container {
+        gap: 5px; /* Reduce el espacio entre imágenes */
+        justify-content: flex-start; /* Alinea las imágenes al principio */
+    }
+
+    .image-preview-container img {
+        max-width: 80px; /* Ajusta el tamaño de las imágenes en pantallas pequeñas */
+    }
+    }
+    
 
 
         .preview-title {
@@ -686,12 +704,23 @@
     display: block;
 }
 /* Estilos de los ítems del menú */
-/* Estilos de los ítems del menú */
 .menu-items {
+    max-height: calc(100vh - 50px); /* Ajustar según el espacio del logo y bienvenida */
+    overflow-y: auto; /* Permite el desplazamiento solo para el contenido debajo */
+    padding: 10px;
     list-style: none;
     padding: 0;
     margin: 0;
     flex-grow: 1;
+}
+/* Ocultar la barra de desplazamiento en navegadores basados en WebKit (Chrome, Safari) */
+.menu-items::-webkit-scrollbar {
+    display: none;
+}
+
+/* En Firefox, usar -moz para ocultar la barra de desplazamiento */
+.menu-items {
+    scrollbar-width: none; /* Ocultar barra en Firefox */
 }
 
 .menu-items li {
@@ -700,6 +729,7 @@
     transition: background 0.3s ease, transform 0.3s ease;
     position: relative;
 }
+
 
 .menu-items li a {
     text-decoration: none;
@@ -959,83 +989,166 @@
         transform: translateX(-30%); /* Elimina el desplazamiento lateral en pantallas pequeñas */
     }
 }
+.preview-containerr {
+            padding: 10px; /* Reducir el padding en pantallas pequeñas */
+            border-radius: 5px; /* Redondear más los bordes en pantallas pequeñas */
+            max-width: 100%; /* Asegurar que el contenedor ocupe todo el ancho */
+            }
+            .preview-containerr {
+            border: 1px solid #ccc;
+            padding: 15px;
+            border-radius: 8px;
+            background-color: #F9F9F9;
+            max-width: 320px; /* Máximo ancho para una apariencia más ordenada */
+            margin: 0 auto; /* Centrar el contenedor */
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        .submenu {
+    display: none;
+    list-style: none;
+    padding-left: 20px;
+}
+
+.submenu li {
+    padding: 5px 0;
+}
+
+.swal2-popup {
+            font-family: 'Arial', sans-serif;
+            background-color: #f8f9fa;
+            border-radius: 15px;
+        }
+
+        .swal2-title {
+            color: #343a40;
+            font-weight: bold;
+        }
+
+        .swal2-content {
+            color: #495057;
+            font-size: 16px;
+        }
+
     </style>
 </head>
 <body>
-<div class="header-container">
-<div class="menu-hamburguesa">
-    <!-- Botón de menú con icono personalizado -->
-    <button onclick="toggleMenu()" class="menu-icon">
-    <img src="{{ asset('images/menu.png') }}" alt="Menu Icon">
-    </button>
+<div class="header-container"> 
+    <div class="menu-hamburguesa">
+        <!-- Botón de menú con icono personalizado -->
+        <button onclick="toggleMenu()" class="menu-icon">
+            <img src="{{ asset('images/menu.png') }}" alt="Menu Icon">
+        </button>
 
-    <!-- Menú lateral -->
-    <nav id="menu-sidebar" class="menu-sidebar">
-        <!-- Logo del proyecto -->
-        <div class="menu-header">
-            <img src="{{ asset('images/logomedy.png') }}" alt="Logo" class="menu-logo">
-        </div>
+        <!-- Menú lateral -->
+        <nav id="menu-sidebar" class="menu-sidebar">
+            <!-- Logo del proyecto -->
+            <div class="menu-header">
+                <img src="{{ asset('images/logomedy.png') }}" alt="Logo" class="menu-logo">
+            </div>
 
-<!-- Bienvenida personalizada -->
-@auth
-<div class="welcome-section">
-    <a href="{{ route('auth.change-password') }}" class="welcome-link">
-        <p>Bienvenido,</p>
-        <p class="user-name">{{ Auth::user()->name }}</p>
-    </a>
-</div>
-@endauth
+            <!-- Bienvenida personalizada -->
+            @auth
+                <div class="welcome-section">
+                    <a href="{{ route('perfil') }}" class="welcome-link">
+                        <p>Bienvenido,</p>
+                        <p class="user-name">{{ Auth::user()->name }}</p>
+                    </a>
+                </div>
+            @endauth
 
-
-
-        <!-- Ítems del menú -->
-        <ul class="menu-items">
-            <li>
-                <a href="{{ url('/') }}">
-                <img src="{{ asset('images/registro.png') }}" alt="Icono Registro de Inventario" class="menu-icon-image"></i> Registro de Inventario
-                </a>
-            </li>
-            <li>
-                <a href="{{ url('/inventario') }}">
-                <img src="{{ asset('images/inventario.png') }}" alt="Icono de Inventario" class="menu-icon-imagen"></i> Inventario
-                </a>
-            </li>
-            <li>
-                    <a href="{{ url('/cotizaciones') }}">
-                        <img src="{{ asset('images/cotizaciones.png') }}" alt="Icono de Cotizaciones" class="menu-icon-image">
-                        Cotizaciones
+            <!-- Ítems del menú -->
+            <ul class="menu-items">
+                <li>
+                    <a href="{{ url('/') }}">
+                        <img src="{{ asset('images/registro.png') }}" alt="Icono Registro de Inventario" class="menu-icon-image">
+                        Registro de Inventario
                     </a>
                 </li>
                 <li>
-                        <a href="{{ url('/remisiones') }}">
-                            <img src="{{ asset('images/remisiones.png') }}" alt="Icono de remisiones" class="menu-icon-image">
-                            Remisiones
-                        </a>
-                    </li>
+                    <a href="{{ url('/inventario') }}">
+                        <img src="{{ asset('images/inventario.png') }}" alt="Icono de Inventario" class="menu-icon-image">
+                        Inventario
+                    </a>
+                </li>
+
+                <!-- Opción de Cotizaciones con Submenú -->
+                @if(Auth::user()->hasRole('admin') || Auth::user()->hasRole('editor'))
+                <li class="menu-items">
+                    <a href="#" onclick="toggleSubmenu(event, 'submenu-cotizaciones')">
+                        <img src="{{ asset('images/cotizaciones.png') }}" alt="Icono de Cotizaciones" class="menu-icon-image">
+                        Cotizaciones
+                    </a>
+                    <ul id="submenu-cotizaciones" class="submenu">
+                        <li><a href="{{ url('/cotizaciones') }}">+ Crear Cotización</a></li>
+                        <li><a href="{{ url('/clientes/vista') }}">Clientes</a></li>
+                        <li><a href="{{ route('historial-cotizaciones') }}">Historial de Cotizaciones</a></li>
+                    </ul>
+                </li>
+                @endif
+
+                <li>
+                    <a href="{{ url('/remisiones') }}">
+                        <img src="{{ asset('images/remisiones.png') }}" alt="Icono de remisiones" class="menu-icon-image">
+                        Remisiones
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url('/agenda') }}">
+                        <img src="{{ asset('images/agenda.png') }}" alt="Icono de agenda" class="menu-icon-image">
+                        Agenda
+                    </a>
+                </li>
+
+                <!-- Nueva opción: Guias y Entregas, visible para todos los usuarios autenticados -->
+                @auth
+                <li class="menu-items">
+                    <a href="#" onclick="toggleSubmenu(event, 'submenu-guias')">
+                        <img src="{{ asset('images/fedex.png') }}" alt="Icono de Guías" class="menu-icon-image">
+                        Guias
+                    </a>
+                    <ul id="submenu-guias" class="submenu">
+                        <li><a href="{{ route('guias.create') }}">+ Crear Guía</a></li>
+                        <li><a href="{{ route('entrega.create') }}">Entregar Guía</a></li>
+                        <li><a href="{{ route('entregas.index') }}">Ver Entregas</a></li>
+                    </ul>
+                </li>
+                @endauth
+
+                <!-- Nueva opción: Usuarios, visible solo para el Admin con Submenú -->
+                @if(Auth::user()->hasRole('admin'))
+                <li class="menu-items">
+                    <a href="#" onclick="toggleSubmenu(event, 'submenu-usuarios')">
+                        <img src="{{ asset('images/empleado.png') }}" alt="Icono de Usuarios" class="menu-icon-image">
+                        Usuarios
+                    </a>
+                    <ul id="submenu-usuarios" class="submenu">
+                        <li><a href="{{ route('users.create') }}">+ Agregar Usuario</a></li>
+                        <li><a href="{{ url('/usuarios') }}">Lista de Usuarios</a></li>
+                        <li> <a href="{{ route('asistencias.index') }}"> Registrar Asistencias</a></li>
+                    </ul> 
+                </li>
+                @endif
+
+                @auth
                     <li>
-                        <a href="{{ url('/agenda') }}">
-                            <img src="{{ asset('images/agenda.png') }}" alt="Icono de agenda" class="menu-icon-imagen">
-                            Agenda
+                        <form action="{{ route('logout') }}" method="POST">
+                            @csrf
+                            <button type="submit" class="logout-button">
+                                <img src="{{ asset('images/cerrar.png') }}" alt="Icono de Cerrar Sesión" class="menu-icon-image">
+                                Cerrar Sesión
+                            </button>
+                        </form>
+                    </li>
+                @else
+                    <li>
+                        <a href="{{ route('login') }}">
+                            <i class="icon-class icon-login"></i> Iniciar Sesión
                         </a>
                     </li>
-            @auth
-            <li>
-                <form action="{{ route('logout') }}" method="POST">
-                    @csrf
-                    <button type="submit" class="logout-button">
-                    <img src="{{ asset('images/cerrar.png') }}" alt="Icono Registro de Inventario" class="menu-icon-imagen"></i> Cerrar Sesión
-                    </button>
-                </form>
-            </li>
-            @else
-            <li>
-                <a href="{{ route('login') }}">
-                    <i class="icon-class icon-login"></i> Iniciar Sesión
-                </a>
-            </li>
-            @endauth
-        </ul>
-    </nav>
+                @endauth
+            </ul>
+        </nav>
+
     <!-- Overlay para cerrar el menú -->
     <div id="menu-overlay" class="menu-overlay" onclick="closeMenu()"></div>
 </div>
@@ -1077,6 +1190,7 @@
                         <option value="hospitalizacion">Hospitalización</option>
                         <option value="cirujia">Cirujia</option>
                         <option value="artroscopia">Artroscopia</option>
+                        <option value="ginecologia">Ginecología</option>
                         <option value="otros">Otros</option>
                     </select>
                 </div>
@@ -1175,7 +1289,7 @@
     <div class="form-group">
         <div class="input_consulta" style="width: 100%;">
             <div class="icon-container2" style="border: none;">
-                <img src="{{ asset('images/Año.png') }}" alt="Año" class="icon2">
+                <img src="{{ asset('images/anio.png') }}" alt="Año" class="icon2">
             </div>
             <input
                 type="text"
@@ -1211,18 +1325,8 @@
  </div>
 <div class="row d-flex justify-content-between align-items-start" style="margin: 15px;">
     <!-- Estado Actual -->
-    <div class="col-md-3 col-12 mb-3">
-    <label for="estado_actual" class="label_nomina mb-1">Estado Actual</label>
-    <div class="form-group">
-        <select class="form-control custom-select select no-arrow" name="estado_actual" id="estado_actual" required>
-            <option value="" selected disabled hidden>Seleccione una opción</option>
-            <option value="1" {{ old('estado_actual') == 1 ? 'selected' : '' }}>En Stock</option>
-            <option value="2" {{ old('estado_actual') == 2 ? 'selected' : '' }}>Vendido</option>
-            <option value="3" {{ old('estado_actual') == 3 ? 'selected' : '' }}>En Mantenimiento</option>
-            <option value="4" {{ old('estado_actual') == 4 ? 'selected' : '' }}>Defectuoso</option> <!-- Nueva opción -->
-        </select>
-    </div>
-</div>
+   
+
 
 
 
@@ -1236,57 +1340,86 @@
     </div>
 
     <!-- Último Mantenimiento -->
-    <div class="col-md-3 col-12 mb-3">
-        <label for="fecha_mantenimiento" class="label_nomina mb-1">Último Mantenimiento</label>
-        <div class="form-group">
-            <input type="date" class="form-control select" id="fecha_mantenimiento" name="fecha_mantenimiento" value="{{ old('fecha_mantenimiento') }}" required>
-        </div>
-    </div>
+  
 
-    <!-- Próximo Mantenimiento -->
+    <!-- 
     <div class="col-md-3 col-12 mb-3">
         <label for="proximo_mantenimiento" class="label_nomina mb-1">Próximo Mantenimiento</label>
         <div class="form-group">
             <input type="date" class="form-control select" id="proximo_mantenimiento" name="proximo_mantenimiento" value="{{ old('proximo_mantenimiento') }}">
         </div>
     </div>
-
+ -->
 
 
     <div class="form-grupo col-md-6">
-        <div class="d-block w-100">
-            <label for="evidencia" class="label_nomina mb-1">Fotos del equipo
-                <div class="info-icon">?
-                    <div class="info-tooltip text-center">Máximo 3.</div>
-                </div>
-            </label>
-            <div class="d-flex align-items-center input-containerr">
-                <label for="evidencia" class="file-input-label d-flex align-items-center">
-                    <div class="icon-containerr">
-                        <img src="{{ asset('images/adjunto-archivo.png') }}" alt="Icono de pin" class="icon-pin">
-                    </div>
-                    <span>Seleccione archivos</span>
-                </label>
-              
-                <input type="file" id="evidencia" name="evidencia[]" class="file-input" onchange="updateFileNames(this, 'file-input-text-images')" multiple accept="image/*">
-                <div id="file-input-text-images" class="file-input-text">Sin selección</div>
-            </div>
-
-            <!-- Área de previsualización -->
-            <div id="preview-container" class="preview-contenedor mt-3" style="display: none;">
-                <h5 class="preview-title">Previsualización de las Imágenes:</h5>
-                <div id="image-preview" class="image-preview"></div>
-                <div id="message" class="upload-message"></div>
-            </div>
-        </div>
-    </div>
-
-
-<div class="form-grupo col-md-6">
     <div class="d-block w-100">
-        <label for="video-evidencia" class="label_nomina mb-1">Video del equipo<div class="info-icon">?
-                        <div class="info-tooltip text-center">Máximo 1.</div>
-                    </div></label>
+        <label class="label_nomina mb-1">Fotos del equipo
+            <div class="info-icon">?
+                <div class="info-tooltip text-center">Máximo 3 (una por campo).</div>
+            </div>
+        </label>
+
+        <!-- Input para Imagen 1 -->
+        <div class="d-flex align-items-center input-containerr">
+            <label for="evidencia1" class="file-input-label d-flex align-items-center">
+                <div class="icon-containerr">
+                    <img src="{{ asset('images/adjunto-archivo.png') }}" alt="Icono de pin" class="icon-pin">
+                </div>
+                <span>Seleccione archivo 1</span>
+            </label>
+            <input type="file" id="evidencia1" name="evidencia1" class="file-input" onchange="updatePreview(this, 'preview1')" accept="image/*">
+            <div id="file-input-text-images1" class="file-input-text">Sin selección</div>
+        </div>
+
+        <!-- Input para Imagen 2 -->
+        <div class="d-flex align-items-center input-containerr mt-2">
+            <label for="evidencia2" class="file-input-label d-flex align-items-center">
+                <div class="icon-containerr">
+                    <img src="{{ asset('images/adjunto-archivo.png') }}" alt="Icono de pin" class="icon-pin">
+                </div>
+                <span>Seleccione archivo 2</span>
+            </label>
+            <input type="file" id="evidencia2" name="evidencia2" class="file-input" onchange="updatePreview(this, 'preview2')" accept="image/*">
+            <div id="file-input-text-images2" class="file-input-text">Sin selección</div>
+        </div>
+
+        <!-- Input para Imagen 3 -->
+        <div class="d-flex align-items-center input-containerr mt-2">
+            <label for="evidencia3" class="file-input-label d-flex align-items-center">
+                <div class="icon-containerr">
+                    <img src="{{ asset('images/adjunto-archivo.png') }}" alt="Icono de pin" class="icon-pin">
+                </div>
+                <span>Seleccione archivo 3</span>
+            </label>
+            <input type="file" id="evidencia3" name="evidencia3" class="file-input" onchange="updatePreview(this, 'preview3')" accept="image/*">
+            <div id="file-input-text-images3" class="file-input-text">Sin selección</div>
+        </div>
+
+ <!-- Contenedor para previsualizar las imágenes -->
+<div id="preview-container" class="preview-container mt-3">
+    <h5 class="preview-title">Previsualización de las Imágenes:</h5>
+    <div class="image-preview-container">
+        <div id="preview1" class="image-preview"></div>
+        <div id="preview2" class="image-preview"></div>
+        <div id="preview3" class="image-preview"></div>
+    </div>
+</div>
+
+
+
+    </div>
+</div>
+
+
+
+<div class="form-grupo col-md-6" style="margin-top: -200px; position: relative;">
+    <div class="d-block w-100">
+        <label for="video-evidencia" class="label_nomina mb-1" >Video del equipo
+            <div class="info-icon">?
+                <div class="info-tooltip text-center">Máximo 1.</div>
+            </div>
+        </label>
         <div class="d-flex align-items-center input-containerr">
             <label for="video-evidencia" class="file-input-label d-flex align-items-center">
                 <div class="icon-containerr">
@@ -1295,11 +1428,12 @@
                 <span>Seleccione archivos</span>
             </label>
             <input type="file" id="video-evidencia" name="video-evidencia" class="file-input"
-                onchange="updateVideoPreview(this, 'file-input-text-video')" accept="video/*">
+                onchange="updateVideoPreview(this, 'file-input-text-video')" 
+                accept="video/mp4,video/avi,video/mpeg,video/webm,video/quicktime">
             <div id="file-input-text-video" class="file-input-text">Sin selección</div>
         </div>
         <!-- Área de previsualización -->
-        <div id="video-preview-container" class="preview-container mt-3" style="display: none;">
+        <div id="video-preview-container" class="preview-containerr mt-3" style="display: none;">
             <h5 class="preview-title">Previsualización del Video:</h5>
             <div id="video-preview" class="video-preview"></div>
             <div id="video-message" class="upload-message"></div>
@@ -1313,33 +1447,9 @@
                 <h5 class="titulos_encabezado">Notas Adicionales</h5>
                  <!-- Campo para subir PDF -->
                  <div class="cuadro mt-4">
-                 <div class="mb-4" style="max-width: 500px;">
-    <label for="documentoPDF" class="label_nomina mb-1">
-        Ficha Técnica
-        <div class="info-icon">
-            ?
-            <div class="info-tooltip text-center">Solo archivos en formato PDF</div>
-        </div>
-    </label>
-    <div class="d-flex align-items-start input-containerr"> <!-- Cambiado a align-items-start -->
-        <label for="documentoPDF" class="file-input-label d-flex align-items-center">
-            <div class="icon-containerr me-2">
-                <img src="{{ asset('images/adjunto-archivo.png') }}" alt="Icono de video" class="icon-pin">
-            </div>
-            <span id="file-label-text">Seleccione archivos</span>
-        </label>
-        <input 
-            type="file" 
-            id="documentoPDF" 
-            name="documentoPDF" 
-            class="file-input" 
-            accept=".pdf" 
-            onchange="mostrarNombreArchivo(this)"
-            class="ms-2" 
-        >
-        <div id="file-input-text" class="file-input-text ms-2">Sin selección</div>
-    </div>
-</div>
+                 
+  
+
 
 
 
@@ -1357,6 +1467,14 @@
             rows="4"
             required>{{ old('observaciones') }}</textarea>
     </div>
+<!-- Nombre del usuario que agrega el registro -->
+@auth
+<div class="mb-4">
+    <label for="user_name" class="form-label">Registrado por</label>
+    <input type="text" id="user_name" name="user_name" class="form-control" 
+           value="{{ Auth::user()->name }}" readonly />
+</div>
+@endauth
 
     <!-- Firma Digital -->
     <div class="mb-3">
@@ -1431,82 +1549,57 @@
     });
 </script>
 <script>
-function updateFileNames(input, textElementId) {
-    const files = input.files;
-    const imagePreview = document.getElementById('image-preview');
-    const message = document.getElementById('message');
-    const maxFiles = 3;
+function updatePreview(input, previewId) {
+    const file = input.files[0];
+    const previewContainer = document.getElementById(previewId);
+    const fileInputText = document.getElementById('file-input-text-images' + previewId.charAt(previewId.length - 1)); // Obtener el texto de estado
 
-    const currentImagesCount = imagePreview.children.length;
-    const selectedFilesCount = files.length;
+    // Limpiar contenido anterior
+    previewContainer.innerHTML = '';
 
-    // Verificar límite de imágenes
-    if (currentImagesCount + selectedFilesCount > maxFiles) {
-        message.textContent = `Solo se permiten hasta ${maxFiles} imágenes.`;
-        message.className = 'upload-message error';
-        input.value = ''; // Limpia la selección
-        return;
+    if (file && file.type.startsWith('image/')) {
+        const imgContainer = document.createElement('div');
+        imgContainer.classList.add('image-preview-container');
+        imgContainer.style.position = 'relative';
+        imgContainer.style.maxWidth = '100%';  // Asegura que no se expanda más allá de su contenedor
+
+        const img = document.createElement('img');
+        const fileURL = URL.createObjectURL(file);
+        img.src = fileURL;
+        img.style.maxWidth = '100px';  // Limita el tamaño de la imagen
+        img.style.margin = '5px';
+        img.onload = () => URL.revokeObjectURL(fileURL);
+
+        const removeBtn = document.createElement('button');
+        removeBtn.innerHTML = '&times;';
+        removeBtn.className = 'remove-btn';
+        removeBtn.style.position = 'absolute';
+        removeBtn.style.top = '0';
+        removeBtn.style.right = '0';
+        removeBtn.style.background = 'red';
+        removeBtn.style.color = 'white';
+        removeBtn.style.border = 'none';
+        removeBtn.style.borderRadius = '50%';
+        removeBtn.style.cursor = 'pointer';
+
+        // Eliminar imagen
+        removeBtn.onclick = function () {
+            input.value = ''; // Elimina el archivo seleccionado
+            previewContainer.innerHTML = ''; // Limpia la previsualización
+            fileInputText.textContent = 'Sin selección'; // Vuelve a mostrar "Sin selección"
+        };
+
+        imgContainer.appendChild(img);
+        imgContainer.appendChild(removeBtn);
+        previewContainer.appendChild(imgContainer);
+
+        // Cambia el texto a "Imagen seleccionada"
+        fileInputText.textContent = 'Imagen seleccionada';
+    } else {
+        // Si no es una imagen válida, muestra "Sin selección"
+        fileInputText.textContent = 'Sin selección';
     }
-
-    // Crear vista previa
-    for (let i = 0; i < selectedFilesCount; i++) {
-        const file = files[i];
-        if (file && file.type.startsWith('image/')) {
-            const imgContainer = document.createElement('div');
-            imgContainer.classList.add('image-preview-container');
-            imgContainer.style.position = 'relative';
-
-            const img = document.createElement('img');
-            const fileURL = URL.createObjectURL(file);
-            img.src = fileURL;
-            img.style.maxWidth = '100px';
-            img.style.margin = '5px';
-            img.onload = () => URL.revokeObjectURL(fileURL);
-
-            const removeBtn = document.createElement('button');
-            removeBtn.innerHTML = '&times;';
-            removeBtn.className = 'remove-btn';
-            removeBtn.style.position = 'absolute';
-            removeBtn.style.top = '0';
-            removeBtn.style.right = '0';
-            removeBtn.style.background = 'red';
-            removeBtn.style.color = 'white';
-            removeBtn.style.border = 'none';
-            removeBtn.style.borderRadius = '50%';
-            removeBtn.style.cursor = 'pointer';
-
-            removeBtn.onclick = function () {
-                imgContainer.remove();
-                updateFileCount();
-                input.value = ''; // Restablecer el input
-            };
-
-            imgContainer.appendChild(img);
-            imgContainer.appendChild(removeBtn);
-            imagePreview.appendChild(imgContainer);
-        }
-    }
-
-    // Actualizar texto y mostrar previsualización
-    updateFileCount();
 }
-
-function updateFileCount() {
-    const imagePreview = document.getElementById('image-preview');
-    const textElement = document.getElementById('file-input-text-images');
-    const totalFilesCount = imagePreview.children.length;
-
-    textElement.textContent = totalFilesCount > 0
-        ? `${totalFilesCount} archivo(s) seleccionado(s)`
-        : 'Sin selección';
-
-    const message = document.getElementById('message');
-    message.textContent = totalFilesCount > 0
-        ? 'Se han seleccionado imágenes.'
-        : '';
-    document.getElementById('preview-container').style.display = totalFilesCount > 0 ? 'block' : 'none';
-}
-
 </script>
 
 
@@ -1528,8 +1621,8 @@ function updateVideoPreview(input) {
     if (file) {
         // Comprobar si el archivo es un video
         if (file.type.startsWith('video/')) {
-            // Mostrar el nombre del archivo seleccionado
-            fileInputText.textContent = file.name;
+            // Mostrar mensaje minimalista en lugar del nombre del archivo
+            fileInputText.textContent = 'Video seleccionado';
 
             // Crear el elemento <video>
             const video = document.createElement('video');
@@ -1587,6 +1680,8 @@ function updateVideoPreview(input) {
 }
 
 </script>
+
+
 
 </div>
 </div>
@@ -1731,27 +1826,27 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
 <script>
-    // Definir los subtipo de equipo por categorías
-        const tiposEquipos = {
+     // Definir los subtipo de equipo por categorías
+     const tiposEquipos = {
         endoscopia: [
             "Adaptador USB", "Adaptador para Sonda", "Bomba de Irrigación", "Bomba de Secreción", "Boquillas", "Broncoscopio", 
             "Cable", "Cable Bipolar", "Cable USB", "Cámara con Cabezal", "Carrito", "Cepillo de Limpieza", "Colonoscopio", 
             "Contenedor de Liquidos", "Duodenoscopio", "Eliminador", "Fuente de Luz", "Gastroscopio", "Kit de Limpieza", 
             "Lineas de Irrigación", "Mause", "Pigtail", "Pigtel", "Pinza de Biopsia", "Pinza de Biopsia Hot", 
             "Pinza de Extracción", "Pinza de Polipectomia", "Probador", "Probador de Fuga", "Procesador", 
-            "Proctector", "Sistema", "Sistema Endoscopia", "Tapon-ETO", "Teclado", "Video Carro"
+            "Proctector", "Sistema", "Sistema Endoscopia", "Tapon-ETO", "Teclado", "Video Carro","Regulador de CO2 Endoscopia", "Argon Plasma", "Electrocauterio"
         ],
         laparoscopia: [
-            "Adaptador", "Adaptador Para Ligasure", "Armonico", "Cabezal", "Cable USB", "Camilla", "Charolas de Esterilización", 
+            "Adaptador", "Adaptador Para Ligasure", "Armonico", "Cabezal", "Camara", "Cable USB", "Camilla", "Charolas de Esterilización", 
             "Clips para Monitor", "Eliminador", "Fibra de Luz", "Forcetriad", "Fuente de Luz", "Insuflador", "Lampara XENON", 
             "Lente", "Maletin/Case", "Manguera de Insuflación", "Manguera para Bomba de Agua", "Manguera y Yugo", 
             "Monitor", "Pedestal", "Pieza de Mano", "Pinza", "Rasurador y Radio Frecuencia", "Set de Artroscopia", 
-            "Trasmisor", "Trocar", "Video Carro", "Video Grabador", "Yugo"
+            "Trasmisor", "Trocar", "Video Carro", "Video Grabador", "Yugo", "Carro FT10", "FT10", "Carro Forcetriad"
         ],
 
         quirofano: [
             "Desfibrador", "Electrocauterio", "Eliminador", "Lámpara de Cirugía", "Lámpara de Quirofano", 
-            "Máquina de Anestesia", "Mesa de Cirugía", "Monitor Signos Vitales"
+            "Máquina de Anestesia", "Mesa de Cirugía", "Consola Quirurjica", "Monitor Signos Vitales"
         ],
 
         hospitalizacion: [
@@ -1762,6 +1857,9 @@ document.addEventListener('DOMContentLoaded', () => {
         ],
         artroscopia: [
             "Set de Taladros de Artroscopia"
+        ],
+        ginecologia: [
+            "Mesa de Exploración", "Cama de Ginecología"
         ],
         otros: [] // Dejar vacío si no tiene subtipo específico
     };
@@ -1810,12 +1908,7 @@ document.addEventListener('DOMContentLoaded', () => {
             menu.classList.toggle('active');
         }
     </script>
-    <script>
-    function mostrarNombreArchivo(input) {
-        const fileName = input.files.length > 0 ? input.files[0].name : 'Sin selección';
-        document.getElementById('file-input-text').innerText = fileName;
-    }
-</script>
+
 <script>
    let startX;
 
@@ -1856,9 +1949,128 @@ document.addEventListener('touchmove', function (e) {
         closeMenu();
     }
 });
-
-
 </script>
+<script>
+function toggleSubmenu(event, submenuId) {
+    event.preventDefault(); // Evita que el enlace recargue la página
+    const submenu = document.getElementById(submenuId);
+    submenu.style.display = (submenu.style.display === "block") ? "none" : "block";
+}
+</script>
+
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            document.getElementById("registroForm").addEventListener("submit", function (event) {
+                event.preventDefault(); // Evita el envío normal del formulario
+
+                let formData = new FormData(this); // Captura los datos del formulario
+
+                // Mostrar SweetAlert con la barra de progreso
+                Swal.fire({
+    title: "Subiendo archivo...",
+    html: `
+        <style>
+            .swal2-popup {
+                border-radius: 1rem !important;
+                font-family: 'Segoe UI', sans-serif;
+            }
+            .progress-container {
+                width: 100%;
+                background-color: #f3f4f6;
+                border-radius: 1rem;
+                overflow: hidden;
+                height: 16px;
+                box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+                margin-top: 10px;
+            }
+            .progress-bar {
+                height: 100%;
+                width: 0%;
+                background: linear-gradient(to right, #4f46e5, #3b82f6);
+                transition: width 0.3s ease;
+            }
+            .progress-text {
+                margin-top: 12px;
+                font-weight: 600;
+                font-size: 14px;
+                color: #374151;
+            }
+        </style>
+        <div class="progress-container">
+            <div id="progress-bar" class="progress-bar"></div>
+        </div>
+        <div class="progress-text">Progreso: <span id="upload-progress">0%</span></div>
+    `,
+    allowOutsideClick: false,
+    showConfirmButton: false,
+    didOpen: () => {
+        Swal.showLoading();
+    }
+});
+
+
+                // Crear XMLHttpRequest
+                const xhr = new XMLHttpRequest();
+
+                // Evento para el progreso de la carga
+                xhr.upload.addEventListener('progress', function (e) {
+                    if (e.lengthComputable) {
+                        const percent = Math.round((e.loaded / e.total) * 100); // Calcula el porcentaje de carga
+                        document.getElementById('upload-progress').textContent = percent + '%';
+                        document.getElementById('progress-bar').style.width = percent + '%';
+                    }
+                });
+
+                // Configurar la solicitud
+                xhr.open('POST', this.action, true);
+                xhr.setRequestHeader('X-CSRF-TOKEN', document.querySelector('input[name="_token"]').value);
+
+                // Enviar la solicitud
+                xhr.onload = function () {
+                    if (xhr.status === 200) {
+                        let data = JSON.parse(xhr.responseText);
+                        if (data.success) {
+                            Swal.fire({
+                                title: "¡Registro guardado!",
+                                text: "El registro se guardó correctamente.",
+                                icon: "success"
+                            }).then(() => {
+                                window.location.href = "{{ route('inventario') }}"; // Redirige a la vista de inventario
+                            });
+                        } else {
+                            Swal.fire({
+                                title: "Error",
+                                text: "Hubo un problema al guardar el registro.",
+                                icon: "error"
+                            });
+                        }
+                    } else {
+                        Swal.fire({
+                            title: "Error",
+                            text: "Hubo un problema al guardar el registro.",
+                            icon: "error"
+                        });
+                    }
+                };
+
+                // Manejo de errores
+                xhr.onerror = function () {
+                    Swal.fire({
+                        title: "Error",
+                        text: "No se pudo conectar con el servidor.",
+                        icon: "error"
+                    });
+                };
+
+                // Enviar el formulario con los datos
+                xhr.send(formData);
+            });
+        });
+    </script>
+
+
+
 
 
             </form>

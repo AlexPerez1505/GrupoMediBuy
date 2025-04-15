@@ -122,7 +122,7 @@
         display: block;
         margin: 20px auto 0; /* Centrado horizontal con espacio superior */
         width: 30px; /* Tamaño inicial */
-        height: 25px; /* Mantiene proporción */
+        height: 30px; /* Mantiene proporción */
         opacity: 0.9; /* Ligera transparencia */
         transition: transform 0.3s ease, opacity 0.3s ease; /* Animación de hover */
     }
@@ -142,15 +142,14 @@
             height: auto;
         }
         .input_consulta {
-            display: flex;
-            align-items: center;
-            padding-bottom: 0px;
-            border-bottom: 2px solid #1E6BB8;
-            border-radius: 10px;
-            width: 100%;
-          
-        }
-   
+        display: flex;
+        align-items: center;
+        padding-bottom: 0px;
+        border-bottom: 2px solid #1E6BB8;
+        border-radius: 10px;
+        width: 100%;
+        position: relative; /* Esto es importante para posicionar el icono de manera relativa al campo */
+    }
 
 
     /* Animación */
@@ -261,7 +260,7 @@
                 </div>
             @endif
           
-            <button type="submit" class="btn btn-primary">Entrar</button>
+            <button type="submit" class="btn btn-primary block mx-auto mt-6">Entrar</button>
             <div class="forgot-password">
                 <!-- Aquí va la opción de recuperación de contraseña si es necesario -->
             </div>
@@ -274,7 +273,7 @@
                 <div class="col-10 col-md-10">
                     <p class="small-text">
                         ¿Olvidaste tu contraseña? 
-                        <a href="https://wa.me/5649806155?text=Hola,%20ayúdame%20a%20cambiar%20mi%20contraseña." 
+                        <a href="https://wa.me/5653350901?text=Hola,%20ayúdame%20a%20cambiar%20mi%20contraseña." 
                            target="_blank" 
                            style="color: #0056b3; text-decoration: none;">
                            Manda un mensaje
@@ -282,8 +281,8 @@
                     </p>
                 </div>
             </div>
-            <a href="https://www.facebook.com/share/19hNNeTyqc/?mibextid=wwXIfr" target="_blank">
-                <img src="{{ asset('images/facebook.png') }}" alt="Logo de pie de página" class="footer-logo">
+            <a href="https://grupomedibuy.com/" target="_blank">
+                <img src="{{ asset('images/web.png') }}" alt="Logo de pie de página" class="footer-logo">
             </a> 
         </div>
     </div>

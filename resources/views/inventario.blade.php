@@ -11,6 +11,9 @@
     <link rel="stylesheet" href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.2.7/css/responsive.dataTables.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/1.7.1/css/buttons.dataTables.min.css">
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+
 
     <!-- Font Awesome (opcional) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -1018,14 +1021,26 @@ textarea#message {
     background-color: rgba(0, 0, 0, 0.05);
 }
 .row-success {
-    background-color: #d4edda !important;
+    background-color: #d4edda !important; /* Verde */
 }
 .row-danger {
-    background-color: #f8d7da !important;
+    background-color: #f8d7da !important; /* Rojo */
 }
 .row-warning {
-    background-color: #fff3cd !important;
+    background-color: #fff3cd !important; /* Amarillo */
 }
+.row-info {
+    background-color: #d1ecf1 !important; /* Azul claro para Registro */
+}
+.row-primary {
+    background-color: #d1ecf1 !important; /* Lila claro para Hojalatería */
+}
+.row-defectuoso {
+    background-color: #e2e3e5 !important; /* Un gris claro y sobrio */
+    color: #333; /* Texto oscuro para buen contraste */
+}
+
+
 .button-text {
     padding-left: 10px;
 
@@ -1086,13 +1101,64 @@ th input {
     align-items: center;
 }
 .btn-info {
-    background-color: #135837;
+    background-color: #17a2b8;
     color: white;
-    border-radius: 0px;
-    width: 28px;
-    height: 25px;
+    border-radius: 20%;
+    width: 30px;
+    height: 30px;
+    padding: 5px;
     align-items: center;
+    justify-content: center;
+    transition: background 0.3s ease, transform 0.2s ease;
+    border: none; /* Eliminar bordes duros */
 }
+.btn-info:hover {
+    background-color: #117a8b; /* Un tono más oscuro en hover */
+    transform: scale(1.1); /* Pequeño efecto de zoom al pasar el cursor */
+}
+#btn-mantenimiento {
+    background-color: #FFC107; /* Amarillo */
+}
+
+#btn-mantenimiento:hover {
+    background-color: #D39E00; /* Un amarillo más oscuro en hover */
+    transform: scale(1.1); /* Pequeño efecto de zoom al pasar el cursor */
+}
+#btn-hojalateria {
+    background-color: #007bff; /* Amarillo */
+}
+
+#btn-hojalateria:hover {
+    background-color: #0056b3; /* Un amarillo más oscuro en hover */
+    transform: scale(1.1); /* Pequeño efecto de zoom al pasar el cursor */
+}
+#btn-stock {
+    background-color: #52a639; /* Amarillo */
+}
+
+#btn-stock:hover {
+    background-color: #3d7d29; /* Un amarillo más oscuro en hover */
+    transform: scale(1.1); /* Pequeño efecto de zoom al pasar el cursor */
+}
+#btn-vendido {
+    background-color: #e43e3d; /* Amarillo */
+}
+
+#btn-vendido:hover {
+    background-color: #B52F2F; /* Un amarillo más oscuro en hover */
+    transform: scale(1.1); /* Pequeño efecto de zoom al pasar el cursor */
+}
+#btn-defectuoso {
+    background-color: #6c757d; /* Gris neutro */
+}
+
+#btn-defectuoso:hover {
+    background-color: #5a6268; /* Gris más oscuro al hacer hover */
+    border-color: #5a6268;
+    transform: scale(1.1); /* Efecto de zoom al pasar el cursor */
+}
+
+
 
 .dt-button.buttons-html5.btn-excel {
     background-color: #339D4A;
@@ -1931,12 +1997,23 @@ text-align: center;
     display: block;
 }
 /* Estilos de los ítems del menú */
-/* Estilos de los ítems del menú */
 .menu-items {
+    max-height: calc(100vh - 50px); /* Ajustar según el espacio del logo y bienvenida */
+    overflow-y: auto; /* Permite el desplazamiento solo para el contenido debajo */
+    padding: 10px;
     list-style: none;
     padding: 0;
     margin: 0;
     flex-grow: 1;
+}
+/* Ocultar la barra de desplazamiento en navegadores basados en WebKit (Chrome, Safari) */
+.menu-items::-webkit-scrollbar {
+    display: none;
+}
+
+/* En Firefox, usar -moz para ocultar la barra de desplazamiento */
+.menu-items {
+    scrollbar-width: none; /* Ocultar barra en Firefox */
 }
 
 .menu-items li {
@@ -1945,6 +2022,7 @@ text-align: center;
     transition: background 0.3s ease, transform 0.3s ease;
     position: relative;
 }
+
 
 .menu-items li a {
     text-decoration: none;
@@ -2193,11 +2271,14 @@ text-align: center;
     background-color: #f9f9f9;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     max-width: 600px;
-    width: 90%;
+    width: 95%;
+    height: 400px; /* Altura fija */
+    overflow: hidden; /* Evita que el contenido desborde */
 }
 
 .video-preview-container h5.preview-title {
-    margin-bottom: 10px;
+    margin-top: 20px;
+    margin-bottom: -10px;
     font-size: 1.2rem;
     font-weight: bold;
     color: #333;
@@ -2206,7 +2287,8 @@ text-align: center;
 
 .video-preview-container video {
     max-width: 100%;
-    height: auto;
+    height: 100%; /* Ajusta el video para que ocupe toda la altura del contenedor */
+    object-fit: cover; /* Evita deformaciones */
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
@@ -2244,10 +2326,183 @@ body {
             text-decoration: none;
             transform: scale(0.9); /* Aumenta el tamaño en un 10% */
         }
+        .submenu {
+    display: none;
+    list-style: none;
+    padding-left: 20px;
+}
+
+.submenu li {
+    padding: 5px 0;
+}
+ /* Línea de separación */
+ .division {
+            width: 95%;
+            margin: 0 auto;
+            margin-top: 15px;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #ccc;
+        }
+        .evidencias-container {
+    display: flex;
+    justify-content: center; /* Centra las imágenes horizontalmente */
+    align-items: center; /* Alinea verticalmente */
+    gap: 10px;
+    overflow-x: auto;
+    white-space: nowrap;
+    padding: 10px; /* Añade un poco de espacio alrededor */
+}
+
+.evidencias-container {
+    display: flex;
+    justify-content: center; /* Centra las imágenes horizontalmente */
+    align-items: center; /* Alinea verticalmente */
+    gap: 10px;
+    overflow-x: auto; /* Permite desplazamiento horizontal */
+    white-space: nowrap;
+    padding: 10px;
+    scrollbar-width: none; /* Oculta el scroll en Firefox */
+    -ms-overflow-style: none; /* Oculta el scroll en Edge e IE */
+}
+
+.evidencias-container::-webkit-scrollbar {
+    display: none; /* Oculta el scroll en Chrome, Safari y Opera */
+}
+
+.evidencia-img {
+    width: 100%; /* Se adapta al contenedor */
+    max-width: 391.325px; /* Tamaño máximo */
+    height: 294px;
+    object-fit: cover;
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.evidencia-img:hover {
+    transform: scale(1.02); /* Pequeño zoom */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); /* Sombra más pronunciada */
+}
+
+/* Responsivo para pantallas más pequeñas */
+@media (max-width: 768px) {
+    .evidencias-container {
+        justify-content: flex-start; /* Alinea imágenes a la izquierda */
+        overflow-x: scroll; /* Asegura desplazamiento en móviles */
+    }
+
+    .evidencia-img {
+        
+        width: 250px;
+        height: 160px;
+    }
+}
+
+
+
+
+
+.evidencia-pdf {
+    width: 100px;
+    height: 100px;
+    border: none;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+/* Contenedor del video */
+.video-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Centra todos los elementos */
+    text-align: center;
+}
+
+/* Video */
+.video-container {
+    display: flex;
+    justify-content: center; /* Centra el video */
+    align-items: center; /* Centra el video verticalmente */
+    width: 100%;
+    max-width: 400px;
+    height: 400px;
+    margin: 0 auto;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+
+}
+
+/* Ajuste del video */
+.video-container video {
+    width: 600px;
+    height: 400px;
+    max-height: 100%;
+    border-radius: 12px;
+}
+
+/* Etiqueta */
+.video-label {
+    font-weight: bold;
+    margin-bottom: 8px;
+    display: block;
+    text-align: center;
+}
+/* Media Query para pantallas pequeñas (por ejemplo, móviles) */
+@media (max-width: 767px) {
+    .video-container {
+        max-width: 100%; /* Permite que el video ocupe el 100% del ancho de la pantalla */
+        height: auto; /* Ajusta la altura según el contenido */
+    }
+
+    .video-container video {
+        width: 100%;   /* Hace que el video ocupe todo el ancho disponible */
+        height: 200px;  /* Mantiene las proporciones originales del video */
+        max-width: 100%; /* Evita que el video se haga más grande que el contenedor */
+    }
+}
+
+
+.proceso-wrapper {
+    max-width: 600px; /* Limita el ancho máximo */
+    width: 100%;
+    margin: 20px auto;
+    text-align: center;
+}
+
+.ficha-tecnica {
+    width: 100%;
+    max-width: 500px; /* Tamaño uniforme */
+    height: 500px;
+}
+
+textarea {
+    resize: none; /* Evita que el usuario cambie el tamaño */
+}
+.ficha-tecnica {
+    display: block; /* Para que respete el centrado */
+    margin: 0 auto; /* Centrado horizontal */
+    width: 100%;
+    max-width: 500px;
+    height: 500px;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+.proceso-wrapper a.btn {
+    display: inline-block;
+    margin: 10px auto;
+}
+
+
+.check-icon {
+    width: 24px;
+    height: 24px;
+    font-size: 1rem;
+}
+
+
 
     </style>
  <!-- Encabezado -->
- <div class="header-container">
+<div class="header-container"> 
     <div class="menu-hamburguesa">
         <!-- Botón de menú con icono personalizado -->
         <button onclick="toggleMenu()" class="menu-icon">
@@ -2263,12 +2518,12 @@ body {
 
             <!-- Bienvenida personalizada -->
             @auth
-            <div class="welcome-section">
-                <a href="{{ route('auth.change-password') }}" class="welcome-link">
-                    <p>Bienvenido,</p>
-                    <p class="user-name">{{ Auth::user()->name }}</p>
-                </a>
-            </div>
+                <div class="welcome-section">
+                    <a href="{{ route('perfil') }}" class="welcome-link">
+                        <p>Bienvenido,</p>
+                        <p class="user-name">{{ Auth::user()->name }}</p>
+                    </a>
+                </div>
             @endauth
 
             <!-- Ítems del menú -->
@@ -2281,44 +2536,121 @@ body {
                 </li>
                 <li>
                     <a href="{{ url('/inventario') }}">
-                        <img src="{{ asset('images/inventario.png') }}" alt="Icono de Inventario" class="menu-icon-imagen">
+                        <img src="{{ asset('images/inventario.png') }}" alt="Icono de Inventario" class="menu-icon-image">
                         Inventario
                     </a>
                 </li>
-                <li>
-                    <a href="{{ url('/cotizaciones') }}">
+
+                <!-- Opción de Cotizaciones con Submenú -->
+                @if(Auth::user()->hasRole('admin') || Auth::user()->hasRole('editor'))
+                <li class="menu-items">
+                    <a href="#" onclick="toggleSubmenu(event, 'submenu-cotizaciones')">
                         <img src="{{ asset('images/cotizaciones.png') }}" alt="Icono de Cotizaciones" class="menu-icon-image">
                         Cotizaciones
                     </a>
+                    <ul id="submenu-cotizaciones" class="submenu">
+                        <li><a href="{{ url('/cotizaciones') }}">+ Crear Cotización</a></li>
+                        <li><a href="{{ url('/clientes/vista') }}">Clientes</a></li>
+                        <li><a href="{{ route('historial-cotizaciones') }}">Historial de Cotizaciones</a></li>
+                    </ul>
                 </li>
+                @endif
+
                 <li>
-                        <a href="{{ url('/remisiones') }}">
-                            <img src="{{ asset('images/remisiones.png') }}" alt="Icono de remisiones" class="menu-icon-image">
-                            Remisiones
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ url('/agenda') }}">
-                            <img src="{{ asset('images/agenda.png') }}" alt="Icono de agenda" class="menu-icon-imagen">
-                            Agenda
-                        </a>
-                    </li>
-                @auth
-                <li>
-                    <form action="{{ route('logout') }}" method="POST">
-                        @csrf
-                        <button type="submit" class="logout-button">
-                            <img src="{{ asset('images/cerrar.png') }}" alt="Icono Registro de Inventario" class="menu-icon-image">
-                            Cerrar Sesión
-                        </button>
-                    </form>
-                </li>
-                @else
-                <li>
-                    <a href="{{ route('login') }}">
-                        <i class="icon-class icon-login"></i> Iniciar Sesión
+                    <a href="{{ url('/remisiones') }}">
+                        <img src="{{ asset('images/remisiones.png') }}" alt="Icono de remisiones" class="menu-icon-image">
+                        Remisiones
                     </a>
                 </li>
+                <li>
+                    <a href="{{ url('/agenda') }}">
+                        <img src="{{ asset('images/agenda.png') }}" alt="Icono de agenda" class="menu-icon-image">
+                        Agenda
+                    </a>
+                </li>
+                       <li>
+    <a href="{{ route('fichas.index') }}">
+        <img src="{{ asset('images/documento.png') }}" alt="Icono de fichas técnicas" class="menu-icon-image">
+        Fichas Técnicas
+    </a>
+</li>
+
+                <!-- Nueva opción: Guias y Entregas, visible para todos los usuarios autenticados -->
+                @auth
+                <li class="menu-items">
+                    <a href="#" onclick="toggleSubmenu(event, 'submenu-guias')">
+                        <img src="{{ asset('images/fedex.png') }}" alt="Icono de Guías" class="menu-icon-image">
+                        Guias
+                    </a>
+                    <ul id="submenu-guias" class="submenu">
+                        <li><a href="{{ route('guias.create') }}">+ Crear Guía</a></li>
+                        <li><a href="{{ route('entrega.create') }}">Entregar Guía</a></li>
+                        <li><a href="{{ route('entregas.index') }}">Ver Entregas</a></li>
+                    </ul>
+                </li>
+                @endauth
+                 @auth
+                <li class="menu-items">
+    <a href="#" onclick="toggleSubmenu(event, 'submenu-camionetas')">
+        <img src="{{ asset('images/cady.png') }}" alt="Icono de Camionetas" class="menu-icon-image">
+        Camionetas
+    </a>
+    <ul id="submenu-camionetas" class="submenu">
+        <li><a href="{{ route('camionetas.create') }}">+ Agregar Camioneta</a></li>
+        <li><a href="{{ route('camionetas.index') }}">Lista de Camionetas</a></li>
+    </ul>
+</li>
+@endauth
+<!-- Nueva opción: Solicitudes de Material (visible para todos los autenticados) -->
+@auth
+<li class="menu-items">
+    <a href="#" onclick="toggleSubmenu(event, 'submenu-solicitudes-material')">
+        <img src="{{ asset('images/material.png') }}" alt="Icono de Solicitudes de Material" class="menu-icon-image">
+        Solicitudes de Material
+    </a>
+    <ul id="submenu-solicitudes-material" class="submenu">
+        <!-- Solo visible para admin -->
+        @if(Auth::user()->hasRole('admin'))
+            <li><a href="{{ route('solicitudes.admin') }}">Solicitudes Pendientes</a></li>
+        @endif
+        <!-- Visible para todos los autenticados -->
+        <li><a href="{{ route('solicitudes.index') }}">Ver Mis Solicitudes</a></li>
+        <li><a href="{{ route('solicitudes.create') }}">+ Crear Solicitud</a></li>
+    </ul>
+</li>
+@endauth
+
+                <!-- Nueva opción: Usuarios, visible solo para el Admin con Submenú -->
+                @if(Auth::user()->hasRole('admin'))
+                <li class="menu-items">
+                    <a href="#" onclick="toggleSubmenu(event, 'submenu-usuarios')">
+                        <img src="{{ asset('images/empleado.png') }}" alt="Icono de Usuarios" class="menu-icon-image">
+                        Usuarios
+                    </a>
+                    <ul id="submenu-usuarios" class="submenu">
+                        <li><a href="{{ route('users.create') }}">+ Agregar Usuario</a></li>
+                        <li><a href="{{ url('/usuarios') }}">Lista de Usuarios</a></li>
+                        <li> <a href="{{ route('asistencias.index') }}"> Registrar Asistencias</a></li>
+                    </ul> 
+                </li>
+                @endif
+
+                @auth
+                    <li>
+                        <form action="{{ route('logout') }}" method="POST">
+                            @csrf
+                            <button type="submit" class="logout-button">
+                                <img src="{{ asset('images/cerrar.png') }}" alt="Icono de Cerrar Sesión" class="menu-icon-image">
+                                Cerrar Sesión
+                            </button>
+                        </form>
+                    </li>
+                @else
+                    <li>
+                        <a href="{{ route('login') }}">
+                            <i class="icon-class icon-login"></i> Iniciar Sesión
+                        </a>
+                    </li>
                 @endauth
             </ul>
         </nav>
@@ -2346,9 +2678,8 @@ body {
     <!-- Primera fila con cuatro campos -->
     <div class="form-row">
     <div class="form-group col-md-3">
-    <label for="Tipo_de_equipo">Tipo de Equipo</label>
-    <div class="form-group w-100">
-        <div class="d-flex align-items-center" style="width: 100%;">
+        <label for="Tipo_de_equipo">Tipo de Equipo</label>
+        <div class="form-group w-100 d-flex align-items-center">
             <div class="icon-container">
                 <img src="{{ asset('images/tipo.png') }}" alt="Tipo de Equipo icon" class="icon">
             </div>
@@ -2356,155 +2687,112 @@ body {
                 class="form-controln form-controlqueja-la iconized" readonly>
         </div>
     </div>
+
+    <div class="form-group col-md-3">
+        <label for="Subtipo">Subtipo de Equipo</label>
+        <div class="form-group w-100 d-flex align-items-center">
+            <div class="icon-container">
+                <img src="{{ asset('images/producto.png') }}" alt="Subtipo de Equipo icon" class="icon">
+            </div>
+            <input type="text" id="Subtipo" name="Subtipo"
+                class="form-controln form-controlqueja-lb iconized" readonly>
+        </div>
+    </div>
+
+    <div class="form-group col-md-3">
+        <label for="Serie">Serie</label>
+        <div class="form-group w-100 d-flex align-items-center">
+            <div class="icon-container">
+                <img src="{{ asset('images/serie.png') }}" alt="Número de serie icon" class="icon">
+            </div>
+            <input type="text" id="Serie" name="Serie"
+                class="form-controln form-controlqueja-lc iconized" readonly>
+        </div>
+    </div>
+
+    <div class="form-group col-md-3">
+        <label for="Marca">Marca</label>
+        <div class="form-group w-100 d-flex align-items-center">
+            <div class="icon-container">
+                <img src="{{ asset('images/marca.png') }}" alt="Marca icon" class="icon">
+            </div>
+            <input type="text" id="Marca" name="Marca"
+                class="form-controln form-controlqueja-ld iconized" readonly>
+        </div>
+    </div>
 </div>
 
-        <div class="form-group col-md-3">
-            <label for="Subtipo">Subtipo de Equipo</label>
-            <div class="form-group w-100">
-            <div class="d-flex align-items-center" style="width: 100%;">
-                <div class="icon-container">
-                    <img src="{{ asset('images/producto.png') }}" alt="Subtipo de Equipo icon" class="icon">
-                </div>
-                <input type="text" id="Subtipo" name="Subtipo"
-                    class="form-controln form-controlqueja-lb iconized" readonly>
+<!-- Segunda fila -->
+<div class="form-row">
+    <div class="form-group col-md-3">
+        <label for="Modelo">Modelo</label>
+        <div class="form-group w-100 d-flex align-items-center">
+            <div class="icon-container">
+                <img src="{{ asset('images/modelo.png') }}" alt="Modelo icon" class="icon">
             </div>
-        </div>
-        </div>
-
-        <div class="form-group col-md-3">
-            <label for="Serie">Serie</label>
-            <div class="form-group w-100">
-            <div class="d-flex align-items-center" style="width: 100%;">
-                <div class="icon-container">
-                    <img src="{{ asset('images/serie.png') }}" alt="Número de serie completo icon" class="icon">
-                </div>
-                <input type="text" id="Serie" name="Serie"
-                class="form-controln form-controlqueja-lc iconized" readonly>
-            </div>
-        </div>
-        </div>
-        <div class="form-group col-md-3">
-            <label for="Marca">Marca</label>
-            <div class="form-group w-100">
-            <div class="d-flex align-items-center" style="width: 100%;">
-                <div class="icon-container">
-                    <img src="{{ asset('images/marca.png') }}" alt="Marca icon" class="icon">
-                </div>
-                <input type="text" id="Marca" name="Marca"
-                                    class="form-controln form-controlqueja-ld iconized" readonly>
-            </div>
-        </div>
-    </div>
-    </div>
-
-    <!-- Segunda fila con tres campos -->
-    <div class="form-row">
-        <div class="form-group col-md-4">
-            <label for="Modelo">Modelo</label>
-            <div class="form-group w-100">
-            <div class="d-flex align-items-center" style="width: 100%;">
-                <div class="icon-container">
-                    <img src="{{ asset('images/modelo.png') }}" alt="Modelo icon" class="icon">
-                </div>
-                <input type="text" id="Modelo" name="Modelo"
-                                    class="form-controln form-controlqueja-le iconized" readonly>
-            </div>
-        </div>
-        </div>
-        <div class="form-group col-md-4">
-            <label for="EstadoActual">Estado Actual</label>
-            <div class="form-group w-100">
-            <div class="d-flex align-items-center" style="width: 100%;">
-                <div class="icon-container">
-                    <img src="{{ asset('images/modelo.png') }}" alt="Estado icon" class="icon">
-                </div>
-                <input type="text" id="EstadoActual" name="EstadoActual"
-                                    class="form-controln form-controlqueja-le iconized" readonly>
-            </div>
-        </div>
-        </div>
-        <div class="form-group col-md-4">
-            <label for="Fecha_adquisición">Fecha de Adquisición</label>
-            <div class="form-group w-100">
-            <div class="d-flex align-items-center" style="width: 100%;">
-                <div class="icon-container">
-                    <img src="{{ asset('images/modelo.png') }}" alt="Fecha de adquisición icon" class="icon">
-                </div>
-                <input type="text"  id="Fecha_adquisicion" name="Fecha_adquisicion"
+            <input type="text" id="Modelo" name="Modelo"
                 class="form-controln form-controlqueja-le iconized" readonly>
-            </div>
         </div>
-    </div>
     </div>
 
-    <!-- Resto de los campos distribuidos en filas adicionales -->
-    <div class="form-row">
-        <div class="form-group col-md-6">
-            <label for="Ultimo_Mantenimiento">Último Mantenimiento</label>
-            <div class="form-group w-100">
-            <div class="d-flex align-items-center" style="width: 100%;">
-                <div class="icon-container">
-                    <img src="{{ asset('images/modelo.png') }}" alt="Último Mantenimiento icon" class="icon">
-                </div>
-                <input type="text" id="Ultimo_Mantenimiento" name="Ultimo_Mantenimiento"
-                                    class="form-controln form-controlqueja-le iconized" readonly>
+    <div class="form-group col-md-3">
+        <label for="EstadoActual">Estado Terminado</label>
+        <div class="form-group w-100 d-flex align-items-center">
+            <div class="icon-container">
+                <img src="{{ asset('images/modelo.png') }}" alt="Estado icon" class="icon">
             </div>
-        </div>
-        </div>
-        <div class="form-group col-md-6">
-            <label for="Proximo_Mantenimiento">Próximo Mantenimiento</label>
-            <div class="form-group w-100">
-            <div class="d-flex align-items-center" style="width: 100%;">
-                <div class="icon-container">
-                    <img src="{{ asset('images/modelo.png') }}" alt="Próximo Mantenimiento icon" class="icon">
-                </div>
-                <input type="text" id="Proximo_Mantenimiento" name="Proximo_Mantenimiento"
-                                    class="form-controln form-controlqueja-le iconized" readonly>
-            </div>
+            <input type="text" id="EstadoActual" name="EstadoActual"
+                class="form-controln form-controlqueja-le iconized" readonly>
         </div>
     </div>
-    </div>
-    <div class="form-row ">
 
-    <div class="form-group col-md-6">
+    <div class="form-group col-md-3">
+        <label for="Fecha_adquisición">Fecha de Adquisición</label>
+        <div class="form-group w-100 d-flex align-items-center">
+            <div class="icon-container">
+                <img src="{{ asset('images/modelo.png') }}" alt="Fecha de adquisición icon" class="icon">
+            </div>
+            <input type="text" id="Fecha_adquisicion" name="Fecha_adquisicion"
+                class="form-controln form-controlqueja-le iconized" readonly>
+        </div>
+    </div>
+
+   
+    
+    <!-- Tercera fila -->
+    <div class="form-group col-md-3">
         <label for="Año">Año</label>
-        <div class="input-group">
+        <div class="form-group w-100">
             <input type="text" id="Año" name="Año" class="form-controln form-controlqueja-lf" readonly>
         </div>
     </div>
-
-
-                        
-                    
-    <div class="form-group col-12 col-md-6">
-    <label for="photo">Evidencia</label>
-    <div class="d-flex align-items-center">
-        <div class="icon-container">
-            <img src="{{ asset('images/imagen.jpeg') }}" alt="Foto del equipo de salida icon" class="icon-pin">
+</div>
+</div>
+    <div class="form-row">
+        
+    <div class="form-group col-md-3">
+        <label for="photo">Evidencia</label>
+        <div class="form-group w-100 d-flex align-items-center">
+            <div class="icon-container">
+                <img src="{{ asset('images/imagen.jpeg') }}" alt="Foto del equipo" class="icon-pin">
+            </div>
+            <button id="viewFilesButton" class="form-controln form-controlqueja-li iconized flex-grow-1" type="button">
+                Ver archivos
+            </button>
         </div>
-        <button id="viewFilesButton" class="form-controln form-controlqueja-li iconized flex-grow-1" type="button">
-            Ver archivos
-        </button>
     </div>
 </div>
 
-<!-- Contenedor de imágenes oculto -->
+<!-- Contenedor de imágenes -->
 <div id="fileContainer" style="display: none;">
     @if(!empty($photos) && is_array($photos))
         @foreach($photos as $photo)
-            <img class="evidence-image" src="{{ asset('storage/' . $photo) }}"  alt="Evidencia de queja">
+            <img class="evidence-image" src="{{ asset($photo) }}" alt="Evidencia" style="max-width: 1%; margin: -10px;">
         @endforeach
     @else
         <p>No hay evidencia disponible</p>
     @endif
 </div>
-
-
-
-</div>
-
-</div>
-
 
 
 
@@ -2522,6 +2810,8 @@ body {
             </div>
         </div>
     </div>
+ 
+
 
     <!-- Observaciones -->
     <div class="form-grupo col-12 col-md-6 px-3">
@@ -2533,34 +2823,23 @@ body {
         </div>
     </div>
     <div class="container">
-    <div class="row">
-        <div class="col-md-6">
-            <div class="document-pdf-container">
-                <h3 class="document-title">Ficha Técnica</h3>
-                <div class="document-content">
-                    <iframe 
-                        id="documentoPDF" 
-                        class="document-frame w-100" 
-                        title="Visualización del PDF" 
-                        src=""
-                        style="height: 400px;"
-                    ></iframe>
-                </div>
-            </div>
-        </div>
+   
         <div class="col-md-6">
             <div id="videoContainer" class="video-preview-container">
                 <!-- Aquí se inyectará el video con JavaScript -->
             </div>
         </div>
     </div>
+
+
+
+
 </div>
+<div class="division"></div>
+<div class="titulo-seccion">Reporte Hojalatería</div>
+<div id="procesosContainer"></div>
 
 
-
-</div>
-
-                      
 
                     <!--  
                     <div class="form-grupo btnqueja-container">
@@ -2584,7 +2863,7 @@ body {
     <table id="example" class="stripe row-border order-column" style="width:100%">
         <thead>
             <tr>
-                <th>Estado actual</th>
+                <th>Estado terminado</th>
                 <th>Tipo de Producto</th>
                 <th>Subtipo de Producto</th>
                 <th>Número de serie</th>
@@ -2598,29 +2877,32 @@ body {
             @foreach($productos as $producto)
                 <tr>
                     <td>
-                    @if($isPdfExport ?? false)
-                {{-- Texto plano para PDF --}}
-                @if($producto->estado_actual == 1)
-                    En Stock
-                @elseif($producto->estado_actual == 2)
-                    Vendido
-                @elseif($producto->estado_actual == 3)
-                    Mantenimiento
-                @elseif($producto->estado_actual == 4)
-                    Defectuoso
-                @endif
-            @else
-                {{-- Etiquetas HTML para la vista web --}}
-                @if($producto->estado_actual == 1)
-                    <span class="badge badge-success">En Stock</span>
-                @elseif($producto->estado_actual == 2)
-                    <span class="badge badge-danger">Vendido</span>
-                @elseif($producto->estado_actual == 3)
-                    <span class="badge badge-warning">Mantenimiento</span>
-                @elseif($producto->estado_actual == 4)
-                    <span class="badge badge-secondary">Defectuoso</span>
-                @endif
-            @endif
+                        @if($isPdfExport ?? false)
+                            {{-- Texto plano para PDF --}}
+                            @if($producto->estado_proceso)
+                                {{ ucfirst($producto->estado_proceso) }}
+                            @else
+                                No disponible
+                            @endif
+                        @else
+                            {{-- Etiquetas HTML para la vista web --}}
+                            @if($producto->estado_proceso)
+                                <span class="badge 
+                                    @switch($producto->estado_proceso)
+                                        @case('registro') badge-info @break
+                                        @case('hojalateria') badge-primary @break
+                                        @case('mantenimiento') badge-warning @break
+                                        @case('stock') badge-success @break
+                                        @case('defectuoso') badge-secondary @break
+                                        @default badge-danger @break
+                                    @endswitch
+                                ">
+                                    {{ ucfirst($producto->estado_proceso) }}
+                                </span>
+                            @else
+                                <span class="badge badge-danger">No disponible</span>
+                            @endif
+                        @endif
                     </td>
                     <td>{{ $producto->tipo_equipo }}</td>
                     <td>{{ $producto->subtipo_equipo ?? 'N/A' }}</td>
@@ -2628,13 +2910,40 @@ body {
                     <td>{{ $producto->marca }}</td>
                     <td>{{ $producto->modelo }}</td>
                     <td>{{ $producto->created_at->format('d/m/Y H:i') }}</td> <!-- Mostrar la fecha de creación -->
-                    <td><button class="btn btn-info" data-id="{{ $producto->id }}"><i class="fa fa-eye"></i></button></td>
+                    <td>
+    <button class="btn btn-info btn-detalles" data-id="{{ $producto->id }}" data-estado="{{ $producto->estado_proceso }}">
+        <i class="fa fa-eye"></i>
+    </button>
+
+    <button class="btn btn-info btn-hojalateria" id="btn-hojalateria" data-id="{{ $producto->id }}" data-estado="{{ $producto->estado_proceso }}">
+        <i class="fa fa-tools"></i> 
+    </button>
+
+    <button class="btn btn-info btn-mantenimiento" id="btn-mantenimiento" data-id="{{ $producto->id }}" data-estado="{{ $producto->estado_proceso }}">
+        <i class="fa fa-wrench"></i>
+    </button>
+
+    <button class="btn btn-info btn-stock" id="btn-stock" data-id="{{ $producto->id }}" data-estado="{{ $producto->estado_proceso }}">
+        <i class="fa fa-box"></i> 
+    </button>
+
+    <button class="btn btn-info btn-vendido" id="btn-vendido" data-id="{{ $producto->id }}" data-estado="{{ $producto->estado_proceso }}">
+        <i class="fa fa-check-circle"></i> 
+    </button>
+
+    <button class="btn btn-info btn-defectuoso" id="btn-defectuoso" data-id="{{ $producto->id }}" data-estado="{{ $producto->estado_proceso }}">
+        <i class="fa fa-exclamation-triangle"></i>
+    </button>
+</td>
+
+
+
                 </tr>
             @endforeach
         </tbody>
         <tfoot>
             <tr>
-                <th>Estado actual</th>
+                <th>Estado terminado</th>
                 <th>Tipo de Producto</th>
                 <th>Subtipo de Producto</th>
                 <th>Número de serie</th>
@@ -2646,6 +2955,187 @@ body {
         </tfoot>
     </table>
 </div>
+<script>
+function actualizarProcesosPendientes(id) {
+    $.ajax({
+        url: `/procesos/${id}/pendientes`,
+        type: 'GET',
+        success: function(procesosPendientes) {
+            console.log(procesosPendientes);
+
+            // Ocultar todos los botones primero
+            $(".btn-proceso").hide();
+
+            // Mostrar solo los botones correspondientes a los procesos pendientes
+            procesosPendientes.forEach(proceso => {
+                $(`#btn-${proceso}`).show();
+            });
+        },
+        error: function() {
+            console.error("Error al obtener los procesos pendientes.");
+        }
+    });
+}
+
+// Hojalatería
+$(document).on('click', '.btn-hojalateria', function () {
+    var id = $(this).data('id');
+    window.location.href = "/procesos/" + id + "/hojalateria";
+});
+
+// Mantenimiento
+$(document).on('click', '.btn-mantenimiento', function () {
+    var id = $(this).data('id');
+    window.location.href = "/procesos/" + id + "/mantenimiento";
+});
+
+// Stock
+$(document).on('click', '.btn-stock', function () {
+    var id = $(this).data('id');
+    window.location.href = "/procesos/" + id + "/stock";
+});
+
+// Vendido
+$(document).on('click', '.btn-vendido', function () {
+    var id = $(this).data('id');
+    window.location.href = "/procesos/" + id + "/vendido";
+});
+
+// NUEVO: Defectuoso
+$(document).on('click', '.btn-defectuoso', function () {
+    var id = $(this).data('id');
+    window.location.href = "/procesos/" + id + "/defectuoso";
+});
+
+// Ejecutar la función de actualización al cargar
+$(document).ready(function() {
+    var id = $('#registro-id').val();
+    if (id) {
+        actualizarProcesosPendientes(id);
+    } else {
+        console.error("No se encontró el ID del registro.");
+    }
+});
+</script>
+
+
+
+<script>
+$(document).ready(function () {
+    $('.btn-hojalateria, .btn-mantenimiento, .btn-stock, .btn-vendido').on('click', function (e) {
+        const estadoActual = $(this).data('estado');
+        const boton = $(this);
+
+        // Orden de los procesos
+        const ordenProcesos = ['hojalateria', 'mantenimiento', 'stock', 'vendido'];
+
+        // Si está defectuoso, bloquear todo
+        if (estadoActual === 'defectuoso') {
+            e.preventDefault();
+            Swal.fire({
+                icon: 'error',
+                title: 'Equipo marcado como defectuoso',
+                text: 'No se puede realizar ningún proceso adicional.',
+                confirmButtonColor: '#d33',
+            });
+            return false;
+        }
+
+        // Detectar el tipo de botón que se presionó
+        const tipoProceso = boton.hasClass('btn-hojalateria') ? 'hojalateria'
+                          : boton.hasClass('btn-mantenimiento') ? 'mantenimiento'
+                          : boton.hasClass('btn-stock') ? 'stock'
+                          : boton.hasClass('btn-vendido') ? 'vendido'
+                          : null;
+
+        const indiceEstado = ordenProcesos.indexOf(estadoActual);
+        const indiceBoton = ordenProcesos.indexOf(tipoProceso);
+
+        // Saltarse un paso
+        if (indiceBoton > indiceEstado + 1) {
+            e.preventDefault();
+            Swal.fire({
+                icon: 'warning',
+                title: 'Proceso incompleto',
+                text: `Primero debes completar el proceso de "${ordenProcesos[indiceEstado + 1]}".`,
+                confirmButtonColor: '#3085d6',
+            });
+            return false;
+        }
+
+        // Intentando regresar a un proceso anterior
+        if (indiceBoton < indiceEstado) {
+            e.preventDefault();
+            Swal.fire({
+                icon: 'info',
+                title: 'Proceso ya avanzado',
+                text: `Este equipo ya está en el proceso de "${estadoActual}", no puedes regresar a "${tipoProceso}".`,
+                confirmButtonColor: '#3085d6',
+            });
+            return false;
+        }
+
+        // Si todo bien, deja pasar
+    });
+});
+</script>
+
+<script>
+$(document).ready(function () {
+    // Detectamos todos los botones de procesos
+    $('.btn-hojalateria, .btn-mantenimiento, .btn-stock, .btn-vendido, .btn-defectuoso').on('click', function (e) {
+        let estado = $(this).data('estado');
+
+        if (estado === 'defectuoso') {
+            e.preventDefault();
+            Swal.fire({
+                icon: 'error',
+                title: 'Equipo marcado como defectuoso',
+                text: 'No se puede realizar ningún proceso adicional.',
+                confirmButtonColor: '#d33',
+            });
+            return false;
+        }
+
+        // Validaciones secuenciales normales
+        const boton = $(this);
+
+        if (boton.hasClass('btn-mantenimiento') && estado !== 'hojalateria') {
+            e.preventDefault();
+            Swal.fire({
+                icon: 'warning',
+                title: 'Proceso incompleto',
+                text: 'Primero debes completar el proceso de hojalatería.',
+                confirmButtonColor: '#3085d6',
+            });
+            return false;
+        }
+
+        if (boton.hasClass('btn-stock') && estado !== 'mantenimiento') {
+            e.preventDefault();
+            Swal.fire({
+                icon: 'warning',
+                title: 'Proceso incompleto',
+                text: 'Primero debes completar el proceso de mantenimiento.',
+                confirmButtonColor: '#3085d6',
+            });
+            return false;
+        }
+
+        if (boton.hasClass('btn-vendido') && estado !== 'stock') {
+            e.preventDefault();
+            Swal.fire({
+                icon: 'warning',
+                title: 'Proceso incompleto',
+                text: 'Primero debes pasar el producto a stock.',
+                confirmButtonColor: '#3085d6',
+            });
+            return false;
+        }
+    });
+});
+</script>
+
 
 
 <script>
@@ -2761,6 +3251,11 @@ customize: function (doc) {
             ]
         });
 
+       // Aplicar estilos a las filas después de cada redibujo de la tabla (filtro, orden, etc.)
+       table.on('draw', function () {
+            applyRowStyling();
+        });
+
         $(table.table().container()).on('keyup', 'tfoot input', function () {
             table
                 .column($(this).data('index'))
@@ -2768,19 +3263,26 @@ customize: function (doc) {
                 .draw();
         });
     }
-
-function applyRowStyling() { 
+    function applyRowStyling() { 
     $('#example tbody tr').each(function () {
         const status = $(this).find('td').eq(0).find('span').text().trim();
-        if (status === 'En Stock') {
+
+        if (status === 'Stock') {
             $(this).addClass('row-success'); // Verde
         } else if (status === 'Vendido') {
             $(this).addClass('row-danger'); // Rojo
         } else if (status === 'Mantenimiento') {
             $(this).addClass('row-warning'); // Amarillo
+        } else if (status === 'Registro') {
+            $(this).addClass('row-info'); // Azul
+        } else if (status === 'Hojalateria') {
+            $(this).addClass('row-info'); // Azul más fuerte
+        } else if (status === 'Defectuoso') {
+            $(this).addClass('row-defectuoso'); // Gris
         }
     });
 }
+
 
 
     initFormContainers();
@@ -2789,113 +3291,227 @@ function applyRowStyling() {
     applyRowStyling();
 });
 </script>
+<script> 
+$(document).ready(function () {
+    $(document).on('click', '.btn-info', function () {
+        var id = $(this).data('id');
 
+        if (!id) {
+            alert('No se encontró un ID válido.');
+            return;
+        }
 
+        $('#loadingIndicator').show();
 
+        $.ajax({
+            url: '/obtener-detalles/' + id,
+            method: 'GET',
+            success: function (response) {
+                $('#loadingIndicator').hide();
 
-
-
-<script>
-    $(document).ready(function () {
-        $(document).on('click', '.btn-info', function () {
-            var id = $(this).data('id'); // Obtener el ID del producto
-
-            if (!id) {
-                alert('No se encontró un ID válido.');
-                return;
-            }
-
-            // Solicitar detalles por AJAX
-            $.ajax({
-                url: '/obtener-detalles/' + id,
-                method: 'GET',
-                success: function (response) {
-                    // Ocultar indicador de carga
-                    $('#loadingIndicator').hide();
-
-                    // Verificar si hay un error en la respuesta
-                    if (response.error) {
-                        alert(response.error);
-                        return;
-                    }
-
-                    // Llenar los campos del formulario
-                    $('#Tipo_de_equipo').val(response.tipo_equipo);
-                    $('#Subtipo').val(response.subtipo_equipo);
-                    $('#Serie').val(response.numero_serie);
-                    $('#Marca').val(response.marca);
-                    $('#Modelo').val(response.modelo);
-                    $('#Año').val(response.anio);
-                    $('#EstadoActual').val(response.estado_actual);
-                    $('#Fecha_adquisicion').val(response.fecha_adquisicion);
-                    $('#Ultimo_Mantenimiento').val(response.ultimo_mantenimiento);
-                    $('#Proximo_Mantenimiento').val(response.proximo_mantenimiento);
-                    $('#message').val(response.descripcion);
-                    $('#observaciones').val(response.observaciones);
-
-                    // Limpiar cualquier iframe existente antes de agregar uno nuevo
-                    $('#documentoPDF').next('iframe').remove();
-
-                    // Verificar y mostrar el documento PDF
-                    console.log('documentoPDF:', response.documentoPDF); // Verificar el valor en la consola
-                    if (response.documentoPDF) {
-                        const pdfPath = response.documentoPDF.startsWith('/storage/') || response.documentoPDF.startsWith('http')
-                            ? response.documentoPDF
-                            : '/storage/' + response.documentoPDF;
-                        $('#documentoPDF').attr('src', pdfPath).css('transform', 'scale(1)').show();
-                    } else {
-                        $('#documentoPDF').attr('src', '').hide();
-                        console.warn('No hay un documento PDF disponible.');
-                    }
-
-                    // Manejar evidencia (imágenes)
-                    if (response.evidencia && response.evidencia.length > 0) {
-                        $('#fileContainer').empty();
-                        response.evidencia.forEach(function (photo) {
-                            const photoUrl = photo.startsWith('/storage/') || photo.startsWith('http') 
-                                ? photo 
-                                : `/storage/${photo}`;
-                            $('#fileContainer').append(`
-                                <img class="evidence-image" 
-                                    src="${photoUrl}" 
-                                    alt="Evidencia de queja" 
-                                    style="max-width: 100%; margin: 10px; display: none;">
-                            `);
-                        });
-                        $('#fileContainer').show();
-                    } else {
-                        $('#fileContainer').html('<p>No hay evidencia disponible</p>').show();
-                    }
-
-                     // Manejar video
-                     if (response.video) {
-                        const videoUrl = response.video.startsWith('/storage/') || response.video.startsWith('http')
-                            ? response.video
-                            : `/storage/${response.video}`;
-
-                        // Configurar el contenedor de video
-                        $('#videoContainer').html(`
-                            <h5 class="preview-title">Previsualización del Video:</h5>
-                            <video controls class="video-preview" style="max-width: 100%; margin: 10px;">
-                                <source src="${videoUrl}" type="video/mp4">
-                                Tu navegador no soporta la reproducción de videos.
-                            </video>
-                        `).show();
-
-                        // Forzar la carga del video
-                        $('#videoContainer video')[0].load();
-                    } else {
-                        $('#videoContainer').html('<p>No hay video disponible</p>').show();
-                    }
-                },
-                error: function (xhr, status, error) {
-                    $('#loadingIndicator').hide(); // Ocultar el indicador de carga
-                    console.error('Error fetching details:', error);
-                    alert('Ocurrió un error al obtener los detalles del producto.');
+                if (response.error) {
+                    alert(response.error);
+                    return;
                 }
-            });
+
+                // Información general
+                $('#Tipo_de_equipo').val(response.tipo_equipo);
+                $('#Subtipo').val(response.subtipo_equipo);
+                $('#Serie').val(response.numero_serie);
+                $('#Marca').val(response.marca);
+                $('#Modelo').val(response.modelo);
+                $('#Año').val(response.anio);
+                $('#EstadoActual').val(response.estado_actual);
+                $('#Fecha_adquisicion').val(response.fecha_adquisicion);
+                $('#Ultimo_Mantenimiento').val(response.ultimo_mantenimiento);
+                $('#Proximo_Mantenimiento').val(response.proximo_mantenimiento);
+                $('#message').val(response.descripcion);
+                $('#observaciones').val(response.observaciones);
+
+                $('#documentoPDF').next('iframe').remove();
+
+                if (response.documentoPDF) {
+                    const pdfPath = response.documentoPDF.startsWith('/storage/') || response.documentoPDF.startsWith('http')
+                        ? response.documentoPDF
+                        : '/storage/' + response.documentoPDF;
+
+                    const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+                    const isAndroid = /Android/.test(navigator.userAgent);
+
+                    if (isIOS) {
+                        $('#documentoPDF').hide(); 
+                        window.open(pdfPath, '_blank'); 
+                    } else if (isAndroid) {
+                        $('#documentoPDF').attr('src', 'https://docs.google.com/gview?embedded=true&url=' + encodeURIComponent(pdfPath)).show();
+                    } else {
+                        $('#documentoPDF').attr('src', pdfPath).show();
+                    }
+
+                    $('#downloadPDF').attr('href', pdfPath).show();
+                } else {
+                    $('#documentoPDF').attr('src', '').hide();
+                }
+
+                // Evidencias generales
+                $('#fileContainer').empty();
+                let evidencias = [response.evidencia1, response.evidencia2, response.evidencia3].filter(Boolean);
+
+                if (evidencias.length > 0) {
+                    evidencias.forEach(function (photo) {
+                        const photoUrl = photo.startsWith('/storage/') || photo.startsWith('http') ? photo : `/storage/${photo}`;
+                        $('#fileContainer').append(`<img class="evidence-image" src="${photoUrl}" alt="Evidencia de queja" style="max-width: 100%; display: none;">`);
+                    });
+                    $('#fileContainer').show();
+                } else {
+                    $('#fileContainer').hide();
+                }
+
+                // Video general
+                if (response.video) {
+                    const videoUrl = response.video.startsWith('/storage/') || response.video.startsWith('http') ? response.video : `/storage/${response.video}`;
+                    $('#videoContainer').html(`
+                        <h5 class="preview-title">Previsualización del Video:</h5>
+                        <video controls class="video-preview" style="max-width: 100%; margin: 10px;">
+                            <source src="${videoUrl}" type="video/mp4">
+                            Tu navegador no soporta la reproducción de videos.
+                        </video>
+                    `).show();
+                } else {
+                    $('#videoContainer').html('<p>No hay video disponible</p>').show();
+                }
+
+                // Procesos
+                $('#procesosContainer').empty();
+
+                if (response.procesos && response.procesos.length > 0) {
+                    response.procesos.forEach(function (proceso) {
+                        let procesoHTML = `
+                            <div class="col-12 d-flex justify-content-center align-items-center">
+                                <div class="proceso-wrapper text-center">
+                                    <label for="descripcion_proceso_${proceso.id}" class="video-label">
+                                        Descripción del Proceso (ID: ${proceso.id}):
+                                    </label>
+                                    <div class="d-flex justify-content-center">
+                                        <textarea id="descripcion_proceso_${proceso.id}" rows="4" class="form-controln form-controlqueja-lj w-100 text-center" readonly>${proceso.descripcion_proceso}</textarea>
+                                    </div>
+                                </div>
+                            </div>
+
+<div class="col-12 d-flex justify-content-center align-items-center mt-4">
+    <div class="w-100" style="max-width: 600px;">
+     ${
+    proceso.defectos && proceso.defectos.trim() !== ''
+        ? `
+        <div class="col-12 d-flex justify-content-center align-items-center mt-4">
+            <div class="w-100" style="max-width: 600px;">
+                <label class="form-label fw-semibold text-dark fs-5 mb-3">
+                    Defectos del Proceso (ID: ${proceso.id})
+                </label>
+                <ul class="list-group list-group-flush shadow-sm rounded-3 border">
+                    ${
+                        proceso.defectos.split(',').map(defecto => {
+                            defecto = defecto.replace(/\\u00e9/g, 'é')
+                                             .replace(/\\u00ed/g, 'í')
+                                             .replace(/\\u00f3/g, 'ó')
+                                             .replace(/\\u00fa/g, 'ú')
+                                             .replace(/\\u00e1/g, 'á')
+                                             .replace(/\\u00e0/g, 'à')
+                                             .replace(/\\u00f1/g, 'ñ')
+                                             .replace(/\\u00e7/g, 'ç')
+                                             .replace(/\\u20ac/g, '€');
+                            return `
+                                <li class="list-group-item d-flex align-items-center gap-3 py-3">
+                                    <span class="check-icon bg-success-subtle text-success-emphasis rounded-circle d-flex justify-content-center align-items-center">
+                                        <i class="bi bi-check-lg"></i>
+                                    </span>
+                                    <span class="text-body">${defecto.trim()}</span>
+                                </li>
+                            `;
+                        }).join('')
+                    }
+                </ul>
+            </div>
+        </div>
+        `
+        : ''
+}
+
+    </div>
+</div>
+                        `;
+                        // Ficha técnica
+                        if (proceso.ficha_tecnica_archivo && proceso.ficha_tecnica_archivo !== 'null') {
+                            procesoHTML += `
+                                <div class="col-12 d-flex justify-content-center align-items-center">
+                                    <div class="proceso-wrapper text-center">
+                                        <label class="video-label">Ficha Técnica (ID: ${proceso.id}):</label>
+                                        <iframe 
+                                            src="/storage/${proceso.ficha_tecnica_archivo}" 
+                                            class="ficha-tecnica d-none d-md-block" 
+                                            frameborder="0">
+                                        </iframe>
+                                        <a href="/storage/${proceso.ficha_tecnica_archivo}" 
+                                           target="_blank" 
+                                           class="btn btn-primary d-block d-md-none mt-2">
+                                           📄 Ver Ficha Técnica
+                                        </a>
+                                    </div>
+                                </div>
+                            `;
+                        }
+
+                        // Evidencias del proceso
+                        let evidenciasProceso = [proceso.evidencia1, proceso.evidencia2, proceso.evidencia3].filter(Boolean);
+                        if (evidenciasProceso.length > 0) {
+                            procesoHTML += `
+                                <div class="form-group">
+                                    <div class="label-container">
+                                        <label>Evidencias del Proceso (ID: ${proceso.id}):</label>
+                                        <div class="evidencias-container">
+                                            ${evidenciasProceso.map(e => `
+                                                ${e.endsWith('.jpg') || e.endsWith('.png') || e.endsWith('.jpeg') || e.endsWith('.gif') ? 
+                                                    `<img src="${e}" alt="Evidencia" class="evidencia-img">` : 
+                                                    `<iframe src="${e}" class="evidencia-pdf"></iframe>`}
+                                            `).join('')}
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        }
+
+                        // Video del proceso
+                        if (proceso.video) {
+                            procesoHTML += `
+                                <div class="col-12 d-flex justify-content-center align-items-center">
+                                    <div class="video-wrapper">
+                                        <label class="video-label">Video del Proceso (ID: ${proceso.id}):</label>
+                                        <div class="video-container">
+                                            <video controls>
+                                                <source src="${proceso.video}" type="video/mp4">
+                                                Tu navegador no soporta el formato de video.
+                                            </video>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        }
+
+                        $('#procesosContainer').append(procesoHTML);
+                    });
+
+                    $('#procesosContainer').show();
+                } else {
+                    $('#procesosContainer').hide();
+                }
+            },
+            error: function (xhr, status, error) {
+                $('#loadingIndicator').hide();
+                console.error('Error fetching details:', error);
+                alert('Ocurrió un error al obtener los detalles del producto.');
+            }
         });
     });
+});
 </script>
 
 
@@ -2906,103 +3522,106 @@ function applyRowStyling() {
  
 <script>
 document.getElementById('viewFilesButton').addEventListener('click', function () {
-    const imageElements = document.querySelectorAll('#fileContainer img');
-    const images = Array.from(imageElements).map(img => img.getAttribute('src'));
+    // Verificar si el contenedor tiene imágenes cargadas
+    setTimeout(() => {
+        const imageElements = document.querySelectorAll('#fileContainer img');
+        const images = Array.from(imageElements).map(img => img.getAttribute('src'));
 
-    if (images.length > 0) {
-        let currentIndex = 0;
-        let touchStartX = 0;
-        let touchEndX = 0;
+        if (images.length > 0) {
+            let currentIndex = 0;
+            let touchStartX = 0;
+            let touchEndX = 0;
 
-        function showImage(index) {
-            Swal.fire({
-                html: `
-                    <div style="display: flex; flex-direction: column; align-items: center;">
-                        <img src="${images[index]}" 
-                            style="width: 400px; height: 300px; object-fit: contain; border-radius: 8px; transition: transform 0.3s;" id="swalImage">
-                        <div style="display: flex; gap: 5px; margin-top: 10px;">
-                            ${images.map((_, i) => `
-                                <span style="width: 8px; height: 8px; background-color: ${i === index ? '#333' : '#ddd'}; border-radius: 50%;"></span>
-                            `).join('')}
+            function showImage(index) {
+                Swal.fire({
+                    html: `
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <img src="${images[index]}" 
+                                style="width: 400px; height: 300px; object-fit: contain; border-radius: 8px; transition: transform 0.3s;" id="swalImage">
+                            <div style="display: flex; gap: 5px; margin-top: 10px;">
+                                ${images.map((_, i) => `
+                                    <span style="width: 8px; height: 8px; background-color: ${i === index ? '#333' : '#ddd'}; border-radius: 50%;"></span>
+                                `).join('')}
+                            </div>
                         </div>
-                    </div>
-                `,
-                width: 'auto',
-                padding: '15px',
+                    `,
+                    width: 'auto',
+                    padding: '15px',
+                    background: '#f9f9f9',
+                    showConfirmButton: false,
+                    showCloseButton: true,
+                    customClass: {
+                        popup: 'compact-popup',
+                        closeButton: 'custom-close-button'
+                    },
+                    backdrop: 'rgba(0, 0, 0, 0.5)',
+                    willOpen: (popup) => {
+                        const image = popup.querySelector('img');
+                        image.addEventListener('click', nextImage);
+
+                        popup.addEventListener('keydown', handleKeyboard);
+                        popup.addEventListener('touchstart', handleTouchStart);
+                        popup.addEventListener('touchmove', handleTouchMove);
+                        popup.addEventListener('touchend', handleTouchEnd);
+                    },
+                    willClose: (popup) => {
+                        const image = popup.querySelector('img');
+                        image.removeEventListener('click', nextImage);
+
+                        popup.removeEventListener('keydown', handleKeyboard);
+                        popup.removeEventListener('touchstart', handleTouchStart);
+                        popup.removeEventListener('touchmove', handleTouchMove);
+                        popup.removeEventListener('touchend', handleTouchEnd);
+                    },
+                });
+            }
+
+            function nextImage() {
+                currentIndex = (currentIndex + 1) % images.length;
+                showImage(currentIndex);
+            }
+
+            function prevImage() {
+                currentIndex = (currentIndex - 1 + images.length) % images.length;
+                showImage(currentIndex);
+            }
+
+            function handleKeyboard(evt) {
+                if (evt.key === 'ArrowRight') {
+                    nextImage();
+                } else if (evt.key === 'ArrowLeft') {
+                    prevImage();
+                }
+            }
+
+            function handleTouchStart(evt) {
+                touchStartX = evt.touches[0].clientX;
+            }
+
+            function handleTouchMove(evt) {
+                touchEndX = evt.touches[0].clientX;
+            }
+
+            function handleTouchEnd() {
+                const diffX = touchEndX - touchStartX;
+                if (diffX > 50) {
+                    prevImage();
+                } else if (diffX < -50) {
+                    nextImage();
+                }
+            }
+
+            showImage(currentIndex);
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Sin imágenes',
+                text: 'No hay evidencia disponible.',
                 background: '#f9f9f9',
-                showConfirmButton: false,
-                showCloseButton: true,
-                customClass: {
-                    popup: 'compact-popup',
-                    closeButton: 'custom-close-button'
-                },
-                backdrop: 'rgba(0, 0, 0, 0.5)',
-                willOpen: (popup) => {
-                    const image = popup.querySelector('img');
-                    image.addEventListener('click', nextImage);
-
-                    popup.addEventListener('keydown', handleKeyboard);
-                    popup.addEventListener('touchstart', handleTouchStart);
-                    popup.addEventListener('touchmove', handleTouchMove);
-                    popup.addEventListener('touchend', handleTouchEnd);
-                },
-                willClose: (popup) => {
-                    const image = popup.querySelector('img');
-                    image.removeEventListener('click', nextImage);
-
-                    popup.removeEventListener('keydown', handleKeyboard);
-                    popup.removeEventListener('touchstart', handleTouchStart);
-                    popup.removeEventListener('touchmove', handleTouchMove);
-                    popup.removeEventListener('touchend', handleTouchEnd);
-                },
+                confirmButtonColor: '#333'
             });
         }
-
-        function nextImage() {
-            currentIndex = (currentIndex + 1) % images.length;
-            showImage(currentIndex);
-        }
-
-        function prevImage() {
-            currentIndex = (currentIndex - 1 + images.length) % images.length;
-            showImage(currentIndex);
-        }
-
-        function handleKeyboard(evt) {
-            if (evt.key === 'ArrowRight') {
-                nextImage();
-            } else if (evt.key === 'ArrowLeft') {
-                prevImage();
-            }
-        }
-
-        function handleTouchStart(evt) {
-            touchStartX = evt.touches[0].clientX;
-        }
-
-        function handleTouchMove(evt) {
-            touchEndX = evt.touches[0].clientX;
-        }
-
-        function handleTouchEnd() {
-            const diffX = touchEndX - touchStartX;
-            if (diffX > 50) {
-                prevImage();
-            } else if (diffX < -50) {
-                nextImage();
-            }
-        }
-
-        showImage(currentIndex);
-    } else {
-        Swal.fire({
-            icon: 'error',
-            title: 'Sin imágenes',
-            text: 'No hay evidencia disponible.',
-            background: '#f9f9f9',
-            confirmButtonColor: '#333'
-        });
-    }
+    }, 200); // Agregar pequeño retraso para asegurarse de que las imágenes ya fueron agregadas
 });
 
 
@@ -3034,7 +3653,6 @@ document.getElementById('viewFilesButton').addEventListener('click', function ()
 
 </script>
 <script>
-
    let startX;
 
 function toggleMenu() {
@@ -3074,12 +3692,45 @@ document.addEventListener('touchmove', function (e) {
         closeMenu();
     }
 });
-
-
-
 </script>
+<script>
+    let timeout;
+    const INACTIVITY_LIMIT = 120 * 60 * 1000; // 10 minutos en milisegundos
+    let lastActivityTime = Date.now(); // Establece el tiempo inicial de actividad
 
+    function resetTimer() {
+        clearTimeout(timeout);
+        timeout = setTimeout(logoutUser, INACTIVITY_LIMIT); // Redirige después de 10 minutos
+        lastActivityTime = Date.now(); // Resetea el tiempo de la última actividad
+    }
 
+    function logoutUser() {
+        // Redirige al usuario a la ruta de logout
+        window.location.href = "{{ route('logout') }}"; // Asegúrate de que la ruta 'logout' esté definida en tus rutas
+    }
+
+    // Detectar cualquier actividad del usuario (movimiento del ratón, teclas presionadas, etc.)
+    document.onload = resetTimer;
+    document.onmousemove = resetTimer;
+    document.onkeypress = resetTimer;
+    document.onscroll = resetTimer;
+    document.onclick = resetTimer;
+
+    // Verificar automáticamente la sesión cada vez que el usuario realice una acción
+    setInterval(function() {
+        // Si han pasado más de 10 minutos desde la última actividad, cerramos la sesión
+        if (Date.now() - lastActivityTime > INACTIVITY_LIMIT) {
+            logoutUser();
+        }
+    }, 10000); // Verificar cada 10 segundos si ha pasado el tiempo de inactividad
+</script>
+<script>
+function toggleSubmenu(event, submenuId) {
+    event.preventDefault(); // Evita que el enlace recargue la página
+    const submenu = document.getElementById(submenuId);
+    submenu.style.display = (submenu.style.display === "block") ? "none" : "block";
+}
+</script>
 
         <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.css">
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.2.7/css/responsive.dataTables.min.css">
@@ -3095,6 +3746,8 @@ document.addEventListener('touchmove', function (e) {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/vfs_fonts.js"></script>
 <script src="https://cdn.datatables.net/buttons/1.7.1/js/buttons.html5.min.js"></script>
 <script src="https://cdn.datatables.net/buttons/1.7.1/js/buttons.print.min.js"></script>
+
+
 
 
 

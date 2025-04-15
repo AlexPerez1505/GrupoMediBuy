@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -23,17 +24,30 @@ class Registro extends Model
         'fecha_adquisicion',
         'ultimo_mantenimiento',
         'proximo_mantenimiento',
-        'evidencia',
+        'evidencia1',
+        'evidencia2',
+        'evidencia3',
         'video',
         'documentoPDF',
         'observaciones',
         'firma_digital',
+        'user_name',
     ];
 
     protected $casts = [
-        'evidencia' => 'array', 
         'fecha_adquisicion' => 'date',
         'ultimo_mantenimiento' => 'date',
         'proximo_mantenimiento' => 'date',
     ];
+
+    // Relación correcta con ProcesoEquipo
+    public function procesos()
+    {
+        return $this->hasMany(ProcesoEquipo::class, 'registro_id', 'id');
+    }
+    public function fichaTecnica()
+{
+    return $this->belongsTo(FichaTecnica::class, 'ficha_tecnica_id');
+}
+
 }

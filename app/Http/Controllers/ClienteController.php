@@ -22,7 +22,7 @@ class ClienteController extends Controller
             'nombre' => $request->input('nombre'),
             'apellido' => $request->input('apellido'),
             'telefono' => $request->input('telefono'),
-            'email' => $request->input('email'),
+            'email' => $request->input('email') ?: null, // Si está vacío, lo almacena como null
             'comentarios' => $request->input('comentarios'),
         ]);
 
@@ -40,10 +40,10 @@ class ClienteController extends Controller
     
         // Verificar si el teléfono ya está registrado
         $telefonoExistente = Cliente::where('telefono', $telefono)->exists();
-        // Verificar si el correo ya está registrado
-        $emailExistente = Cliente::where('email', $email)->exists();
     
-        // Retornar los mensajes específicos si el teléfono o el correo ya existen
+        // Verificar si el correo ya está registrado solo si no es nulo
+        $emailExistente = !empty($email) ? Cliente::where('email', $email)->exists() : false;
+    
         if ($telefonoExistente && $emailExistente) {
             return response()->json([
                 'success' => false,
@@ -66,17 +66,37 @@ class ClienteController extends Controller
     }
     public function getClients(Request $request)
     {
-        // Obtener los clientes filtrados según el término de búsqueda, si existe
+        // Obtener los clientes filtrados según el término de búsqueda
         $search = $request->input('search');
+    
         $clients = Cliente::when($search, function ($query, $search) {
             return $query->where('nombre', 'like', '%' . $search . '%')
-                         ->orWhere('apellido', 'like', '%' . $search . '%'); // Buscar también por apellido
-        })->get(['nombre', 'apellido']); // Devolver solo nombre y apellido
+                         ->orWhere('apellido', 'like', '%' . $search . '%')
+                         ->orWhere('telefono', 'like', '%' . $search . '%')
+                         ->orWhere('email', 'like', '%' . $search . '%');
+        })->get(['nombre', 'apellido', 'telefono', 'email', 'comentarios']); // <--- Agregar estos campos
     
         return response()->json($clients);
     }
     
+    public function index()
+    {
+        $clientes = Cliente::all(); // Obtiene todos los clientes
+        return view('clientes', compact('clientes'));
+    }
+    public function updateAsesor(Request $request)
+{
+    $request->validate([
+        'id' => 'required|exists:clientes,id',
+        'asesor' => 'nullable|string|in:Jesús Tellez,Gabriela Diaz,Joel Diaz,Anahí Tellez'
+    ]);
 
+    $cliente = Cliente::findOrFail($request->id);
+    $cliente->asesor = $request->asesor;
+    $cliente->save();
+
+    return response()->json(['message' => 'Asesor actualizado correctamente']);
+}
     
 }
 

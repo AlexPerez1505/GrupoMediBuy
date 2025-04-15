@@ -47,14 +47,6 @@
 .menu-overlay.active {
     display: block;
 }
-/* Estilos de los ítems del menú */
-/* Estilos de los ítems del menú */
-.menu-items {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    flex-grow: 1;
-}
 
 .menu-items li {
     padding: 15px 20px;
@@ -113,8 +105,6 @@
     color: #007bff;
     transform: rotate(10deg);
 }
-
-
 /* Imagen del icono */
 .menu-icon-image {
     width: 34px; /* Tamaño del icono */
@@ -153,6 +143,10 @@
     padding: 20px;
     background: #F4F4F4;
     text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 10; /* Asegura que estén por encima de otros elementos */
+   
 }
 .menu-hamburguesa .menu-icon img {
     width: 34px;
@@ -166,6 +160,11 @@
     border-bottom: 1px solid #444;
     color: black;
     font-size: 14px;
+    position: sticky;
+    top: 0;
+ 
+    z-index: 10; /* Asegura que estén por encima de otros elementos */
+    
 }
 
 .welcome-section .user-name {
@@ -246,19 +245,19 @@
             }
         }
         .header-container {
-                    position: fixed; /* Hace que el contenedor sea fijo */
-                    top: 0; /* Lo fija en la parte superior de la pantalla */
-                    left: 0; /* Lo fija al inicio del viewport horizontal */
-                    width: 100%; /* Asegura que el encabezado abarque todo el ancho de la pantalla */
-                    z-index: 1000; /* Coloca el encabezado por encima de otros elementos */
-                    background-color: #ffffff; /* Añade un fondo para que no se superponga con otros elementos */
-                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Añade una ligera sombra para destacarlo */
-                    display: grid;
-                    grid-template-columns: auto 1fr auto; /* Tres columnas: menú, título, espacio */
-                    align-items: center;
-                    padding: 10px;
-                    box-sizing: border-box;
-                }
+            position: fixed; /* Hace que el contenedor sea fijo */
+            top: 0; /* Lo fija en la parte superior de la pantalla */
+            left: 0; /* Lo fija al inicio del viewport horizontal */
+            width: 100%; /* Asegura que el encabezado abarque todo el ancho de la pantalla */
+            z-index: 1000; /* Coloca el encabezado por encima de otros elementos */
+            background-color: #ffffff; /* Añade un fondo para que no se superponga con otros elementos */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Añade una ligera sombra para destacarlo */
+            display: grid;
+            grid-template-columns: auto 1fr auto; /* Tres columnas: menú, título, espacio */
+            align-items: center;
+            padding: 10px;
+            box-sizing: border-box;
+        }
                 body {
             padding-top: 10px; /* Ajusta este valor al alto del encabezado */
         }
@@ -532,6 +531,19 @@
   .btn-primary:hover {
     background-color: #0056b3; /* Azul más oscuro */
     transform: translateY(-2px);
+  }
+  .btn-descargapdf {
+    background-color: #ff3131;
+    border: none;
+    border-radius: 8px;
+    transition: background-color 0.3s;
+    font-weight: bold; /* Hace la letra más gruesa */
+    color: #fff;
+  }
+
+  .btn-descargapdf:hover {
+    background-color: #dc3545; /* Azul más oscuro */
+    color: #fff;
   }
   
 
@@ -909,7 +921,219 @@
     border: none;
     transition: background 0.3s;
 }
+@media print {
+    .no-imprimir {
+        display: none !important;
+    }
+}
 
 .custom-summary-cancel:hover {
     background: #999;
 }
+/* Aplica mayúsculas a todos los textos de la interfaz */
+ /* Contenedor principal */
+.form-container-lower {
+    background-color: #fff;
+    padding: 1.5rem;
+    border-radius: 10px;
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    max-width: 100%;
+    width: 90%;
+    margin: 100px auto;
+    overflow-x: auto; /* Permite el desplazamiento horizontal */
+}
+
+/* Asegura que la tabla no se desborde */
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+}
+/* Tabla */
+#clientesTable {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: "Inter", sans-serif;
+    font-size: 14px;
+    min-width: 800px; /* Ajusta según el contenido */
+    white-space: nowrap; /* Evita saltos de línea en el contenido */
+}
+
+#clientesTable thead {
+    background-color: #7cb8eb;
+    color: black;
+}
+
+#clientesTable thead th {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 2px solid #0e3d2a;
+}
+
+#clientesTable tbody tr {
+    border-bottom: 1px solid #e0e0e0;
+}
+
+#clientesTable tbody tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+#clientesTable tbody td {
+    padding: 10px;
+    text-align: left;
+}
+
+/* Input en el footer para filtros */
+#clientesTable tfoot th input {
+    width: 100%;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 13px;
+}
+
+/* Estilos de los botones */
+.dt-buttons .dt-button {
+    color: white;
+    border-radius: 5px;
+    padding: 8px 15px;
+    font-size: 14px;
+    cursor: pointer;
+    border: none;
+    transition: background-color 0.3s ease;
+    margin: 5px;
+}
+
+.dt-button.buttons-pdf {
+    background-color: #FF3131;
+}
+
+.dt-button.buttons-excel {
+    background-color: #339D4A;
+}
+
+.dt-button.buttons-csv {
+    background-color: #014490;
+}
+
+.dt-button.buttons-pdf:hover {
+    background-color: #e62929;
+}
+
+.dt-button.buttons-excel:hover {
+    background-color: #2d8a3f;
+}
+
+.dt-button.buttons-csv:hover {
+    background-color: #013a7c;
+}
+
+
+/* Badges */
+.badge {
+    padding: 6px 12px;
+    border-radius: 5px;
+    font-size: 13px;
+    display: inline-block;
+    text-align: center;
+}
+
+.badge-success {
+    background-color: #52A639;
+}
+
+.badge-danger {
+    background-color: #E43E3D;
+}
+
+/* Modal */
+.modal-footer {
+    display: flex;
+    justify-content: center;
+}
+
+/* Responsividad */
+@media (max-width: 768px) {
+    .form-container-lower {
+        width: 100%;
+        padding: 1rem;
+    }
+    .dt-buttons .dt-button {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+}
+.top.d-flex {
+    gap: 10px; /* Espacio entre los botones y el selector */
+}
+
+.dt-buttons {
+    display: flex;
+    gap: 5px; /* Reduce el espacio entre los botones */
+}
+.dataTables_filter {
+    margin-bottom: 15px; /* Ajusta el espacio entre el buscador y la tabla */
+}
+.submenu {
+    display: none;
+    list-style: none;
+    padding-left: 20px;
+}
+.submenu li {
+    padding: 5px 0;
+}
+
+
+.menu-items {
+    max-height: calc(100vh - 50px); /* Ajustar según el espacio del logo y bienvenida */
+    overflow-y: auto; /* Permite el desplazamiento solo para el contenido debajo */
+    padding: 10px;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    flex-grow: 1;
+}
+/* Ocultar la barra de desplazamiento en navegadores basados en WebKit (Chrome, Safari) */
+.menu-items::-webkit-scrollbar {
+    display: none;
+}
+
+/* En Firefox, usar -moz para ocultar la barra de desplazamiento */
+.menu-items {
+    scrollbar-width: none; /* Ocultar barra en Firefox */
+}
+
+.estado-activo {
+    color: green;
+    font-weight: bold;
+}
+
+.estado-vencido {
+    color: red;
+    font-weight: bold;
+}
+
+.fila-activa {
+    background-color: #d4edda !important; /* Verde claro */
+    color: black !important; /* Texto verde oscuro */
+  
+}
+
+.fila-vencida {
+    background-color: #f8d7da !important; /* Rojo claro */
+    color: black !important; /* Texto verde oscuro */
+}
+.btn-descargapdf {
+    background-color: #ff3131;
+    border: none;
+    border-radius: 8px;
+    transition: background-color 0.3s;
+    font-weight: bold; /* Hace la letra más gruesa */
+    color: #fff;
+  }
+
+  .btn-descargapdf:hover {
+    background-color: #dc3545; /* Azul más oscuro */
+    color: #fff;
+}
+

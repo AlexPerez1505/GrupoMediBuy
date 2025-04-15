@@ -10,7 +10,7 @@ class ProductoController extends Controller
     public function index()
     {
         // Obtener todos los productos registrados
-        $productos = Producto::all(); 
+         $productos = Producto::orderBy('tipo_equipo', 'asc')->get();
 
         // Pasar los productos a la vista 'cotizaciones'
         return view('cotizaciones', compact('productos'));  // 'cotizaciones' es el nombre de tu vista
@@ -46,21 +46,44 @@ class ProductoController extends Controller
             'producto' => $producto
         ]);
     }
+    public function search(Request $request)
+    {
+        $search = $request->input('search');
+    
+        $productos = Producto::where('tipo_equipo', 'like', "%$search%")
+            ->orWhere('modelo', 'like', "%$search%")
+            ->orWhere('marca', 'like', "%$search%")
+            ->orderBy('tipo_equipo', 'asc') // Agregar orden alfabético
+            ->get()
+            ->map(function ($producto) {
+                return [
+                    'id' => $producto->id,
+                    'tipo_equipo' => strtoupper($producto->tipo_equipo),
+                    'modelo' => strtoupper($producto->modelo),
+                    'marca' => strtoupper($producto->marca),
+                    'precio' => $producto->precio,
+                    'imagen' => $producto->imagen,
+                    'stock' => $producto->stock,
+                ];
+            });
+    
+        return response()->json($productos);
+    }
     public function buscar(Request $request)
-{
-    // Validar el término de búsqueda
-    $request->validate([
-        'termino' => 'required|string|max:255',
-    ]);
-
-    // Buscar productos que coincidan con el término de búsqueda
-    $productos = Producto::where('tipo_equipo', 'like', '%' . $request->termino . '%')
-                         ->orWhere('modelo', 'like', '%' . $request->termino . '%')
-                         ->get();
-
-    // Retornar los productos como respuesta JSON
-    return response()->json($productos);
-}
+    {
+        // Validar el término de búsqueda
+        $request->validate([
+            'termino' => 'required|string|max:255',
+        ]);
+    
+        // Buscar productos que coincidan con el término de búsqueda
+        $productos = Producto::where('tipo_equipo', 'like', '%' . $request->termino . '%')
+                             ->orWhere('modelo', 'like', '%' . $request->termino . '%')
+                             ->get();
+    
+        // Retornar los productos como respuesta JSON
+        return response()->json($productos);
+    }
 
 }
     

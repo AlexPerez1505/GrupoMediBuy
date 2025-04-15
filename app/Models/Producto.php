@@ -23,4 +23,8 @@ class Producto extends Model
                 ->withPivot('cantidad', 'precio', 'subtotal')
                 ->withTimestamps();
 }
+public function paquetes()
+    {
+        return $this->belongsToMany(Paquete::class);
+    }
 }

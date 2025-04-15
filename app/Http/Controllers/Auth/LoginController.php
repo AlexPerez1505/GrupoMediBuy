@@ -34,7 +34,7 @@ class LoginController extends Controller
         // Intentamos hacer login con las credenciales proporcionadas
         if (Auth::attempt(['nomina' => $credentials['nomina'], 'password' => $credentials['contrasena']])) {
             $request->session()->regenerate();
-            return redirect()->intended('inventario');
+            return redirect('/home');
         }
 
         // Si el login falla debido a la contraseña incorrecta

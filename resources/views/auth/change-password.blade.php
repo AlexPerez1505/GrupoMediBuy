@@ -453,94 +453,39 @@
     width: 20px;  /* Ajusta el tamaño del icono */
     height: 20px;
 }
+.back-button {
+        display: flex;
+        align-items: center;
+    }
+
+    .menu-icon {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 5px;
+    }
+
+    .menu-icon img {
+        width: 45px;
+        height: 40px;
+    }
 
     </style>
 </head>
 <body>
 <div class="header-container">
-    <div class="menu-hamburguesa">
-        <!-- Botón de menú con icono personalizado -->
-        <button onclick="toggleMenu()" class="menu-icon">
-            <img src="{{ asset('images/menu.png') }}" alt="Menu Icon">
-        </button>
-
-        <!-- Menú lateral -->
-        <nav id="menu-sidebar" class="menu-sidebar">
-            <!-- Logo del proyecto -->
-            <div class="menu-header">
-                <img src="{{ asset('images/logomedy.png') }}" alt="Logo" class="menu-logo">
-            </div>
-
-                <!-- Bienvenida personalizada -->
-                @auth
-                <div class="welcome-section">
-                    <a href="{{ route('auth.change-password') }}" class="welcome-link">
-                        <p>Bienvenido,</p>
-                        <p class="user-name">{{ Auth::user()->name }}</p>
-                    </a>
-                </div>
-                @endauth
-
-            <!-- Ítems del menú -->
-            <ul class="menu-items">
-                <li>
-                    <a href="{{ url('/') }}">
-                        <img src="{{ asset('images/registro.png') }}" alt="Icono Registro de Inventario" class="menu-icon-image">
-                        Registro de Inventario
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ url('/inventario') }}">
-                        <img src="{{ asset('images/inventario.png') }}" alt="Icono de Inventario" class="menu-icon-imagen">
-                        Inventario
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ url('/cotizaciones') }}">
-                        <img src="{{ asset('images/cotizaciones.png') }}" alt="Icono de Cotizaciones" class="menu-icon-image">
-                        Cotizaciones
-                    </a>
-                </li>
-                <li>
-                        <a href="{{ url('/remisiones') }}">
-                            <img src="{{ asset('images/remisiones.png') }}" alt="Icono de remisiones" class="menu-icon-image">
-                            Remisiones
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ url('/agenda') }}">
-                            <img src="{{ asset('images/agenda.png') }}" alt="Icono de agenda" class="menu-icon-imagen">
-                            Agenda
-                        </a>
-                    </li>
-                @auth
-                <li>
-                    <form action="{{ route('logout') }}" method="POST">
-                        @csrf
-                        <button type="submit" class="logout-button">
-                            <img src="{{ asset('images/cerrar.png') }}" alt="Icono Registro de Inventario" class="menu-icon-imagen">
-                            Cerrar Sesión
-                        </button>
-                    </form>
-                </li>
-                @else
-                <li>
-                    <a href="{{ route('login') }}">
-                        <i class="icon-class icon-login"></i> Iniciar Sesión
-                    </a>
-                </li>
-                @endauth
-            </ul>
-        </nav>
-        <!-- Overlay para cerrar el menú -->
-        <div id="menu-overlay" class="menu-overlay" onclick="closeMenu()"></div>
-    </div>
+<div class="back-button">
+    <button onclick="window.location.href='{{ route('perfil') }}'" class="menu-icon">
+        <img src="{{ asset('images/atras.png') }}" alt="Regresar">
+    </button>
+</div>
 
     <h1 class="titulos">Cambiar Contraseña</h1>
 
     <!-- Línea animada -->
     <div class="gradient-bg-animation"></div>
 </div>
+
     <div class="container">
  
 
@@ -616,49 +561,7 @@
     </a>
 </p>
 
-<script>
-   let startX;
 
-function toggleMenu() {
-    const menu = document.getElementById('menu-sidebar');
-    const overlay = document.getElementById('menu-overlay');
-    const body = document.body;
-
-    if (menu.classList.contains('open')) {
-        closeMenu();
-    } else {
-        menu.classList.add('open');
-        overlay.classList.add('active');
-        body.classList.add('menu-open');
-    }
-}
-
-function closeMenu() {
-    const menu = document.getElementById('menu-sidebar');
-    const overlay = document.getElementById('menu-overlay');
-    const body = document.body;
-
-    menu.classList.remove('open');
-    overlay.classList.remove('active');
-    body.classList.remove('menu-open');
-}
-
-// Manejo de gestos en pantallas táctiles
-document.addEventListener('touchstart', function (e) {
-    startX = e.touches[0].clientX;
-});
-
-document.addEventListener('touchmove', function (e) {
-    const currentX = e.touches[0].clientX;
-    const menu = document.getElementById('menu-sidebar');
-
-    if (startX > currentX && startX - currentX > 50 && menu.classList.contains('open')) {
-        closeMenu();
-    }
-});
-
-
-</script>
 <script>
 function togglePassword(inputId) {
     // Obtener el campo de entrada
