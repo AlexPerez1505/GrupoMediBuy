@@ -130,6 +130,7 @@
                     <ul id="submenu-usuarios" class="submenu">
                         <li><a href="{{ route('users.create') }}">+ Agregar Usuario</a></li>
                         <li><a href="{{ url('/usuarios') }}">Lista de Usuarios</a></li>
+                        <li><a href="{{ url('/asistencias/historial') }}">Reporte</a></li>
                         <li><a href="{{ route('asistencias.index') }}"> Registrar Asistencias</a></li>
                     </ul> 
                 </li>
@@ -182,6 +183,15 @@
     </ul>
 </li>
 @endauth
+@auth
+<li>
+    <a href="{{ route('prestamos.index') }}">
+        <img src="{{ asset('images/endoscopia.png') }}" alt="Icono de Préstamos" class="menu-icon-image">
+        Préstamos
+    </a>
+</li>
+@endauth
+
 
                 @auth
                     <li>

@@ -11,7 +11,8 @@
     <link rel="stylesheet" href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.2.7/css/responsive.dataTables.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/1.7.1/css/buttons.dataTables.min.css">
-  
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
 
 
@@ -1116,11 +1117,11 @@ th input {
     background-color: #117a8b; /* Un tono más oscuro en hover */
     transform: scale(1.1); /* Pequeño efecto de zoom al pasar el cursor */
 }
-#btn-mantenimiento {
+#btn-salida-mantenimiento {
     background-color: #FFC107; /* Amarillo */
 }
 
-#btn-mantenimiento:hover {
+#btn-salida-mantenimiento:hover {
     background-color: #D39E00; /* Un amarillo más oscuro en hover */
     transform: scale(1.1); /* Pequeño efecto de zoom al pasar el cursor */
 }
@@ -1132,19 +1133,19 @@ th input {
     background-color: #0056b3; /* Un amarillo más oscuro en hover */
     transform: scale(1.1); /* Pequeño efecto de zoom al pasar el cursor */
 }
-#btn-stock {
+#btn-entrada-mantenimiento {
     background-color: #52a639; /* Amarillo */
 }
 
-#btn-stock:hover {
+#btn-entrada-mantenimiento:hover {
     background-color: #3d7d29; /* Un amarillo más oscuro en hover */
     transform: scale(1.1); /* Pequeño efecto de zoom al pasar el cursor */
 }
-#btn-vendido {
+#btn-salida-dueno {
     background-color: #e43e3d; /* Amarillo */
 }
 
-#btn-vendido:hover {
+#btn-salida-dueno:hover {
     background-color: #B52F2F; /* Un amarillo más oscuro en hover */
     transform: scale(1.1); /* Pequeño efecto de zoom al pasar el cursor */
 }
@@ -2169,7 +2170,7 @@ text-align: center;
     }
     .titulos {
         font-size: 20px;
-        transform: translateX(-165%); /* Elimina el desplazamiento lateral en pantallas pequeñas */
+        transform: translateX(-15%); /* Elimina el desplazamiento lateral en pantallas pequeñas */
     }
     .menu-hamburguesa {
         justify-self: start; /* Alinea el menú al inicio */
@@ -2184,7 +2185,7 @@ text-align: center;
 @media (max-width: 375px) {
     .titulos {
         font-size: 20px;
-        transform: translateX(-135%); /* Elimina el desplazamiento lateral en pantallas pequeñas */
+        transform: translateX(-15%); /* Elimina el desplazamiento lateral en pantallas pequeñas */
     }
 }
 /* Contenedor principal */
@@ -2528,18 +2529,30 @@ textarea {
 
             <!-- Ítems del menú -->
             <ul class="menu-items">
-                <li>
-                    <a href="{{ url('/') }}">
-                        <img src="{{ asset('images/registro.png') }}" alt="Icono Registro de Inventario" class="menu-icon-image">
-                        Registro de Inventario
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ url('/inventario') }}">
-                        <img src="{{ asset('images/inventario.png') }}" alt="Icono de Inventario" class="menu-icon-image">
-                        Inventario
-                    </a>
-                </li>
+                <li class="menu-items">
+    <a href="#" onclick="toggleSubmenu(event, 'submenu-publicacion')">
+        <img src="{{ asset('images/publicacion.png') }}" alt="Icono de Publicacion" class="menu-icon-image">
+        Publicaciones
+    </a>
+    <ul id="submenu-publicacion" class="submenu">
+        <li><a href="{{ url('/publicaciones') }}">Ver publicaciones</a></li>
+        <li><a href="{{ url('/publicaciones/crear') }}">+ Agregar</a></li>
+
+    </ul>
+</li>
+            <li class="menu-items">
+    <a href="#" onclick="toggleSubmenu(event, 'submenu-inventario')">
+        <img src="{{ asset('images/inventario.png') }}" alt="Icono de Inventario" class="menu-icon-image">
+        Inventario
+    </a>
+    <ul id="submenu-inventario" class="submenu">
+        <li><a href="{{ url('/') }}">Registro Interno</a></li>
+        <li><a href="{{ url('/inventario') }}">Inventario Interno</a></li>
+        <li><a href="{{ url('/servicio') }}">Registro Externo</a></li>
+        <li><a href="{{ url('/inventario/servicio') }}">Inventario Externo</a></li>
+    </ul>
+</li>
+
 
                 <!-- Opción de Cotizaciones con Submenú -->
                 @if(Auth::user()->hasRole('admin') || Auth::user()->hasRole('editor'))
@@ -2634,6 +2647,14 @@ textarea {
                     </ul> 
                 </li>
                 @endif
+                @auth
+<li>
+    <a href="{{ route('prestamos.index') }}">
+        <img src="{{ asset('images/endoscopia.png') }}" alt="Icono de Préstamos" class="menu-icon-image">
+        Préstamos
+    </a>
+</li>
+@endauth
 
                 @auth
                     <li>
@@ -2741,7 +2762,7 @@ textarea {
             <div class="icon-container">
                 <img src="{{ asset('images/modelo.png') }}" alt="Estado icon" class="icon">
             </div>
-            <input type="text" id="EstadoActual" name="EstadoActual"
+            <input type="text" id="estado_proceso" name="estado_proceso"
                 class="form-controln form-controlqueja-le iconized" readonly>
         </div>
     </div>
@@ -2823,20 +2844,33 @@ textarea {
         </div>
     </div>
     <div class="container">
-   
+    <div class="row align-items-center">
+        <!-- Columna del video -->
         <div class="col-md-6">
             <div id="videoContainer" class="video-preview-container">
                 <!-- Aquí se inyectará el video con JavaScript -->
             </div>
         </div>
+
+        <!-- Columna de la firma digital -->
+        <div class="col-md-6 text-center">
+            <label for="firma" class="form-label">Firma Digital</label><br>
+            <img id="firmaDigitalImagen" src="" alt="Firma Digital" style="max-width: 100%; height: auto; display: none;" class="img-fluid border border-dark rounded shadow">
+
+            <!-- Nombre del firmante -->
+            <div id="firmaUsuarioNombre" style="display: none; margin-top: 10px;">
+                <strong>Firmado por:</strong> <br> <span id="nombreUsuarioTexto" class="text-primary fst-italic" style="font-style: italic; color: #0d6efd;"></span>
+            </div>
+        </div>
     </div>
+</div>
 
 
 
 
 </div>
 <div class="division"></div>
-<div class="titulo-seccion">Reporte Hojalatería</div>
+<div class="titulo-seccion">Reportes</div>
 <div id="procesosContainer"></div>
 
 
@@ -2882,7 +2916,7 @@ textarea {
                             @if($servicio->estado_proceso)
                                 {{ ucfirst($servicio->estado_proceso) }}
                             @else
-                                No disponible
+                                Registro
                             @endif
                         @else
                             {{-- Etiquetas HTML para la vista web --}}
@@ -2890,17 +2924,18 @@ textarea {
                                 <span class="badge 
                                     @switch($servicio->estado_proceso)
                                         @case('registro') badge-info @break
-                                        @case('hojalateria') badge-primary @break
-                                        @case('mantenimiento') badge-warning @break
-                                        @case('stock') badge-success @break
+                                        @case('btn-salida-mantenimiento') badge-primary @break
+                                        @case('salida') badge-warning @break
+                                        @case('regreso') badge-success @break
                                         @case('defectuoso') badge-secondary @break
+                                        @case('btn-salida-dueno') badge-danger @break
                                         @default badge-danger @break
                                     @endswitch
                                 ">
                                     {{ ucfirst($servicio->estado_proceso) }}
                                 </span>
                             @else
-                                <span class="badge badge-danger">No disponible</span>
+                                <span class="badge badge-info">Registro</span>
                             @endif
                         @endif
                     </td>
@@ -2915,30 +2950,22 @@ textarea {
                             <i class="fa fa-eye"></i>
                         </button>
 
-                        <button class="btn btn-info btn-hojalateria" id="btn-hojalateria" data-id="{{ $servicio->id }}" data-estado="{{ $servicio->estado_proceso }}">
-                            <i class="fa fa-tools"></i> 
-                        </button>
+                      
+    <button class="btn btn-info btn-salida-mantenimiento" id="btn-salida-mantenimiento" data-id="{{ $servicio->id }}" data-estado="{{ $servicio->estado_proceso }}">
+        <i class="fa fa-sign-out-alt"></i> 
+    </button>
 
-                        <button class="btn btn-info btn-mantenimiento" id="btn-mantenimiento" data-id="{{ $servicio->id }}" data-estado="{{ $servicio->estado_proceso }}">
-                            <i class="fa fa-wrench"></i>
-                        </button>
+    <button class="btn btn-info btn-entrada-mantenimiento" id="btn-entrada-mantenimiento" data-id="{{ $servicio->id }}" data-estado="{{ $servicio->estado_proceso }}">
+        <i class="fa fa-sign-in-alt"></i>
+    </button>
+    
 
-                        <button class="btn btn-info btn-stock" id="btn-stock" data-id="{{ $servicio->id }}" data-estado="{{ $servicio->estado_proceso }}">
-                            <i class="fa fa-box"></i> 
-                        </button>
-
-                        <button class="btn btn-info btn-vendido" id="btn-vendido" data-id="{{ $servicio->id }}" data-estado="{{ $servicio->estado_proceso }}">
-                            <i class="fa fa-check-circle"></i> 
-                        </button>
-
-                        <button class="btn btn-info btn-defectuoso" id="btn-defectuoso" data-id="{{ $servicio->id }}" data-estado="{{ $servicio->estado_proceso }}">
-                            <i class="fa fa-exclamation-triangle"></i>
-                        </button>
+    <button class="btn btn-info btn-salida-dueno" id="btn-salida-dueno" data-id="{{ $servicio->id }}" data-estado="{{ $servicio->estado_proceso }}">
+        <i class="fa fa-user-check"></i> 
+    </button>
                     </td>
                 </tr>
             @endforeach
- 
-
         </tbody>
         <tfoot>
             <tr>
@@ -2976,36 +3003,23 @@ function actualizarProcesosPendientes(id) {
     });
 }
 
-// Hojalatería
-$(document).on('click', '.btn-hojalateria', function () {
+// Salida a mantenimiento
+$(document).on('click', '.btn-salida-mantenimiento', function () {
     var id = $(this).data('id');
-    window.location.href = "/procesos/" + id + "/hojalateria";
+    window.location.href = "/movimientos/" + "salida-mantenimiento/" + id;
 });
 
-// Mantenimiento
-$(document).on('click', '.btn-mantenimiento', function () {
+// Entrada de mantenimiento
+$(document).on('click', '.btn-entrada-mantenimiento', function () {
     var id = $(this).data('id');
-    window.location.href = "/procesos/" + id + "/mantenimiento";
+    window.location.href = "/movimientos/" + "entrada-mantenimiento/" + id;
 });
 
-// Stock
-$(document).on('click', '.btn-stock', function () {
+// Salida a dueño
+$(document).on('click', '.btn-salida-dueno', function () {
     var id = $(this).data('id');
-    window.location.href = "/procesos/" + id + "/stock";
+    window.location.href = "/movimientos/" + "salida-dueno/" + id;
 });
-
-// Vendido
-$(document).on('click', '.btn-vendido', function () {
-    var id = $(this).data('id');
-    window.location.href = "/procesos/" + id + "/vendido";
-});
-
-// NUEVO: Defectuoso
-$(document).on('click', '.btn-defectuoso', function () {
-    var id = $(this).data('id');
-    window.location.href = "/procesos/" + id + "/defectuoso";
-});
-
 // Ejecutar la función de actualización al cargar
 $(document).ready(function() {
     var id = $('#registro-id').val();
@@ -3021,14 +3035,12 @@ $(document).ready(function() {
 
 <script>
 $(document).ready(function () {
-    $('.btn-hojalateria, .btn-mantenimiento, .btn-stock, .btn-vendido').on('click', function (e) {
+    $('.btn-salida-mantenimiento, .btn-entrada-mantenimiento, .btn-salida-dueno').on('click', function (e) {
         const estadoActual = $(this).data('estado');
         const boton = $(this);
 
-        // Orden de los procesos
-        const ordenProcesos = ['hojalateria', 'mantenimiento', 'stock', 'vendido'];
+        const ordenProcesos = ['salida', 'regreso', 'entregado'];
 
-        // Si está defectuoso, bloquear todo
         if (estadoActual === 'defectuoso') {
             e.preventDefault();
             Swal.fire({
@@ -3040,17 +3052,14 @@ $(document).ready(function () {
             return false;
         }
 
-        // Detectar el tipo de botón que se presionó
-        const tipoProceso = boton.hasClass('btn-hojalateria') ? 'hojalateria'
-                          : boton.hasClass('btn-mantenimiento') ? 'mantenimiento'
-                          : boton.hasClass('btn-stock') ? 'stock'
-                          : boton.hasClass('btn-vendido') ? 'vendido'
+        const tipoProceso = boton.hasClass('btn-salida-mantenimiento') ? 'salida'
+                          : boton.hasClass('btn-entrada-mantenimiento') ? 'regreso'
+                          : boton.hasClass('btn-salida-dueno') ? 'entregado'
                           : null;
 
         const indiceEstado = ordenProcesos.indexOf(estadoActual);
         const indiceBoton = ordenProcesos.indexOf(tipoProceso);
 
-        // Saltarse un paso
         if (indiceBoton > indiceEstado + 1) {
             e.preventDefault();
             Swal.fire({
@@ -3062,7 +3071,6 @@ $(document).ready(function () {
             return false;
         }
 
-        // Intentando regresar a un proceso anterior
         if (indiceBoton < indiceEstado) {
             e.preventDefault();
             Swal.fire({
@@ -3073,67 +3081,12 @@ $(document).ready(function () {
             });
             return false;
         }
-
-        // Si todo bien, deja pasar
     });
 });
+
 </script>
 
-<script>
-$(document).ready(function () {
-    // Detectamos todos los botones de procesos
-    $('.btn-hojalateria, .btn-mantenimiento, .btn-stock, .btn-vendido, .btn-defectuoso').on('click', function (e) {
-        let estado = $(this).data('estado');
 
-        if (estado === 'defectuoso') {
-            e.preventDefault();
-            Swal.fire({
-                icon: 'error',
-                title: 'Equipo marcado como defectuoso',
-                text: 'No se puede realizar ningún proceso adicional.',
-                confirmButtonColor: '#d33',
-            });
-            return false;
-        }
-
-        // Validaciones secuenciales normales
-        const boton = $(this);
-
-        if (boton.hasClass('btn-mantenimiento') && estado !== 'hojalateria') {
-            e.preventDefault();
-            Swal.fire({
-                icon: 'warning',
-                title: 'Proceso incompleto',
-                text: 'Primero debes completar el proceso de hojalatería.',
-                confirmButtonColor: '#3085d6',
-            });
-            return false;
-        }
-
-        if (boton.hasClass('btn-stock') && estado !== 'mantenimiento') {
-            e.preventDefault();
-            Swal.fire({
-                icon: 'warning',
-                title: 'Proceso incompleto',
-                text: 'Primero debes completar el proceso de mantenimiento.',
-                confirmButtonColor: '#3085d6',
-            });
-            return false;
-        }
-
-        if (boton.hasClass('btn-vendido') && estado !== 'stock') {
-            e.preventDefault();
-            Swal.fire({
-                icon: 'warning',
-                title: 'Proceso incompleto',
-                text: 'Primero debes pasar el producto a stock.',
-                confirmButtonColor: '#3085d6',
-            });
-            return false;
-        }
-    });
-});
-</script>
 
 
 
@@ -3196,9 +3149,13 @@ $(document).ready(function () {
             buttons: [
                 {
                     extend: 'excelHtml5',
-                    text: '<span class="button-icon"><img src="images/excel.png" alt="Excel" height="20"></span><span class="button-text">Excel</span>',
+                    text: `<span class="button-icon">
+         <img src="{{ asset('images/excel.png') }}" alt="Excel" height="20">
+       </span>
+       <span class="button-text">Excel</span>`,
+
                     className: 'btn-excel',
-                    title: 'Inventario Grupo MediBuy',
+                    title: 'Mantenimiento Externo Grupo MediBuy',
                     exportOptions: {
                         columns: ':not(:last-child)',
                         format: {
@@ -3210,15 +3167,15 @@ $(document).ready(function () {
                 },
                 {
                     extend: 'csvHtml5',
-                    text: '<span class="button-icon"><img src="images/csv.png" alt="CSV" height="20"></span><span class="button-text">CSV</span>',
+                    text: '<span class="button-icon"><img src="{{ asset('images/csv.png') }}" alt="Csv" height="20"></span><span class="button-text">CSV</span>',
                     className: 'btn-csv',
-                    title: 'Inventario Grupo MediBuy'
+                    title: 'Mantenimiento Externo Grupo MediBuy'
                 },
                 {
                     extend: 'pdfHtml5',
-text: '<span class="button-icon"><img src="images/pdf.png" alt="PDF" height="20"></span><span class="button-text">PDF</span>',
+text: '<span class="button-icon"><img src="{{ asset('images/pdf.png') }}" alt="Pdf" height="20"></span><span class="button-text">PDF</span>',
 className: 'btn-pdf',
-title: 'Inventario Grupo MediBuy',
+title: 'Mantenimiento Externo Grupo MediBuy',
 exportOptions: {
     columns: ':not(:last-child)', // Excluye la última columna (botón de detalles)
     format: {
@@ -3266,11 +3223,11 @@ customize: function (doc) {
     $('#example tbody tr').each(function () {
         const status = $(this).find('td').eq(0).find('span').text().trim();
 
-        if (status === 'Stock') {
+        if (status === 'Regreso') {
             $(this).addClass('row-success'); // Verde
-        } else if (status === 'Vendido') {
+        } else if (status === 'Entregado') {
             $(this).addClass('row-danger'); // Rojo
-        } else if (status === 'Mantenimiento') {
+        } else if (status === 'Salida') {
             $(this).addClass('row-warning'); // Amarillo
         } else if (status === 'Registro') {
             $(this).addClass('row-info'); // Azul
@@ -3313,26 +3270,46 @@ $(document).ready(function () {
                     return;
                 }
 
-                // Información general del equipo
+                // Información general del servicio
                 $('#Tipo_de_equipo').val(response.tipo_equipo || '');
                 $('#Subtipo').val(response.subtipo_equipo || '');
                 $('#Serie').val(response.numero_serie || '');
                 $('#Marca').val(response.marca || '');
                 $('#Modelo').val(response.modelo || '');
                 $('#Año').val(response.anio || '');
-                $('#EstadoActual').val(response.estado_actual || '');
+                $('#estado_proceso').val(response.estado_proceso || '');
                 $('#Fecha_adquisicion').val(response.fecha_adquisicion || '');
                 $('#message').val(response.descripcion || '');
                 $('#observaciones').val(response.observaciones || '');
 
                 // Documento PDF
                 $('#documentoPDF').next('iframe').remove();
+                if (response.firma_digital) {
+    // Asegúrate de que la ruta sea la correcta
+    let firmaUrl = response.firma_digital;
+    $('#firmaDigitalImagen').attr('src', firmaUrl).show();
+
+    // Mostrar nombre del usuario si existe
+    if (response.user_name) {
+        $('#nombreUsuarioTexto').text(response.user_name);
+        $('#firmaUsuarioNombre').show();
+    } else {
+        $('#firmaUsuarioNombre').hide();
+    }
+} else {
+    $('#firmaDigitalImagen').hide();
+    $('#firmaUsuarioNombre').hide();
+}
+
+
+
+
                 if (response.documentoPDF) {
                     const pdfPath = response.documentoPDF.startsWith('/storage/') ? response.documentoPDF : '/storage/' + response.documentoPDF;
 
                     if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
-                        $('#documentoPDF').hide(); 
-                        window.open(pdfPath, '_blank'); 
+                        $('#documentoPDF').hide();
+                        window.open(pdfPath, '_blank');
                     } else if (/Android/.test(navigator.userAgent)) {
                         $('#documentoPDF').attr('src', 'https://docs.google.com/gview?embedded=true&url=' + encodeURIComponent(pdfPath)).show();
                     } else {
@@ -3344,18 +3321,25 @@ $(document).ready(function () {
                     $('#documentoPDF').attr('src', '').hide();
                 }
 
-                // Evidencias
-                $('#fileContainer').empty();
-                let evidencias = [response.evidencia1, response.evidencia2, response.evidencia3].filter(Boolean);
-                evidencias.forEach(photo => {
-                    const photoUrl = photo.startsWith('/storage/') ? photo : '/storage/' + photo;
-                    $('#fileContainer').append(`<img class="evidence-image" src="${photoUrl}" style="max-width: 100%; display: none;">`);
-                });
-                $('#fileContainer').toggle(evidencias.length > 0);
+            // Evidencias generales
+$('#fileContainer').empty();
 
-                // Video general
-                if (response.video) {
-                    const videoUrl = response.video.startsWith('/storage/') ? response.video : '/storage/' + response.video;
+let evidencias = [response.evidencia1, response.evidencia2, response.evidencia3].filter(Boolean);
+if (evidencias.length > 0) {
+                    evidencias.forEach(function (photo) {
+                        const photoUrl = photo.startsWith('/storage/') || photo.startsWith('http') ? photo : `/storage/${photo}`;
+                        $('#fileContainer').append(`<img class="evidence-image" src="${photoUrl}" alt="Evidencia de queja" style="max-width: 100%; display: none;">`);
+                    });
+                    $('#fileContainer').show();
+                } else {
+                    $('#fileContainer').hide();
+                }
+
+
+
+// Video general
+if (response.video) {
+                    const videoUrl = response.video.startsWith('/storage/') || response.video.startsWith('http') ? response.video : `/storage/${response.video}`;
                     $('#videoContainer').html(`
                         <h5 class="preview-title">Previsualización del Video:</h5>
                         <video controls class="video-preview" style="max-width: 100%; margin: 10px;">
@@ -3367,72 +3351,188 @@ $(document).ready(function () {
                     $('#videoContainer').html('<p>No hay video disponible</p>').show();
                 }
 
-                // Procesos
-                $('#procesosContainer').empty();
+                // Movimientos
+             // Movimientos
+$('#procesosContainer').empty();
+if (response.movimientos && response.movimientos.length > 0) {
+    // Ordena los movimientos por tipo: primero salida, luego entrada, y finalmente entrega
+    response.movimientos.sort((a, b) => {
+        const order = ['salida', 'entrada', 'entrega'];
+        return order.indexOf(a.tipo_movimiento) - order.indexOf(b.tipo_movimiento);
+    });
 
-                if (response.procesos && response.procesos.length > 0) {
-                    response.procesos.forEach(proceso => {
-                        let procesoHTML = `
-                            <div class="col-12 text-center">
-                                <label for="descripcion_proceso_${proceso.id}" class="video-label">Descripción del Proceso (ID: ${proceso.id}):</label>
-                                <textarea id="descripcion_proceso_${proceso.id}" rows="4" class="form-controln form-controlqueja-lj w-100 text-center" readonly>${proceso.descripcion_proceso}</textarea>
-                            </div>
-                        `;
+    response.movimientos.forEach(mov => {
+    let tipoBadge = '';
+    switch (mov.tipo_movimiento) {
+        case 'salida_mantenimiento':
+            tipoBadge = `
+                <div class="reporte-separador bg-danger-subtle text-danger border-start border-4 border-danger mb-4 p-3 rounded">
+                    🚚 <strong>Reporte de Salida a Mantenimiento</strong>
+                </div>`;
+            break;
+        case 'entrada_mantenimiento':
+            tipoBadge = `
+                <div class="reporte-separador bg-success-subtle text-success border-start border-4 border-success mb-4 p-3 rounded">
+                    📦 <strong>Reporte de Regreso a Planta</strong>
+                </div>`;
+            break;
+        case 'salida_dueno':
+            tipoBadge = `
+                <div class="reporte-separador bg-primary-subtle text-primary border-start border-4 border-primary mb-4 p-3 rounded">
+                    📤 <strong>Reporte de Entrega a Destinatario</strong>
+                </div>`;
+            break;
+        default:
+            tipoBadge = `
+                <div class="reporte-separador bg-secondary-subtle text-dark border-start border-4 border-dark mb-4 p-3 rounded">
+                    🔄 <strong>Otro Movimiento</strong>
+                </div>`;
+    }
 
-                        // Defectos
-                        if (proceso.defectos) {
-                            const defectosList = proceso.defectos.split(',').map(def => `
-                                <li class="list-group-item d-flex align-items-center gap-3 py-3">
-                                    <span class="check-icon bg-success-subtle text-success-emphasis rounded-circle d-flex justify-content-center align-items-center">
-                                        <i class="bi bi-check-lg"></i>
-                                    </span>
-                                    <span class="text-body">${def.trim()}</span>
-                                </li>
-                            `).join('');
-                            procesoHTML += `
-                                <div class="mt-4">
-                                    <label class="form-label fw-semibold text-dark fs-5 mb-3">Defectos del Proceso (ID: ${proceso.id})</label>
-                                    <ul class="list-group list-group-flush shadow-sm rounded-3 border">${defectosList}</ul>
-                                </div>
-                            `;
-                        }
 
-                        // Evidencias de proceso
-                        let evidenciasProceso = [proceso.evidencia1, proceso.evidencia2, proceso.evidencia3].filter(Boolean);
-                        if (evidenciasProceso.length > 0) {
-                            procesoHTML += `<div class="evidencias-container mt-3">`;
-                            evidenciasProceso.forEach(ev => {
-                                const evUrl = ev.startsWith('/storage/') ? ev : '/storage/' + ev;
-                                procesoHTML += evUrl.match(/\.(jpg|jpeg|png|gif)$/i)
-                                    ? `<img src="${evUrl}" alt="Evidencia" class="evidencia-img">`
-                                    : `<iframe src="${evUrl}" class="evidencia-pdf"></iframe>`;
-                            });
-                            procesoHTML += `</div>`;
-                        }
 
-                        // Video de proceso
-                        if (proceso.video) {
-                            const videoProcesoUrl = proceso.video.startsWith('/storage/') ? proceso.video : '/storage/' + proceso.video;
-                            procesoHTML += `
-                                <div class="col-12 d-flex justify-content-center align-items-center mt-3">
-                                    <div class="video-wrapper">
-                                        <label class="video-label">Video del Proceso (ID: ${proceso.id}):</label>
-                                        <video controls>
-                                            <source src="${videoProcesoUrl}" type="video/mp4">
-                                            Tu navegador no soporta el formato de video.
-                                        </video>
-                                    </div>
-                                </div>
-                            `;
-                        }
 
-                        $('#procesosContainer').append(procesoHTML);
-                    });
+        // Aquí puedes agregar el código para renderizar el tipoBadge
+    
 
-                    $('#procesosContainer').show();
-                } else {
-                    $('#procesosContainer').hide();
-                }
+
+ 
+let movHTML = `
+    <div class="col-12 d-flex justify-content-center align-items-center">
+        <div class="proceso-wrapper text-center">
+            ${tipoBadge}
+            <label for="descripcion_movimiento_${mov.id}" class="video-label">
+                Descripción del Movimiento (ID: ${mov.id}):
+            </label>
+            <div class="d-flex justify-content-center">
+                <textarea id="descripcion_movimiento_${mov.id}" rows="4" class="form-controln form-controlqueja-lj w-100 text-center" readonly>${mov.descripcion}</textarea>
+            </div>
+        </div>
+    </div>
+`;
+        // Evidencias del movimiento
+        let evidenciasMov = [mov.evidencia1, mov.evidencia2, mov.evidencia3].filter(Boolean);
+if (evidenciasMov.length > 0) {
+    movHTML += `<div class="evidencias-container mt-3">`;
+    evidenciasMov.forEach(ev => {
+        // Verifica si 'ev' es una URL completa (contiene 'http')
+        const evUrl = ev.startsWith('http') ? ev : '/storage/' + ev;
+        movHTML += evUrl.match(/\.(jpg|jpeg|png|gif)$/i)
+            ? `<img src="${evUrl}" alt="Evidencia" class="evidencia-img">`
+            : `<iframe src="${evUrl}" class="evidencia-pdf"></iframe>`;
+    });
+    movHTML += `</div>`;
+}
+
+
+        // Video del movimiento 
+        if (mov.video) { 
+    // Verifica si 'mov.video' es una URL completa (contiene 'http')
+    const videoMovUrl = mov.video.startsWith('http') ? mov.video : '/storage/' + mov.video;
+    const shareVideoUrl = encodeURIComponent(window.location.origin + videoMovUrl);
+
+    movHTML += `
+        <div class="col-12 d-flex justify-content-center align-items-center mt-3">
+            <div class="video-wrapper" style="max-width: 640px; width: 100%;">
+                <label class="video-label">Video del Movimiento (ID: ${mov.id}):</label>
+                <div class="video-container position-relative video-menu-wrapper">
+                    <video controls class="mov-video" style="width: 100%; border-radius: 8px;">
+                        <source src="${videoMovUrl}" type="video/mp4">
+                        Tu navegador no soporta el formato de video.
+                    </video>
+
+                    <!-- Botón de menú (3 puntos) -->
+                    <div class="menu-toggle position-absolute top-0 end-0 m-2" style="z-index: 10; cursor: pointer;">
+                        <img src="https://img.icons8.com/material-outlined/24/000000/more.png" alt="Más opciones" style="width: 30px; height: 30px;">
+                    </div>
+
+                    <!-- Menú de opciones -->
+                    <div class="menu-options position-absolute top-0 end-0 mt-5 me-2 p-2 bg-white shadow rounded border"
+                        style="display: none; z-index: 20; min-width: 160px;">
+                        <a href="https://wa.me/?text=${shareVideoUrl}" target="_blank" 
+                        class="d-block mb-1 text-decoration-none text-dark">
+                            📤 Compartir por WhatsApp
+                        </a>
+                        <a href="${videoMovUrl}" download 
+                        class="d-block text-decoration-none text-dark">
+                            ⬇️ Descargar video
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Checklist del movimiento (como array JSON) 
+console.log('📦 Valor original de mov.checklist:', mov.checklist);
+
+if (mov.checklist) {
+    let itemsChecklist = [];
+
+    try {
+        if (typeof mov.checklist === 'string') {
+            console.log('🧪 Checklist es un string, intentando parsear...');
+            itemsChecklist = JSON.parse(mov.checklist);
+        } else {
+            console.log('✅ Checklist ya es un array:', mov.checklist);
+            itemsChecklist = mov.checklist;
+        }
+    } catch (e) {
+        console.error('❌ Error al parsear el checklist:', e);
+        itemsChecklist = [];
+    }
+
+    console.log('🔍 Resultado después del parseo:', itemsChecklist);
+    console.log('🧾 Es un array:', Array.isArray(itemsChecklist));
+    console.log('📏 Longitud del array:', itemsChecklist.length);
+
+    if (Array.isArray(itemsChecklist) && itemsChecklist.length > 0) {
+        console.log('✅ El checklist tiene elementos, procediendo a renderizar.');
+
+        const decodedChecklist = itemsChecklist.map((item, index) => {
+            console.log(`📝 Item [${index}]:`, item);
+            return `
+                <li class="list-group-item d-flex align-items-center gap-3 py-3">
+                    <span class="check-icon bg-success-subtle text-success-emphasis rounded-circle d-flex justify-content-center align-items-center">
+                        <i class="bi bi-check-lg"></i>
+                    </span>
+                    <span class="text-body">${item}</span>
+                </li>
+            `;
+        }).join('');
+
+        movHTML += `
+            <div class="col-12 d-flex justify-content-center align-items-center mt-4">
+                <div class="w-100" style="max-width: 600px;">
+                    <label class="form-label fw-semibold text-dark fs-5 mb-3">
+                        Checklist del Movimiento (ID: ${mov.id})
+                    </label>
+                    <ul class="list-group list-group-flush shadow-sm rounded-3 border">
+                        ${decodedChecklist}
+                    </ul>
+                </div>
+            </div>
+        `;
+    } else {
+        console.warn('⚠️ El checklist está vacío o no es un array válido.');
+    }
+} else {
+    console.warn('⚠️ No se encontró el campo mov.checklist o está vacío.');
+}
+
+
+
+
+
+        $('#procesosContainer').append(movHTML);
+    });
+
+    $('#procesosContainer').show();
+} else {
+    $('#procesosContainer').hide();
+}
+
             },
             error: function (xhr, status, error) {
                 $('#loadingIndicator').hide();
@@ -3444,7 +3544,38 @@ $(document).ready(function () {
 });
 </script>
 
+<script>
+document.addEventListener('click', function(e) {
+    // Mostrar u ocultar el menú si se hace clic en el botón de opciones
+    if (e.target.closest('.menu-toggle')) {
+        const wrapper = e.target.closest('.video-menu-wrapper');
+        const menu = wrapper.querySelector('.menu-options');
+        const isVisible = menu.style.display === 'block';
+        
+        // Cerrar todos los menús abiertos
+        document.querySelectorAll('.menu-options').forEach(m => m.style.display = 'none');
+        
+        // Alternar visibilidad del actual
+        if (!isVisible) {
+            menu.style.display = 'block';
+        }
 
+        e.stopPropagation();
+    } else {
+        // Si haces clic fuera, oculta todos los menús
+        document.querySelectorAll('.menu-options').forEach(m => m.style.display = 'none');
+    }
+});
+
+// Ocultar menú al reproducir video
+document.addEventListener('play', function(e) {
+    if (e.target.classList.contains('mov-video')) {
+        const wrapper = e.target.closest('.video-menu-wrapper');
+        const menu = wrapper.querySelector('.menu-options');
+        if (menu) menu.style.display = 'none';
+    }
+}, true); // Usa `true` para capturar en fase de captura
+</script>
 
 
      

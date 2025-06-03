@@ -1467,22 +1467,22 @@
 
     <!-- Firma Digital -->
     <div class="mb-3">
-        <label for="firmaCanvas" class="form-label">Firma Digital</label>
-        <div class="border rounded mb-2" style="height: 150px; overflow: hidden;">
-            <canvas id="firmaCanvas" class="w-100 h-100"></canvas>
-        </div>
-        <div class="text-end">
-            <button id="limpiarFirma" class="btn btn-primary" type="button">Limpiar Firma</button>
-        </div>
-        <input type="hidden" id="firmaInput" name="firmaDigital"value="{{ old('firmaDigital') }}" />
+    <label for="firmaCanvas" class="form-label">Firma Digital</label>
+    <div class="border rounded mb-2" style="height: 150px; overflow: hidden;">
+        <canvas id="firmaCanvas" class="w-100 h-100"></canvas>
     </div>
+    <div class="text-end">
+        <button id="limpiarFirma" class="btn btn-primary" type="button">Limpiar Firma</button>
+    </div>
+    <input type="hidden" id="firmaInput" name="firmaDigital" value="{{ old('firmaDigital') }}" />
+
+</div>
+
 
 </div>
 </div>
 
 <body>
-
-
 
 <script>
     const canvas = document.getElementById('firmaCanvas');
@@ -1490,6 +1490,28 @@
     const limpiarFirma = document.getElementById('limpiarFirma');
     const firmaInput = document.getElementById('firmaInput');
     let dibujando = false;
+
+    // Ajuste responsivo y nítido
+    function ajustarCanvas() {
+        const container = canvas.parentElement;
+        const width = container.offsetWidth;
+        const height = container.offsetHeight;
+
+        // Alta resolución para pantallas retina
+        const ratio = window.devicePixelRatio || 1;
+        canvas.width = width * ratio;
+        canvas.height = height * ratio;
+        canvas.style.width = width + 'px';
+        canvas.style.height = height + 'px';
+        ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+
+        // Opcional: Color de fondo blanco
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    ajustarCanvas();
+    window.addEventListener('resize', ajustarCanvas);
 
     function obtenerPosicionCanvas(event) {
         const rect = canvas.getBoundingClientRect();
@@ -1507,36 +1529,47 @@
     }
 
     function detenerDibujo() {
+        if (!dibujando) return;
         dibujando = false;
-        ctx.beginPath();
-        firmaInput.value = canvas.toDataURL();
+        ctx.closePath();
+        firmaInput.value = canvas.toDataURL('image/png');
     }
 
     function dibujar(event) {
         if (!dibujando) return;
         const { x, y } = obtenerPosicionCanvas(event);
         ctx.lineTo(x, y);
-        ctx.strokeStyle = '#333';
+        ctx.strokeStyle = '#222';
         ctx.lineWidth = 2;
         ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
         ctx.stroke();
         event.preventDefault();
     }
 
+    // Mouse events
     canvas.addEventListener('mousedown', comenzarDibujo);
     canvas.addEventListener('mousemove', dibujar);
     canvas.addEventListener('mouseup', detenerDibujo);
     canvas.addEventListener('mouseout', detenerDibujo);
-    canvas.addEventListener('touchstart', comenzarDibujo);
-    canvas.addEventListener('touchmove', dibujar);
+
+    // Touch events
+    canvas.addEventListener('touchstart', comenzarDibujo, { passive: false });
+    canvas.addEventListener('touchmove', dibujar, { passive: false });
     canvas.addEventListener('touchend', detenerDibujo);
     canvas.addEventListener('touchcancel', detenerDibujo);
 
+    // Limpiar firma
     limpiarFirma.addEventListener('click', () => {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // Opcional: volver a fondo blanco
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.beginPath();
         firmaInput.value = '';
     });
 </script>
+
 <script>
 function updatePreview(input, previewId) {
     const file = input.files[0];
@@ -1956,7 +1989,7 @@ function toggleSubmenu(event, submenuId) {
                                 text: "El registro se guardó correctamente.",
                                 icon: "success"
                             }).then(() => {
-                                window.location.href = "{{ route('inventario') }}"; // Redirige a la vista de inventario
+                                window.location.href = "{{ route('inventarioservicio') }}"; // Redirige a la vista de inventario
                             });
                         } else {
                             Swal.fire({

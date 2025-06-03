@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\FichaTecnica;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Auth;
 
 class ProcesoEquipoController extends Controller
 {
@@ -166,30 +167,6 @@ class ProcesoEquipoController extends Controller
     }
   
 
-    public function obtenerProcesosPendientes($id)
-    {
-        // Buscar el registro con sus procesos
-        $registro = Registro::with('procesos')->findOrFail($id);
-        
-        // Obtener todos los tipos de procesos disponibles
-        $todosLosProcesos = ['hojalateria', 'mantenimiento', 'stock', 'vendido'];
-        
-        // Obtener los procesos ya completados
-        $procesosCompletados = $registro->procesos->pluck('descripcion_proceso')->toArray();
-    
-        // Depuración: Verificar los procesos completados
-        // dd($procesosCompletados); // Comenta esta línea si no necesitas ver los resultados en el navegador
-    
-        // Filtrar los procesos pendientes
-        $procesosPendientes = array_diff($todosLosProcesos, $procesosCompletados);
-    
-        // Depuración: Verificar los resultados de los procesos pendientes
-        return response()->json([
-            'todosLosProcesos' => $todosLosProcesos,
-            'procesosCompletados' => $procesosCompletados,
-            'procesosPendientes' => $procesosPendientes,
-        ]);
-    }
     
     
     

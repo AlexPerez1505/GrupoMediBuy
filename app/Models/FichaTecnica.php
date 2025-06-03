@@ -16,5 +16,9 @@ public function procesos()
 {
     return $this->hasMany(ProcesoEquipo::class); // Si quieres obtener todos los procesos relacionados con una ficha
 }
-
+    // Relación inversa con cotizaciones
+    public function cotizaciones()
+    {
+        return $this->hasMany(Cotizacion::class);
+    }
 }

@@ -16,23 +16,31 @@ class ClienteController extends Controller
             'email' => 'nullable|email|max:255',
             'comentarios' => 'nullable|string',
         ]);
-
-        // Crear el cliente en la base de datos
+    
+        // Crear el cliente
         $cliente = Cliente::create([
             'nombre' => $request->input('nombre'),
             'apellido' => $request->input('apellido'),
             'telefono' => $request->input('telefono'),
-            'email' => $request->input('email') ?: null, // Si está vacío, lo almacena como null
+            'email' => $request->input('email') ?: null,
             'comentarios' => $request->input('comentarios'),
         ]);
-
-        // Redirigir o responder con éxito
-        return response()->json([
-            'success' => true,
-            'message' => 'Cliente creado exitosamente',
-        ]);
+    
+        // Si la petición espera JSON (AJAX o API), responder con JSON
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'cliente_id' => $cliente->id,
+                'message' => 'Cliente creado exitosamente.'
+            ]);
+        }
+    
+        // Si es una petición normal (HTML), redirige
+        $redirect = $request->input('redirect_to', route('remisions.create'));
+        return redirect($redirect)->with('cliente_creado', true);
     }
-
+    
+    
     public function checkUnique(Request $request)
     {
         $telefono = $request->input('telefono');

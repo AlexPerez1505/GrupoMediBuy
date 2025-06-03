@@ -754,14 +754,18 @@
     <div class="info"><strong>Puesto:</strong> {{ Auth::user()->puesto ?? 'No registrado' }}</div>
     <div class="info"><strong>Vacaciones Disponibles:</strong> {{ Auth::user()->vacaciones_disponibles ?? '0' }} días</div>
     <div class="info"><strong>Vacaciones Utilizadas:</strong> {{ Auth::user()->vacaciones_utilizadas ?? '0' }} días</div>
-    <div class="info"><strong>Permisos:</strong> {{ Auth::user()->permisos ?? '0' }}</div>
-    <div class="info"><strong>Retardos:</strong> {{ Auth::user()->retardos ?? '0' }}</div>
-<!-- Contenedor para centrar el botón -->
-<div class="password-container">
+    <div class="info"><strong>Permisos Disponibles:</strong> {{ Auth::user()->permisos ?? '0' }}</div>
+
+<!-- Contenedor para centrar los botones uno al lado del otro -->
+<div class="password-container" style="display: flex; gap: 1rem; justify-content: center;">
     <a href="{{ route('auth.change-password') }}">
         <button class="btn-modify">Cambiar Contraseña</button>
     </a>
+    <a href="{{ route('mi-historial') }}">
+        <button class="btn-modify">Ver Historial</button>
+    </a>
 </div>
+
 
 
     </div>

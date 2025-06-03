@@ -22,6 +22,17 @@ use App\Http\Controllers\CamionetaController;
 use App\Http\Controllers\FichaTecnicaController;
 use App\Http\Controllers\SolicitudMaterialController;
 use App\Http\Controllers\ServicioController;
+use App\Http\Controllers\MovimientoController;
+use App\Http\Controllers\PrestamoController;
+use App\Http\Controllers\PublicacionController;
+use App\Http\Controllers\ValoracionController;
+use Illuminate\Support\Facades\Mail;
+use App\Http\Controllers\RemisionController;
+use App\Http\Controllers\PagoController;
+use App\Models\Cliente;
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\VentaController;
+use App\Http\Controllers\CartaGarantiaController;
 
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login'])->name('Login');
@@ -255,8 +266,97 @@ Route::get('/solicitudes/listado', [App\Http\Controllers\SolicitudMaterialContro
 Route::get('/cotizaciones/recrear/{id}', [CotizacionController::class, 'recrear'])->name('cotizacion.recrear');
 
 
-Route::get('/servicio', [ServicioController::class, 'index'])->name('servicio.index');
+
 Route::post('/servicio', [ServicioController::class, 'store'])->name('servicio.store');
 
 Route::get('/detalles/{id}', [ServicioController::class, 'detalles'])->name('detalles.equipo');
-Route::get('/inventarioservicio', [ServicioController::class, 'index'])->name('inventario.servicio');
+Route::get('/inventario/servicio', [ServicioController::class, 'index'])->name('inventarioservicio');
+
+// Mostrar formulario de cada tipo de movimiento
+Route::get('/movimientos/salida-mantenimiento/{id}', [MovimientoController::class, 'salidaMantenimiento'])->name('movimientos.salidaMantenimiento');
+Route::get('/movimientos/entrada-mantenimiento/{id}', [MovimientoController::class, 'entradaMantenimiento'])->name('movimientos.entradaMantenimiento');
+Route::get('/movimientos/salida-dueno/{id}', [MovimientoController::class, 'salidaDueno'])->name('movimientos.salidaDueno');
+Route::get('/movimientos/entrada-dueno/{id}', [MovimientoController::class, 'entradaDueno'])->name('movimientos.entradaDueno');
+
+// Guardar movimiento (envío del formulario)
+Route::post('/movimientos/guardar/{id}', [MovimientoController::class, 'guardar'])->name('movimientos.guardar');
+Route::resource('prestamos', PrestamoController::class);
+Route::get('/publicaciones', [PublicacionController::class, 'index'])->name('publicaciones.index');
+Route::get('/publicaciones/crear', [PublicacionController::class, 'create'])->name('publicaciones.create');
+Route::post('/publicaciones', [PublicacionController::class, 'store'])->name('publicaciones.store');
+Route::post('/publicaciones/{id}/like', [PublicacionController::class, 'like'])->name('publicaciones.like');
+Route::get('/publicaciones/fetch', [PublicacionController::class, 'fetchPublicaciones'])->name('publicaciones.fetch');
+Route::get('/publicaciones/ultima-actualizacion', [PublicacionController::class, 'ultimaActualizacion'])->name('publicaciones.ultimaActualizacion');
+Route::get('/publicaciones/{id}', [PublicacionController::class, 'show'])->name('publicaciones.show');
+
+Route::post('/valorar', [ValoracionController::class, 'guardarValoracion'])->name('valorar')->middleware('auth');
+Route::get('/cotizaciones', [CotizacionController::class, 'mostrarFormulario']);
+
+// Mostrar un registro específico (GET para llenar el formulario)
+Route::get('/registro/{id}', [App\Http\Controllers\RegistroController::class, 'mostrarRegistro'])->name('registro.mostrar');
+
+// Actualizar un registro (PUT con AJAX)
+Route::put('/registro/{id}', [App\Http\Controllers\RegistroController::class, 'actualizarRegistro'])->name('registro.actualizar');
+
+Route::delete('/registro/{id}', [RegistroController::class, 'eliminarRegistro'])->name('registro.eliminar');
+
+Route::resource('remisions', RemisionController::class);
+Route::get('remisions/{remision}/descargar-pdf', [RemisionController::class, 'descargarPdf'])->name('remisions.descargarPdf');
+Route::get('/validar-telefono', function (\Illuminate\Http\Request $request) {
+    $valor = preg_replace('/\D/', '', $request->valor);
+    $existe = Cliente::where('telefono', $valor)->exists();
+    return response()->json(['existe' => $existe]);
+});
+
+Route::get('/validar-email', function (\Illuminate\Http\Request $request) {
+    $valor = $request->valor;
+    $existe = Cliente::where('email', $valor)->exists();
+    return response()->json(['existe' => $existe]);
+});
+
+// routes/web.php
+Route::get('/cotizaciones/duplicar/{id}', [CotizacionController::class, 'duplicar'])->name('cotizaciones.duplicar');
+Route::get('/cuentas-por-cobrar', [RemisionController::class, 'cuentasPorCobrar'])->name('remisions.cuentasPorCobrar');
+Route::post('/pagos', [PagoController::class, 'store'])->name('pagos.store');
+Route::post('/pagos', [PagoController::class, 'store'])->name('pagos.store');
+Route::get('/pagos/{item}', [PagoController::class, 'index'])->name('pagos.index');
+Route::get('/pagos/{item}/recibo', [PagoController::class, 'generarPDF'])->name('pagos.recibo.pdf');
+Route::get('/pagos/generar-pdf', [PagoController::class, 'generarPDF'])->name('pagos.generarPDF');
+Route::middleware('auth')->group(function () {
+    Route::get('/ventas/crear', [VentaController::class, 'create'])->name('ventas.create');
+    Route::post('/ventas', [VentaController::class, 'store'])->name('ventas.store');
+    
+    // Nueva ruta para PDF
+    Route::get('/ventas/{venta}/pdf', [VentaController::class, 'pdf'])->name('ventas.pdf');
+});
+Route::middleware('web')->get('/ventas/{venta}', [VentaController::class, 'show'])->name('ventas.show');
+
+Route::get('ventas/{venta}/edit', [VentaController::class, 'edit'])->name('ventas.edit');
+Route::put('ventas/{venta}', [VentaController::class, 'update'])->name('ventas.update');
+Route::get('/ventas', [VentaController::class, 'index'])->name('ventas.index');
+
+// Ver historial de asistencias de un usuario
+Route::get('/asistencias/historial', [AsistenciaController::class, 'verHistorial'])->name('asistencias.historial');
+Route::get('/asistencias/quincena', [AsistenciaController::class, 'obtenerAsistenciasQuincena'])->name('asistencias.quincena');
+Route::get('/asistencia/verificar', [App\Http\Controllers\AsistenciaController::class, 'verificarAsistencia'])->name('asistencia.verificar');
+Route::get('/mi-historial', [AsistenciaController::class, 'miHistorial'])
+    ->name('mi-historial')
+    ->middleware('auth');
+
+
+// Mostrar todos los pagos de una venta (opcional)
+Route::get('/ventas/{venta}/pagos', [VentaController::class, 'indexPagos'])->name('ventas.pagos');
+
+// Guardar un nuevo pago para una venta
+Route::post('/ventas/{venta}/pagos', [VentaController::class, 'storePago'])->name('ventas.pagos.store');
+
+Route::get('/clientes', [VentaController::class, 'clientes'])->name('clientes.search');
+Route::get('/api/ventas', [VentaController::class, 'apiVentas']);
+Route::get('/carta-garantia', [CartaGarantiaController::class, 'index'])->name('carta.index');
+Route::get('/carta-garantia/create', [CartaGarantiaController::class, 'create'])->name('carta.create');
+Route::post('/carta-garantia', [CartaGarantiaController::class, 'store'])->name('carta.store');
+Route::get('/carta-garantia/{id}/descargar', [CartaGarantiaController::class, 'descargar'])->name('carta.descargar');
+Route::delete('/carta-garantia/{id}', [CartaGarantiaController::class, 'destroy'])->name('carta.destroy');
+Route::get('/pagos/seguimiento/{item_id}', [PagoController::class, 'seguimientoInteligente'])->name('pagos.seguimiento');
+
+Route::get('/ventas/seguimiento/{venta}', [App\Http\Controllers\VentaController::class, 'seguimiento'])->name('pagos.index');

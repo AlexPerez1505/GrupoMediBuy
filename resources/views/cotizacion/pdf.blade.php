@@ -43,12 +43,6 @@
     height: 100%;
     line-height: 1; /* Evita que el texto tenga separación extra */
 }
-
-
-
-
-
-
         .background-image {
             position: absolute;
             top: 0;
@@ -195,14 +189,6 @@
 .plan-pagos {
     font-size: 12px; /* Establece el tamaño de la fuente a 12px */
 }
-
-
-
-
-
-
-
-
     </style>
 </head>
 <body>
@@ -219,9 +205,6 @@
 
 
 <div class="info-box">
-
-    
-
     <p>
         <strong>CLIENTE:</strong> {{ $cliente['nombre'] ?? 'Desconocido' }} {{ $cliente['apellido'] ?? '' }}
     </p>
@@ -305,23 +288,15 @@
     @if ($cotizacion->iva > 0)
         <p><strong>IVA:</strong> ${{ number_format($cotizacion->iva, 2) }}</p>
     @endif
-
     <p class="highlight"><strong>Total:</strong> ${{ number_format($cotizacion->total, 2) }}</p>
 </td>
-
-
-
     </tr>
 </table>
-
-
  <!-- Nota -->
 @if (!empty($cotizacion->nota))
     <h3>Nota</h3>
     <p>{{ $cotizacion->nota }}</p>
 @endif
-
-
 <!-- Sección de Términos y Condiciones en pie de página -->
 <div class="footer-container">
     <table class="terms-table">

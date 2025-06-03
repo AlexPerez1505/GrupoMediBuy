@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Servicio;
+use App\Models\Movimiento;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
@@ -16,7 +17,7 @@ class ServicioController extends Controller
         $servicios = Servicio::all();
         return view('inventarioservicio', compact('servicios'));
     }
-    
+
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -28,10 +29,10 @@ class ServicioController extends Controller
             'año' => 'nullable|integer',
             'descripcion' => 'nullable|string',
             'fecha_inicial' => 'required|date',
-            'evidencia1' => 'nullable|image|max:2048',
-            'evidencia2' => 'nullable|image|max:2048',
-            'evidencia3' => 'nullable|image|max:2048',
-            'video' => 'nullable|mimetypes:video/mp4,video/avi,video/mpeg|max:10240',
+            'evidencia1' => 'nullable|image|mimes:jpg,jpeg,png,gif,webp,heic,heif',
+            'evidencia2' => 'nullable|image|mimes:jpg,jpeg,png,gif,webp,heic,heif',
+            'evidencia3' => 'nullable|image|mimes:jpg,jpeg,png,gif,webp,heic,heif',
+            'video-evidencia' => 'nullable|file|mimetypes:video/mp4,video/avi,video/mpeg,video/webm,video/quicktime,video/x-msvideo,video/x-flv,video/3gpp,video/3gpp2,video/x-matroska,video/x-ms-wmv,video/hevc,video/h265,video/mp2t,video/ogg,video/x-matroska,video/mkv',
             'documentoPDF' => 'nullable|file|mimes:pdf|max:10240',
             'firmaDigital' => 'nullable|string',
             'observaciones' => 'nullable|string',
@@ -73,14 +74,29 @@ class ServicioController extends Controller
                 Log::info('Documento PDF guardado correctamente.', ['ruta' => $rutaPDF]);
             }
 
-            $firma = null;
-            if ($request->firmaDigital) {
-                $decodedImage = base64_decode($request->firmaDigital);
-                $nombreFirma = 'firma_' . time() . '.png';
-                Storage::put('public/firmas/' . $nombreFirma, $decodedImage);
-                $firma = Storage::url('public/firmas/' . $nombreFirma);
-                Log::info('Firma digital guardada correctamente.', ['ruta' => $firma]);
-            }
+            // Procesar firma digital
+          // Procesar firma digital
+  // Procesar firma digital
+  $firma = null;
+  if ($request->firmaDigital) {
+    $base64Image = preg_replace('#^data:image/\w+;base64,#i', '', $request->firmaDigital);
+    $decodedImage = base64_decode($base64Image);
+
+    if ($decodedImage !== false) {
+        $nombreFirma = 'firma_' . time() . '.png';
+        // Guardar la firma en la ruta correcta
+        Storage::put('firmas/' . $nombreFirma, $decodedImage);
+
+        // Guardar solo el path relativo
+        $firma = 'firmas/' . $nombreFirma;
+
+        Log::info('Firma digital guardada correctamente.', ['ruta' => $firma]);
+    } else {
+        Log::error('Error al decodificar la firma.');
+    }
+}
+
+
 
             $servicio = Servicio::create([
                 'tipo_equipo' => $request->input('tipo_equipo'),
@@ -120,14 +136,45 @@ class ServicioController extends Controller
             ], 500);
         }
     }
-
     public function detalles($id) 
     {
-        $servicio = Servicio::find($id); // <-- Esta línea es la que faltaba
+        $servicio = Servicio::find($id);
     
         if (!$servicio) {
             return response()->json(['error' => 'Servicio no encontrado.'], 404);
         }
+    
+        $cleanStoragePath = function ($path) {
+            if (!$path) return null;
+    
+            // Si ya es una URL completa, no la toques
+            if (preg_match('/^https?:\/\//', $path)) {
+                return $path;
+            }
+    
+            // Si empieza con 'storage/', limpia esa parte
+            $cleanedPath = preg_replace('#^/?storage/#', '', $path);
+    
+            return Storage::url($cleanedPath);
+        };
+    
+        $movimientos = Movimiento::where('servicio_id', $servicio->id)->get()->map(function ($mov) use ($cleanStoragePath) {
+            return [
+                'id' => $mov->id,
+                'descripcion' => $mov->descripcion,
+                'evidencia1' => $cleanStoragePath($mov->evidencia1),
+                'evidencia2' => $cleanStoragePath($mov->evidencia2),
+                'evidencia3' => $cleanStoragePath($mov->evidencia3),
+                'video' => $cleanStoragePath($mov->video),
+                'tipo_movimiento' => $mov->tipo_movimiento,
+                'fecha' => $mov->created_at->format('Y-m-d H:i:s'),
+                'checklist' => $mov->checklist,
+            ];
+        });
+    
+        // ✅ Usamos directamente la URL guardada en la base de datos
+        $firmaUrl = $servicio->firma_digital ? Storage::url($servicio->firma_digital) : null;
+
     
         return response()->json([
             'tipo_equipo' => $servicio->tipo_equipo,
@@ -138,12 +185,16 @@ class ServicioController extends Controller
             'observaciones' => $servicio->observaciones,
             'numero_serie' => $servicio->numero_serie,
             'fecha_adquisicion' => $servicio->fecha_adquisicion,
+            'estado_proceso' => $servicio->estado_proceso,
             'anio' => $servicio->anio,
-            'documentoPDF' => $servicio->documentoPDF ? Storage::url($servicio->documentoPDF) : null,
-            'evidencia1' => $servicio->evidencia1 ? Storage::url($servicio->evidencia1) : null,
-            'evidencia2' => $servicio->evidencia2 ? Storage::url($servicio->evidencia2) : null,
-            'evidencia3' => $servicio->evidencia3 ? Storage::url($servicio->evidencia3) : null,
-            'video' => $servicio->video ? Storage::url($servicio->video) : null,
+            'documentoPDF' => $cleanStoragePath($servicio->documentoPDF),
+            'evidencia1' => $cleanStoragePath($servicio->evidencia1),
+            'evidencia2' => $cleanStoragePath($servicio->evidencia2),
+            'evidencia3' => $cleanStoragePath($servicio->evidencia3),
+            'firma_digital' => $firmaUrl,
+            'user_name' => $servicio->user_name,
+            'video' => $cleanStoragePath($servicio->video),
+            'movimientos' => $movimientos,
         ]);
     }
     

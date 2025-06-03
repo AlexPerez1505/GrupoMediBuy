@@ -6,6 +6,8 @@
 
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+<!-- Bootstrap 5 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
     <!-- DataTables CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.css">
@@ -26,7 +28,7 @@
 </head>
 
     <style>
-    .titulo-seccion {
+        .titulo-seccion {
     font-size: 18px;
     font-weight: bold;
     margin: 20px 0 10px;
@@ -1098,64 +1100,81 @@ th input {
 
 .btn btn-info {
 
-    align-items: center;
+align-items: center;
 }
 .btn-info {
-    background-color: #17a2b8;
-    color: white;
-    border-radius: 20%;
-    width: 30px;
-    height: 30px;
-    padding: 5px;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.3s ease, transform 0.2s ease;
-    border: none; /* Eliminar bordes duros */
+background-color: #17a2b8;
+color: white;
+border-radius: 20%;
+width: 30px;
+height: 30px;
+padding: 5px;
+align-items: center;
+justify-content: center;
+transition: background 0.3s ease, transform 0.2s ease;
+border: none; /* Eliminar bordes duros */
 }
 .btn-info:hover {
-    background-color: #117a8b; /* Un tono más oscuro en hover */
-    transform: scale(1.1); /* Pequeño efecto de zoom al pasar el cursor */
+background-color: #117a8b; /* Un tono más oscuro en hover */
+transform: scale(1.1); /* Pequeño efecto de zoom al pasar el cursor */
 }
 #btn-mantenimiento {
-    background-color: #FFC107; /* Amarillo */
+background-color: #FFC107; /* Amarillo */
 }
 
 #btn-mantenimiento:hover {
-    background-color: #D39E00; /* Un amarillo más oscuro en hover */
-    transform: scale(1.1); /* Pequeño efecto de zoom al pasar el cursor */
+background-color: #D39E00; /* Un amarillo más oscuro en hover */
+transform: scale(1.1); /* Pequeño efecto de zoom al pasar el cursor */
 }
 #btn-hojalateria {
-    background-color: #007bff; /* Amarillo */
+background-color: #007bff; /* Amarillo */
 }
 
 #btn-hojalateria:hover {
-    background-color: #0056b3; /* Un amarillo más oscuro en hover */
-    transform: scale(1.1); /* Pequeño efecto de zoom al pasar el cursor */
+background-color: #0056b3; /* Un amarillo más oscuro en hover */
+transform: scale(1.1); /* Pequeño efecto de zoom al pasar el cursor */
 }
 #btn-stock {
-    background-color: #52a639; /* Amarillo */
+background-color: #52a639; /* Amarillo */
 }
 
 #btn-stock:hover {
-    background-color: #3d7d29; /* Un amarillo más oscuro en hover */
-    transform: scale(1.1); /* Pequeño efecto de zoom al pasar el cursor */
+background-color: #3d7d29; /* Un amarillo más oscuro en hover */
+transform: scale(1.1); /* Pequeño efecto de zoom al pasar el cursor */
 }
 #btn-vendido {
-    background-color: #e43e3d; /* Amarillo */
+background-color: #e43e3d; /* Amarillo */
 }
 
 #btn-vendido:hover {
-    background-color: #B52F2F; /* Un amarillo más oscuro en hover */
-    transform: scale(1.1); /* Pequeño efecto de zoom al pasar el cursor */
+background-color: #B52F2F; /* Un amarillo más oscuro en hover */
+transform: scale(1.1); /* Pequeño efecto de zoom al pasar el cursor */
 }
+#btn-editar {
+  background-color: #d2b48c; /* Camel claro */
+}
+
+#btn-editar:hover {
+  background-color: #b8946c; /* Camel más oscuro al hacer hover */
+  transform: scale(1.1);
+}
+#btn-borrar {
+  background-color: #e38b6c; /* Terracota suave */
+}
+
+#btn-borrar:hover {
+  background-color: #cc6f51; /* Versión más oscura al hacer hover */
+  transform: scale(1.1);
+}
+
 #btn-defectuoso {
-    background-color: #6c757d; /* Gris neutro */
+background-color: #6c757d; /* Gris neutro */
 }
 
 #btn-defectuoso:hover {
-    background-color: #5a6268; /* Gris más oscuro al hacer hover */
-    border-color: #5a6268;
-    transform: scale(1.1); /* Efecto de zoom al pasar el cursor */
+background-color: #5a6268; /* Gris más oscuro al hacer hover */
+border-color: #5a6268;
+transform: scale(1.1); /* Efecto de zoom al pasar el cursor */
 }
 
 
@@ -2169,7 +2188,7 @@ text-align: center;
     }
     .titulos {
         font-size: 20px;
-        transform: translateX(-165%); /* Elimina el desplazamiento lateral en pantallas pequeñas */
+        transform: translateX(-15%); /* Elimina el desplazamiento lateral en pantallas pequeñas */
     }
     .menu-hamburguesa {
         justify-self: start; /* Alinea el menú al inicio */
@@ -2184,7 +2203,7 @@ text-align: center;
 @media (max-width: 375px) {
     .titulos {
         font-size: 20px;
-        transform: translateX(-135%); /* Elimina el desplazamiento lateral en pantallas pequeñas */
+        transform: translateX(-15%); /* Elimina el desplazamiento lateral en pantallas pequeñas */
     }
 }
 /* Contenedor principal */
@@ -2497,6 +2516,150 @@ textarea {
     height: 24px;
     font-size: 1rem;
 }
+/* Importar fuente Inter */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+/* General */
+#modalEditar .modal-content {
+    font-family: 'Inter', sans-serif;
+    background: #fafdff;
+    border-radius: 18px;
+    border: none;
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    padding: 0;
+}
+
+/* Header */
+#modalEditar .modal-header {
+    background-color: #7cb8eb;
+    padding: 24px;
+    border-bottom: none;
+    text-align: center; /* centra el contenido */
+    justify-content: center; /* centra el contenido con flex */
+    display: flex;
+    position: relative;
+}
+
+#modalEditar .modal-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #153e75;
+    margin: 0;
+    text-align: center;
+    flex-grow: 1;
+}
+
+#modalEditar .btn-close {
+    filter: brightness(0.6);
+    opacity: 1;
+    font-size: 1.3rem;
+}
+
+/* Body */
+#modalEditar .modal-body {
+    padding: 24px;
+    background-color: #fafdff;
+}
+
+/* Labels */
+#modalEditar .form-label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #0e3c65;
+    margin-bottom: 4px;
+}
+
+/* Inputs y Textareas */
+#modalEditar .form-control,
+#modalEditar textarea {
+    background-color: #ffffff;
+    border: 1px solid #d0e3f5;
+    border-radius: 12px;
+    padding: 10px 14px;
+    font-size: 0.95rem;
+    color: #1e1e1e;
+    transition: all 0.2s ease-in-out;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+#modalEditar .form-control:focus,
+#modalEditar textarea:focus {
+    border-color: #6cb8f6;
+    box-shadow: 0 0 0 3px rgba(108, 184, 246, 0.15);
+    outline: none;
+}
+
+/* Footer */
+#modalEditar .modal-footer {
+    background-color: #f3f9ff;
+    padding: 20px 24px;
+    border-top: none;
+    display: flex;
+    justify-content: center; /* centrado */
+}
+
+/* Botón principal */
+#modalEditar .btn-primary {
+    background: linear-gradient(to right, #5fa8f3, #1e6bb8);
+    border: none;
+    border-radius: 12px;
+    padding: 10px 24px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: white;
+    transition: background 0.3s ease;
+    box-shadow: 0 5px 12px rgba(95, 168, 243, 0.3);
+}
+
+#modalEditar .btn-primary:hover {
+    background: linear-gradient(to right, #479fe6, #3b92d9);
+}
+
+/* Inputs en columnas */
+#modalEditar .col-md-6,
+#modalEditar .col-md-3,
+#modalEditar .col-md-12 {
+    margin-bottom: 16px;
+}
+
+.swal2-popup {
+    font-family: 'Arial', sans-serif;
+    background-color: #f8f9fa;
+    border-radius: 15px;
+}
+.swal2-title {
+    color: #343a40;
+}
+.swal2-content {
+    color: #495057;
+}
+.swal2-popup .btn-custom-confirm {
+    background-color: #4CAF50; /* Verde suave */
+    color: white;
+    border-radius: 10px;
+    padding: 12px 25px;
+    border: none; /* Eliminar borde */
+    margin-right: 10px; /* Separar botones */
+    transition: background-color 0.3s ease;
+}
+.swal2-popup .btn-custom-confirm:hover {
+    background-color: #45a049; /* Verde un poco más oscuro */
+}
+.btn-custom-cancel {
+    background-color: #DC3545; /* Gris suave */
+    color: white;
+    border-radius: 10px;
+    padding: 12px 25px;
+    border: none; /* Eliminar borde */
+    margin-left: 10px; /* Separar botones */
+    transition: background-color 0.3s ease;
+}
+.btn-custom-cancel:hover {
+    background-color: #C82333; /* Gris un poco más oscuro */
+}
+
+
 
 
 
@@ -2528,18 +2691,29 @@ textarea {
 
             <!-- Ítems del menú -->
             <ul class="menu-items">
-                <li>
-                    <a href="{{ url('/') }}">
-                        <img src="{{ asset('images/registro.png') }}" alt="Icono Registro de Inventario" class="menu-icon-image">
-                        Registro de Inventario
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ url('/inventario') }}">
-                        <img src="{{ asset('images/inventario.png') }}" alt="Icono de Inventario" class="menu-icon-image">
-                        Inventario
-                    </a>
-                </li>
+                <li class="menu-items">
+    <a href="#" onclick="toggleSubmenu(event, 'submenu-publicacion')">
+        <img src="{{ asset('images/publicacion.png') }}" alt="Icono de Publicacion" class="menu-icon-image">
+        Publicaciones
+    </a>
+    <ul id="submenu-publicacion" class="submenu">
+        <li><a href="{{ url('/publicaciones') }}">Ver publicaciones</a></li>
+        <li><a href="{{ url('/publicaciones/crear') }}">+ Agregar</a></li>
+    </ul>
+</li>
+            <li class="menu-items">
+    <a href="#" onclick="toggleSubmenu(event, 'submenu-inventario')">
+        <img src="{{ asset('images/inventario.png') }}" alt="Icono de Inventario" class="menu-icon-image">
+        Inventario
+    </a>
+    <ul id="submenu-inventario" class="submenu">
+        <li><a href="{{ url('/') }}">Registro Interno</a></li>
+        <li><a href="{{ url('/inventario') }}">Inventario Interno</a></li>
+        <li><a href="{{ url('/servicio') }}">Registro Externo</a></li>
+        <li><a href="{{ url('/inventario/servicio') }}">Inventario Externo</a></li>
+    </ul>
+</li>
+
 
                 <!-- Opción de Cotizaciones con Submenú -->
                 @if(Auth::user()->hasRole('admin') || Auth::user()->hasRole('editor'))
@@ -2552,6 +2726,19 @@ textarea {
                         <li><a href="{{ url('/cotizaciones') }}">+ Crear Cotización</a></li>
                         <li><a href="{{ url('/clientes/vista') }}">Clientes</a></li>
                         <li><a href="{{ route('historial-cotizaciones') }}">Historial de Cotizaciones</a></li>
+                    </ul>
+                </li>
+                @endif
+                <!-- Opción de Cotizaciones con Submenú -->
+                @if(Auth::user()->hasRole('admin') || Auth::user()->hasRole('editor'))
+                <li class="menu-items">
+                    <a href="#" onclick="toggleSubmenu(event, 'submenu-orden')">
+                        <img src="{{ asset('images/orden.png') }}" alt="Icono de Orden" class="menu-icon-image">
+                        Mantenimiento
+                    </a>
+                    <ul id="submenu-orden" class="submenu">
+                        <li><a href="{{ url('/remisions/create') }}">+ Crear Orden</a></li>
+                        <li><a href="{{ url('/remisions') }}">Historial</a></li>
                     </ul>
                 </li>
                 @endif
@@ -2634,6 +2821,14 @@ textarea {
                     </ul> 
                 </li>
                 @endif
+                @auth
+<li>
+    <a href="{{ route('prestamos.index') }}">
+        <img src="{{ asset('images/endoscopia.png') }}" alt="Icono de Préstamos" class="menu-icon-image">
+        Préstamos
+    </a>
+</li>
+@endauth
 
                 @auth
                     <li>
@@ -2676,112 +2871,99 @@ textarea {
                         <!-- Tipo de Equipo -->
                         
     <!-- Primera fila con cuatro campos -->
-    <div class="form-row">
-    <div class="form-group col-md-3">
+    <div class="row">
+    <div class="col-md-3 mb-3">
         <label for="Tipo_de_equipo">Tipo de Equipo</label>
-        <div class="form-group w-100 d-flex align-items-center">
+        <div class="d-flex align-items-center w-100">
             <div class="icon-container">
                 <img src="{{ asset('images/tipo.png') }}" alt="Tipo de Equipo icon" class="icon">
             </div>
             <input type="text" id="Tipo_de_equipo" name="Tipo_de_equipo"
-                class="form-controln form-controlqueja-la iconized" readonly>
+                   class="form-controln form-controlqueja-la iconized w-100" readonly>
         </div>
     </div>
 
-    <div class="form-group col-md-3">
+    <div class="col-md-3 mb-3">
         <label for="Subtipo">Subtipo de Equipo</label>
-        <div class="form-group w-100 d-flex align-items-center">
+        <div class="d-flex align-items-center w-100">
             <div class="icon-container">
                 <img src="{{ asset('images/producto.png') }}" alt="Subtipo de Equipo icon" class="icon">
             </div>
             <input type="text" id="Subtipo" name="Subtipo"
-                class="form-controln form-controlqueja-lb iconized" readonly>
+                   class="form-controln form-controlqueja-lb iconized w-100" readonly>
         </div>
     </div>
 
-    <div class="form-group col-md-3">
+    <div class="col-md-3 mb-3">
         <label for="Serie">Serie</label>
-        <div class="form-group w-100 d-flex align-items-center">
+        <div class="d-flex align-items-center w-100">
             <div class="icon-container">
                 <img src="{{ asset('images/serie.png') }}" alt="Número de serie icon" class="icon">
             </div>
             <input type="text" id="Serie" name="Serie"
-                class="form-controln form-controlqueja-lc iconized" readonly>
+                   class="form-controln form-controlqueja-lc iconized w-100" readonly>
         </div>
     </div>
 
-    <div class="form-group col-md-3">
+    <div class="col-md-3 mb-3">
         <label for="Marca">Marca</label>
-        <div class="form-group w-100 d-flex align-items-center">
+        <div class="d-flex align-items-center w-100">
             <div class="icon-container">
                 <img src="{{ asset('images/marca.png') }}" alt="Marca icon" class="icon">
             </div>
-            <input type="text" id="Marca" name="Marca"
-                class="form-controln form-controlqueja-ld iconized" readonly>
+            <!-- SOLO MUESTRA, NO ENVÍA NADA -->
+<input type="text" id="Marca" class="form-controln form-controlqueja-ld iconized w-100" readonly>
+
         </div>
     </div>
 </div>
 
-<!-- Segunda fila -->
-<div class="form-row">
-    <div class="form-group col-md-3">
+<div class="row">
+    <div class="col-md-3 mb-3">
         <label for="Modelo">Modelo</label>
-        <div class="form-group w-100 d-flex align-items-center">
+        <div class="d-flex align-items-center w-100">
             <div class="icon-container">
                 <img src="{{ asset('images/modelo.png') }}" alt="Modelo icon" class="icon">
             </div>
-            <input type="text" id="Modelo" name="Modelo"
-                class="form-controln form-controlqueja-le iconized" readonly>
+            <input type="text" id="Modelo" class="form-controln form-controlqueja-le iconized w-100" readonly>
+
         </div>
     </div>
 
-    <div class="form-group col-md-3">
-        <label for="EstadoActual">Estado Terminado</label>
-        <div class="form-group w-100 d-flex align-items-center">
-            <div class="icon-container">
-                <img src="{{ asset('images/modelo.png') }}" alt="Estado icon" class="icon">
-            </div>
-            <input type="text" id="EstadoActual" name="EstadoActual"
-                class="form-controln form-controlqueja-le iconized" readonly>
-        </div>
-    </div>
-
-    <div class="form-group col-md-3">
-        <label for="Fecha_adquisición">Fecha de Adquisición</label>
-        <div class="form-group w-100 d-flex align-items-center">
+    <div class="col-md-3 mb-3">
+        <label for="Fecha_adquisicion">Fecha de Adquisición</label>
+        <div class="d-flex align-items-center w-100">
             <div class="icon-container">
                 <img src="{{ asset('images/modelo.png') }}" alt="Fecha de adquisición icon" class="icon">
             </div>
             <input type="text" id="Fecha_adquisicion" name="Fecha_adquisicion"
-                class="form-controln form-controlqueja-le iconized" readonly>
+                   class="form-controln form-controlqueja-le iconized w-100" readonly>
         </div>
     </div>
 
-   
-    
-    <!-- Tercera fila -->
-    <div class="form-group col-md-3">
+    <div class="col-md-3 mb-3">
         <label for="Año">Año</label>
-        <div class="form-group w-100">
-            <input type="text" id="Año" name="Año" class="form-controln form-controlqueja-lf" readonly>
+        <div class="w-100">
+            <input type="text" id="Año" name="Año"
+                   class="form-controln form-controlqueja-lf w-100" readonly>
         </div>
     </div>
-</div>
-</div>
-    <div class="form-row">
-        
-    <div class="form-group col-md-3">
+
+    <div class="col-md-3 mb-3">
         <label for="photo">Evidencia</label>
-        <div class="form-group w-100 d-flex align-items-center">
+        <div class="d-flex align-items-center w-100">
             <div class="icon-container">
                 <img src="{{ asset('images/imagen.jpeg') }}" alt="Foto del equipo" class="icon-pin">
             </div>
-            <button id="viewFilesButton" class="form-controln form-controlqueja-li iconized flex-grow-1" type="button">
+            <button id="viewFilesButton" type="button"
+                    class="form-controln form-controlqueja-li iconized w-100">
                 Ver archivos
             </button>
         </div>
     </div>
 </div>
+</div>
+
 
 <!-- Contenedor de imágenes -->
 <div id="fileContainer" style="display: none;">
@@ -2813,6 +2995,8 @@ textarea {
  
 
 
+
+
     <!-- Observaciones -->
     <div class="form-grupo col-12 col-md-6 px-3">
         <div class="label-container">
@@ -2823,34 +3007,31 @@ textarea {
         </div>
     </div>
     <div class="container">
-   
+    <div class="row align-items-center">
+        <!-- Columna del video -->
         <div class="col-md-6">
             <div id="videoContainer" class="video-preview-container">
                 <!-- Aquí se inyectará el video con JavaScript -->
             </div>
         </div>
+
+        <!-- Columna de la firma digital -->
+        <div class="col-md-6 text-center">
+            <label for="firma" class="form-label">Firma Digital</label><br>
+            <img id="firmaDigitalImagen" src="" alt="Firma Digital" style="max-width: 100%; height: auto; display: none;" class="img-fluid border border-dark rounded shadow">
+
+            <!-- Nombre del firmante -->
+            <div id="firmaUsuarioNombre" style="display: none; margin-top: 10px;">
+                <strong>Firmado por:</strong> <br> <span id="nombreUsuarioTexto" class="text-primary fst-italic" style="font-style: italic; color: #0d6efd;"></span>
+            </div>
+        </div>
     </div>
-
-
-
-
 </div>
+
+
 <div class="division"></div>
 <div class="titulo-seccion">Reporte Hojalatería</div>
 <div id="procesosContainer"></div>
-
-
-
-                    <!--  
-                    <div class="form-grupo btnqueja-container">
-                        <button type="reset" class="btn btnqueja-danger" data-toggle="modal" data-target="#addNoteModa2">
-                            <img src="{{ asset('images/borrar.png') }}" alt="Borrar icon" class="icono-queja">
-                            Borrar
-                        </button>
-                        <button type="button" class="btn btnqueja-success" data-toggle="modal" data-target="#addNoteModal">
-                            <img src="{{ asset('images/editar.png') }}" alt="Enviar icon" class="icono-queja">
-                            Modificar
-                        </button>-->
 
                     </div>
 
@@ -2934,10 +3115,16 @@ textarea {
     <button class="btn btn-info btn-defectuoso" id="btn-defectuoso" data-id="{{ $producto->id }}" data-estado="{{ $producto->estado_proceso }}">
         <i class="fa fa-exclamation-triangle"></i>
     </button>
+    <button class="btn btn-info btn-editar" id="btn-editar" data-id="{{ $producto->id }}">
+    <i class="fa fa-edit"></i>
+</button>
+
+
+<button class="btn btn-info btn-eliminar" id="btn-borrar" data-id="{{ $producto->id }}">
+    <i class="fa fa-trash"></i>
+</button>
+
 </td>
-
-
-
                 </tr>
             @endforeach
         </tbody>
@@ -2955,6 +3142,233 @@ textarea {
         </tfoot>
     </table>
 </div>
+<!-- Modal de edición -->
+<div class="modal fade" id="modalEditar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form id="formEditar">
+                @csrf
+                <input type="hidden" id="registro_id">
+
+                <div class="modal-header">
+                    <h5 class="modal-title">Editar Registro</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Tipo de Equipo</label>
+                        <input type="text" name="tipo_equipo" id="Tipo_de_Equipo" class="form-control">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Subtipo de Equipo</label>
+                        <input type="text" name="subtipo_equipo" id="Subtipo_de_Equipo" class="form-control">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Número de Serie</label>
+                        <input type="text" name="numero_serie" id="Numero_de_Serie" class="form-control">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Marca</label>
+                        <input type="text" name="marca" id="marca" class="form-control">
+                    </div>
+                    <div class="col-md-6">
+    <label class="form-label">Modelo</label>
+    <input type="text" name="modelo" id="modelo" class="form-control">
+</div>
+                    <div class="col-md-3">
+                        <label class="form-label">Año</label>
+                        <input type="text" name="anio" id="Año" class="form-control">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Fecha Inicial</label>
+                        <input type="date" name="fecha_adquisicion" id="fecha_inicial" class="form-control">
+                    </div>
+
+                    <div class="col-md-12">
+                        <label class="form-label">Descripción</label>
+                        <textarea name="descripcion" id="descripcion" class="form-control"></textarea>
+                    </div>
+
+                    <div class="col-md-12">
+                        <label class="form-label">Observaciones</label>
+                        <textarea name="observaciones" id="observaciones" class="form-control"></textarea>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Actualizar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    $('.btn-eliminar').on('click', function () {
+        const id = $(this).data('id');
+
+        Swal.fire({
+            title: '¿Estás seguro?',
+            text: "Esta acción no se puede deshacer.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar',
+            customClass: {
+                popup: 'swal2-popup',
+                title: 'swal2-title',
+                htmlContainer: 'swal2-content',
+                confirmButton: 'btn-custom-confirm',
+                cancelButton: 'btn-custom-cancel'
+            },
+            buttonsStyling: false
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch(`/registro/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Eliminado!',
+                        text: data.message,
+                        customClass: {
+                            popup: 'swal2-popup',
+                            title: 'swal2-title',
+                            htmlContainer: 'swal2-content',
+                        },
+                        confirmButtonText: 'OK',
+                        buttonsStyling: false,
+                          confirmButton: 'btn-custom-confirm'
+                    }).then(() => {
+                        location.reload();
+                    });
+                })
+                .catch(error => {
+                    console.error('Error al eliminar:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'No se pudo eliminar el registro.',
+                        customClass: {
+                            popup: 'swal2-popup',
+                            title: 'swal2-title',
+                            htmlContainer: 'swal2-content',
+                        },
+                        confirmButtonText: 'OK',
+                        buttonsStyling: false,
+                        confirmButtonClass: 'btn-custom-cancel'
+                    });
+                });
+            }
+        });
+    });
+});
+</script>
+<script>
+$(document).ready(function () {
+    $('.btn-editar').on('click', function () {
+        const id = $(this).data('id');
+
+        $.get(`/registro/${id}`, function (data) {
+            console.log("Datos recibidos:", data);
+
+            $('#registro_id').val(data.id);
+            $('#Tipo_de_Equipo').val(data.tipo_equipo);
+            $('#Subtipo_de_Equipo').val(data.subtipo_equipo);
+            $('#Numero_de_Serie').val(data.numero_serie);
+            $('#marca').val(data.marca);
+            $('#modelo').val(data.modelo);
+            $('#Año').val(data.anio);
+            $('#descripcion').val(data.descripcion);
+            $('#fecha_inicial').val(data.fecha_adquisicion ? data.fecha_adquisicion.substring(0, 10) : '');
+            $('#observaciones').val(data.observaciones);
+
+            const modal = new bootstrap.Modal(document.getElementById('modalEditar'));
+            modal.show();
+        });
+    });
+
+    $('#formEditar').on('submit', function (e) {
+        e.preventDefault();
+        $('.text-danger').remove(); // Borra errores anteriores
+
+        const id = $('#registro_id').val();
+        const formData = $(this).serialize();
+
+        $.ajax({
+            url: `/registro/${id}`,
+            type: 'PUT',
+            data: formData,
+            success: function (response) {
+                if (response.success) {
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('modalEditar'));
+                    modal.hide();
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Actualizado!',
+                        text: response.message,
+                        customClass: {
+                              confirmButton: 'btn-custom-confirm'
+                        },
+                        confirmButtonText: 'OK',
+                        buttonsStyling: false
+                    }).then(() => {
+                        location.reload();
+                    });
+                }
+            },
+            error: function (xhr) {
+                if (xhr.status === 422) {
+                    const errores = xhr.responseJSON.errors;
+                    mostrarErrores(errores);
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Error inesperado al actualizar el registro.',
+                        customClass: {
+                              confirmButton: 'btn-custom-confirm'
+                        },
+                        confirmButtonText: 'OK',
+                        buttonsStyling: false
+                    });
+                }
+            }
+        });
+    });
+
+    function mostrarErrores(errores) {
+        for (const campo in errores) {
+            const mensajes = errores[campo];
+            const input = $(`[name="${campo}"]`);
+            if (input.length) {
+                input.after(`<small class="text-danger">${mensajes[0]}</small>`);
+            }
+        }
+    }
+});
+</script>
+
+
+
+
+
 <script>
 function actualizarProcesosPendientes(id) {
     $.ajax({
@@ -3329,6 +3743,26 @@ $(document).ready(function () {
                 $('#observaciones').val(response.observaciones);
 
                 $('#documentoPDF').next('iframe').remove();
+                if (response.firma_digital) {
+    $('#firmaDigitalImagen').attr('src', response.firma_digital).show();
+
+    // Mostrar nombre del usuario si existe
+    if (response.user_name) {
+        $('#nombreUsuarioTexto').text(response.user_name);
+        $('#firmaUsuarioNombre').show();
+    } else {
+        $('#firmaUsuarioNombre').hide();
+    }
+} else {
+    $('#firmaDigitalImagen').hide();
+    $('#firmaUsuarioNombre').hide();
+}
+
+
+
+
+                
+            
 
                 if (response.documentoPDF) {
                     const pdfPath = response.documentoPDF.startsWith('/storage/') || response.documentoPDF.startsWith('http')
@@ -3383,126 +3817,124 @@ $(document).ready(function () {
                 // Procesos
                 $('#procesosContainer').empty();
 
-                if (response.procesos && response.procesos.length > 0) {
-                    response.procesos.forEach(function (proceso) {
-                        let procesoHTML = `
-                            <div class="col-12 d-flex justify-content-center align-items-center">
-                                <div class="proceso-wrapper text-center">
-                                    <label for="descripcion_proceso_${proceso.id}" class="video-label">
-                                        Descripción del Proceso (ID: ${proceso.id}):
-                                    </label>
-                                    <div class="d-flex justify-content-center">
-                                        <textarea id="descripcion_proceso_${proceso.id}" rows="4" class="form-controln form-controlqueja-lj w-100 text-center" readonly>${proceso.descripcion_proceso}</textarea>
-                                    </div>
-                                </div>
-                            </div>
+if (response.procesos && response.procesos.length > 0) {
+    response.procesos.forEach(function (proceso) {
+        let tipoBadge = `
+            <div class="reporte-separador bg-secondary-subtle text-dark border-start border-4 border-dark mb-4 p-3 rounded">
+                ⚙️ <strong>Proceso Técnico</strong>
+            </div>`;
 
-<div class="col-12 d-flex justify-content-center align-items-center mt-4">
-    <div class="w-100" style="max-width: 600px;">
-     ${
-    proceso.defectos && proceso.defectos.trim() !== ''
-        ? `
-        <div class="col-12 d-flex justify-content-center align-items-center mt-4">
-            <div class="w-100" style="max-width: 600px;">
-                <label class="form-label fw-semibold text-dark fs-5 mb-3">
-                    Defectos del Proceso (ID: ${proceso.id})
-                </label>
-                <ul class="list-group list-group-flush shadow-sm rounded-3 border">
-                    ${
-                        proceso.defectos.split(',').map(defecto => {
-                            defecto = defecto.replace(/\\u00e9/g, 'é')
-                                             .replace(/\\u00ed/g, 'í')
-                                             .replace(/\\u00f3/g, 'ó')
-                                             .replace(/\\u00fa/g, 'ú')
-                                             .replace(/\\u00e1/g, 'á')
-                                             .replace(/\\u00e0/g, 'à')
-                                             .replace(/\\u00f1/g, 'ñ')
-                                             .replace(/\\u00e7/g, 'ç')
-                                             .replace(/\\u20ac/g, '€');
-                            return `
-                                <li class="list-group-item d-flex align-items-center gap-3 py-3">
-                                    <span class="check-icon bg-success-subtle text-success-emphasis rounded-circle d-flex justify-content-center align-items-center">
-                                        <i class="bi bi-check-lg"></i>
-                                    </span>
-                                    <span class="text-body">${defecto.trim()}</span>
-                                </li>
-                            `;
-                        }).join('')
-                    }
-                </ul>
+        let procesoHTML = `
+            <div class="col-12 d-flex justify-content-center align-items-center">
+                <div class="proceso-wrapper text-center">
+                    ${tipoBadge}
+                    <label for="descripcion_proceso_${proceso.id}" class="video-label">
+                        Descripción del Proceso (ID: ${proceso.id}):
+                    </label>
+                    <div class="d-flex justify-content-center">
+                        <textarea id="descripcion_proceso_${proceso.id}" rows="4" class="form-controln form-controlqueja-lj w-100 text-center" readonly>${proceso.descripcion_proceso}</textarea>
+                    </div>
+                </div>
             </div>
-        </div>
-        `
-        : ''
+        `;
+
+        // Defectos (checklist-style)
+        if (proceso.defectos && proceso.defectos.trim() !== '') {
+            let defectosList = proceso.defectos.split(',').map(defecto => {
+                defecto = defecto.replace(/\\u[\dA-F]{4}/gi, match => decodeURIComponent('%' + match.replace(/\\u/g, '')));
+                return `
+                    <li class="list-group-item d-flex align-items-center gap-3 py-3">
+                        <span class="check-icon bg-success-subtle text-success-emphasis rounded-circle d-flex justify-content-center align-items-center">
+                            <i class="bi bi-check-lg"></i>
+                        </span>
+                        <span class="text-body">${defecto.trim()}</span>
+                    </li>
+                `;
+            }).join('');
+
+            procesoHTML += `
+                <div class="col-12 d-flex justify-content-center align-items-center mt-4">
+                    <div class="w-100" style="max-width: 600px;">
+                        <label class="form-label fw-semibold text-dark fs-5 mb-3">
+                            Defectos del Proceso (ID: ${proceso.id})
+                        </label>
+                        <ul class="list-group list-group-flush shadow-sm rounded-3 border">
+                            ${defectosList}
+                        </ul>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Ficha técnica
+        if (proceso.ficha_tecnica_archivo && proceso.ficha_tecnica_archivo !== 'null') {
+            procesoHTML += `
+                <div class="col-12 d-flex justify-content-center align-items-center mt-3">
+                    <div class="proceso-wrapper text-center">
+                        <label class="video-label">Ficha Técnica (ID: ${proceso.id}):</label>
+                        <iframe src="/storage/${proceso.ficha_tecnica_archivo}" class="ficha-tecnica d-none d-md-block" frameborder="0"></iframe>
+                        <a href="/storage/${proceso.ficha_tecnica_archivo}" target="_blank" class="btn btn-primary d-block d-md-none mt-2">
+                            📄 Ver Ficha Técnica
+                        </a>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Evidencias
+        let evidenciasProceso = [proceso.evidencia1, proceso.evidencia2, proceso.evidencia3].filter(Boolean);
+        if (evidenciasProceso.length > 0) {
+            procesoHTML += `<div class="evidencias-container mt-3">`;
+            evidenciasProceso.forEach(ev => {
+                const evUrl = ev.startsWith('http') ? ev : '/storage/' + ev;
+                procesoHTML += evUrl.match(/\.(jpg|jpeg|png|gif)$/i)
+                    ? `<img src="${evUrl}" alt="Evidencia" class="evidencia-img">`
+                    : `<iframe src="${evUrl}" class="evidencia-pdf"></iframe>`;
+            });
+            procesoHTML += `</div>`;
+        }
+
+        // Video
+        if (proceso.video) {
+            const videoUrl = proceso.video.startsWith('http') ? proceso.video : '/storage/' + proceso.video;
+            const shareUrl = encodeURIComponent(window.location.origin + videoUrl);
+            procesoHTML += `
+                <div class="col-12 d-flex justify-content-center align-items-center mt-3">
+                    <div class="video-wrapper" style="max-width: 640px; width: 100%;">
+                        <label class="video-label">Video del Proceso (ID: ${proceso.id}):</label>
+                        <div class="video-container position-relative video-menu-wrapper">
+                            <video controls class="mov-video" style="width: 100%; border-radius: 8px;">
+                                <source src="${videoUrl}" type="video/mp4">
+                                Tu navegador no soporta el formato de video.
+                            </video>
+                            <div class="menu-toggle position-absolute top-0 end-0 m-2" style="z-index: 10; cursor: pointer;">
+                                <img src="https://img.icons8.com/material-outlined/24/000000/more.png" alt="Más opciones" style="width: 30px; height: 30px;">
+                            </div>
+                            <div class="menu-options position-absolute top-0 end-0 mt-5 me-2 p-2 bg-white shadow rounded border"
+                                style="display: none; z-index: 20; min-width: 160px;">
+                                <a href="https://wa.me/?text=${shareUrl}" target="_blank" 
+                                class="d-block mb-1 text-decoration-none text-dark">
+                                    📤 Compartir por WhatsApp
+                                </a>
+                                <a href="${videoUrl}" download 
+                                class="d-block text-decoration-none text-dark">
+                                    ⬇️ Descargar video
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        $('#procesosContainer').append(procesoHTML);
+    });
+
+    $('#procesosContainer').show();
+} else {
+    $('#procesosContainer').hide();
 }
 
-    </div>
-</div>
-                        `;
-                        // Ficha técnica
-                        if (proceso.ficha_tecnica_archivo && proceso.ficha_tecnica_archivo !== 'null') {
-                            procesoHTML += `
-                                <div class="col-12 d-flex justify-content-center align-items-center">
-                                    <div class="proceso-wrapper text-center">
-                                        <label class="video-label">Ficha Técnica (ID: ${proceso.id}):</label>
-                                        <iframe 
-                                            src="/storage/${proceso.ficha_tecnica_archivo}" 
-                                            class="ficha-tecnica d-none d-md-block" 
-                                            frameborder="0">
-                                        </iframe>
-                                        <a href="/storage/${proceso.ficha_tecnica_archivo}" 
-                                           target="_blank" 
-                                           class="btn btn-primary d-block d-md-none mt-2">
-                                           📄 Ver Ficha Técnica
-                                        </a>
-                                    </div>
-                                </div>
-                            `;
-                        }
-
-                        // Evidencias del proceso
-                        let evidenciasProceso = [proceso.evidencia1, proceso.evidencia2, proceso.evidencia3].filter(Boolean);
-                        if (evidenciasProceso.length > 0) {
-                            procesoHTML += `
-                                <div class="form-group">
-                                    <div class="label-container">
-                                        <label>Evidencias del Proceso (ID: ${proceso.id}):</label>
-                                        <div class="evidencias-container">
-                                            ${evidenciasProceso.map(e => `
-                                                ${e.endsWith('.jpg') || e.endsWith('.png') || e.endsWith('.jpeg') || e.endsWith('.gif') ? 
-                                                    `<img src="${e}" alt="Evidencia" class="evidencia-img">` : 
-                                                    `<iframe src="${e}" class="evidencia-pdf"></iframe>`}
-                                            `).join('')}
-                                        </div>
-                                    </div>
-                                </div>
-                            `;
-                        }
-
-                        // Video del proceso
-                        if (proceso.video) {
-                            procesoHTML += `
-                                <div class="col-12 d-flex justify-content-center align-items-center">
-                                    <div class="video-wrapper">
-                                        <label class="video-label">Video del Proceso (ID: ${proceso.id}):</label>
-                                        <div class="video-container">
-                                            <video controls>
-                                                <source src="${proceso.video}" type="video/mp4">
-                                                Tu navegador no soporta el formato de video.
-                                            </video>
-                                        </div>
-                                    </div>
-                                </div>
-                            `;
-                        }
-
-                        $('#procesosContainer').append(procesoHTML);
-                    });
-
-                    $('#procesosContainer').show();
-                } else {
-                    $('#procesosContainer').hide();
-                }
             },
             error: function (xhr, status, error) {
                 $('#loadingIndicator').hide();
@@ -3513,7 +3945,38 @@ $(document).ready(function () {
     });
 });
 </script>
+<script>
+document.addEventListener('click', function(e) {
+    // Mostrar u ocultar el menú si se hace clic en el botón de opciones
+    if (e.target.closest('.menu-toggle')) {
+        const wrapper = e.target.closest('.video-menu-wrapper');
+        const menu = wrapper.querySelector('.menu-options');
+        const isVisible = menu.style.display === 'block';
+        
+        // Cerrar todos los menús abiertos
+        document.querySelectorAll('.menu-options').forEach(m => m.style.display = 'none');
+        
+        // Alternar visibilidad del actual
+        if (!isVisible) {
+            menu.style.display = 'block';
+        }
 
+        e.stopPropagation();
+    } else {
+        // Si haces clic fuera, oculta todos los menús
+        document.querySelectorAll('.menu-options').forEach(m => m.style.display = 'none');
+    }
+});
+
+// Ocultar menú al reproducir video
+document.addEventListener('play', function(e) {
+    if (e.target.classList.contains('mov-video')) {
+        const wrapper = e.target.closest('.video-menu-wrapper');
+        const menu = wrapper.querySelector('.menu-options');
+        if (menu) menu.style.display = 'none';
+    }
+}, true); // Usa `true` para capturar en fase de captura
+</script>
 
 
 
@@ -3731,6 +4194,11 @@ function toggleSubmenu(event, submenuId) {
     submenu.style.display = (submenu.style.display === "block") ? "none" : "block";
 }
 </script>
+<!-- jQuery (necesario para AJAX si usas Bootstrap 4) -->
+
+
+<!-- Bootstrap 5 JS Bundle -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
         <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.css">
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.2.7/css/responsive.dataTables.min.css">

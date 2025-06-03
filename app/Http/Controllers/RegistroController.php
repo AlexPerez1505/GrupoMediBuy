@@ -1,7 +1,5 @@
 <?php
-
 namespace App\Http\Controllers;
-
 use App\Models\Registro;
 use App\Models\ProcesoEquipo;
 use Illuminate\Http\Request;
@@ -10,13 +8,11 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 
-
 class RegistroController extends Controller
 {
     public function guardarRegistro(Request $request) 
     {
-        // Validar los campos del formulario
-        // Validar los campos del formulario
+
         $validator = Validator::make($request->all(), [
             'Tipo_de_Equipo' => 'required|string|max:255',
             'Subtipo_de_Equipo' => 'nullable|string|max:255',
@@ -46,11 +42,8 @@ class RegistroController extends Controller
                 'errors' => $validator->errors()
             ], 422);
         }
-    
         try {
             Log::info('Inicio del proceso de guardar registro.');
-    
-            // Variables para almacenar rutas
             $evidencias = [null, null, null];
     
             // Manejo de imágenes separadas
@@ -66,8 +59,6 @@ class RegistroController extends Controller
                     }
                 }
             }
-    
-            // Manejar video
             $video = null;
             if ($request->hasFile('video-evidencia') && $request->file('video-evidencia')->isValid()) {
                 $rutaVideo = $request->file('video-evidencia')->store('public/videos');
@@ -84,16 +75,21 @@ class RegistroController extends Controller
             }
     
             // Manejar firma digital
-            $firma = null;
-            if ($request->firmaDigital) {
-                $decodedImage = base64_decode($request->firmaDigital);
-                $nombreFirma = 'firma_' . time() . '.png';
-                Storage::put('public/firmas/' . $nombreFirma, $decodedImage);
-                $firma = Storage::url('public/firmas/' . $nombreFirma);
-                Log::info('Firma digital guardada correctamente.', ['ruta' => $firma]);
-            }
-    
-            // Crear el registro en la base de datos con columnas separadas
+           // Manejar firma digital
+$firma = null;
+if ($request->firmaDigital) {
+    // Quitar encabezado 'data:image/png;base64,'
+    $base64Image = preg_replace('#^data:image/\w+;base64,#i', '', $request->firmaDigital);
+    $decodedImage = base64_decode($base64Image);
+    if ($decodedImage !== false) {
+        $nombreFirma = 'firma_' . time() . '.png';
+        Storage::put('public/firmas/' . $nombreFirma, $decodedImage);
+        $firma = Storage::url('firmas/' . $nombreFirma);
+        Log::info('Firma digital guardada correctamente.', ['ruta' => $firma]);
+    } else {
+        Log::error('Error al decodificar la firma.');
+    }
+}
             $registro = Registro::create([
                 'tipo_equipo' => $request->Tipo_de_Equipo,
                 'subtipo_equipo' => $request->Subtipo_de_Equipo,
@@ -118,9 +114,7 @@ class RegistroController extends Controller
             ]);
     
             Log::info('Registro creado exitosamente.', ['id' => $registro->id]);
-    
             return response()->json(['success' => true, 'message' => 'Registro guardado exitosamente.']);
-    
         } catch (\Exception $e) {
             Log::error('Error al guardar el registro.', [
                 'error' => $e->getMessage(),
@@ -132,17 +126,11 @@ class RegistroController extends Controller
             ], 500);
         }
     }
-    
-// Función para mostrar los productos en el DataTable
 public function mostrarProductos()
 {
-    // Obtener todos los registros (productos)
     $productos = Registro::all();
 
-    // Crear una colección vacía si la vista espera procesos
     $procesos = collect(); 
-
-    // Retornar la vista con los productos y procesos vacíos
     return view('inventario', compact('productos', 'procesos'));
 }
 public function obtenerDetalles($id)
@@ -157,11 +145,8 @@ public function obtenerDetalles($id)
         3 => 'En Mantenimiento',
         4 => 'Defectuoso',
     ];
-
-    // Obtener el estado actual del registro
     $estadoActual = $estados[$registro->estado_actual] ?? 'Estado desconocido';
 
-    // Obtener todos los procesos asociados al registro
     $procesos = $registro->procesos->map(function ($proceso) {
         // Verificar y ajustar la ruta de la ficha técnica
         $fichaArchivo = $proceso->fichaTecnica ? $proceso->fichaTecnica->archivo : null;
@@ -170,18 +155,12 @@ public function obtenerDetalles($id)
     : (trim($proceso->defectos) !== '' && strtolower($proceso->defectos) !== 'null'
         ? $proceso->defectos
         : null);
-
-
-
-
-
         if ($fichaArchivo) {
             // Verifica si la ruta ya tiene el prefijo 'fichas_tecnicas/'
             if (!str_contains($fichaArchivo, 'fichas_tecnicas/')) {
                 $fichaArchivo = 'fichas_tecnicas/' . $fichaArchivo;
             }
         }
-
         return [
             'id' => $proceso->id,
             'descripcion_proceso' => $proceso->descripcion_proceso ?? 'No disponible',
@@ -194,7 +173,14 @@ public function obtenerDetalles($id)
             'defectos' => $defectos, // Aquí se asigna directamente la cadena
         ];
     });
-
+    $firmaPath = $registro->firma_digital;
+    if ($firmaPath && str_contains($firmaPath, 'storage/')) {
+        $firmaUrl = asset($firmaPath); // ya tiene /storage
+    } elseif ($firmaPath) {
+        $firmaUrl = asset('storage/' . $firmaPath);
+    } else {
+        $firmaUrl = null;
+    }
     return response()->json([
         'tipo_equipo' => $registro->tipo_equipo,
         'subtipo_equipo' => $registro->subtipo_equipo,
@@ -212,37 +198,110 @@ public function obtenerDetalles($id)
         'evidencia2' => $registro->evidencia2,
         'evidencia3' => $registro->evidencia3,
         'documentoPDF' => $registro->documentoPDF, 
-        'video' => $registro->video, // Incluye el video
+        'video' => $registro->video, 
+                'firma_digital' => $firmaUrl,
+'user_name' => $registro->user_name,
         'procesos' => $procesos,
     ]);
-
-
-
-
-
-    // Retornar la vista con la información del registro y sus procesos
     return view('inventario', compact('registro', 'procesos', 'estadoActual'));
 }
-// En RegistroController.php
+
+public function actualizarRegistro(Request $request, $id)
+{
+    $registro = Registro::findOrFail($id);
+
+    $validator = Validator::make($request->all(), [
+        'tipo_equipo' => 'required|string|max:255',
+        'subtipo_equipo' => 'nullable|string|max:255',
+        'subtipo_equipo_otro' => 'nullable|string|max:255',
+        'numero_serie' => 'required|string|max:255',
+        'marca' => 'required|string|max:255',
+        'modelo' => 'required|string|max:255',
+        'anio' => 'nullable|string|max:4',
+        'descripcion' => 'required|string',
+        'estado_actual' => 'nullable|in:1,2,3,4',
+        'fecha_adquisicion' => 'required|date',
+        'ultimo_mantenimiento' => 'nullable|date',
+        'proximo_mantenimiento' => 'nullable|date',
+        'observaciones' => 'nullable|string',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json([
+            'success' => false,
+            'errors' => $validator->errors()
+        ], 422);
+    }
+
+    try {
+        $registro->update([
+            'tipo_equipo' => $request->tipo_equipo,
+            'subtipo_equipo' => $request->subtipo_equipo,
+            'subtipo_equipo_otro' => $request->subtipo_equipo_otro,
+            'numero_serie' => $request->numero_serie,
+            'marca' => $request->marca,
+            'modelo' => $request->modelo,
+            'anio' => $request->anio,
+            'descripcion' => $request->descripcion,
+            'estado_actual' => $request->estado_actual,
+            'fecha_adquisicion' => $request->fecha_adquisicion,
+            'ultimo_mantenimiento' => $request->ultimo_mantenimiento,
+            'proximo_mantenimiento' => $request->proximo_mantenimiento,
+            'observaciones' => $request->observaciones,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Registro actualizado exitosamente.'
+        ]);
+    } catch (\Exception $e) {
+        Log::error('Error al actualizar el registro.', ['error' => $e->getMessage()]);
+
+        return response()->json([
+            'success' => false,
+            'error' => 'Hubo un error al actualizar el registro.'
+        ], 500);
+    }
+}
+
+public function mostrarRegistro($id)
+{
+    $registro = Registro::findOrFail($id);
+    return response()->json($registro);
+}
+
+public function eliminarRegistro($id)
+{
+    try {
+        $registro = Registro::findOrFail($id);
+
+        // Si hay archivos, puedes borrarlos físicamente aquí si lo deseas.
+        // Storage::delete('ruta');
+
+        $registro->delete();
+
+        return response()->json(['success' => true, 'message' => 'Registro eliminado correctamente.']);
+    } catch (\Exception $e) {
+        Log::error('Error al eliminar el registro.', ['error' => $e->getMessage()]);
+        return response()->json(['success' => false, 'error' => 'Hubo un error al eliminar el registro.'], 500);
+    }
+}
+
 public function obtenerProcesosPendientes($id)
 {
-    // Cargar el registro con la relación 'procesos'
+
     $registro = Registro::with('procesos')->findOrFail($id);
 
-    // Definir los procesos disponibles
+
     $todosLosProcesos = ['hojalateria', 'mantenimiento', 'stock', 'finalizado'];
 
-    // Obtener los procesos ya completados
+
     $procesosCompletados = $registro->procesos->pluck('descripcion_proceso')->toArray();
 
-    // Filtrar los procesos pendientes
+ 
     $procesosPendientes = array_diff($todosLosProcesos, $procesosCompletados);
 
     return response()->json($procesosPendientes);
 }
-
-
-
-
-    
+  
 }

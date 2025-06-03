@@ -83,7 +83,27 @@
                 </div>
             </div>
 
+
             <div class="form-group">
+                <label for="estado" class="label_nomina">Estado:</label>
+                <div class="form-group">
+                    <div class="input_consulta">
+                        <div class="icon-container2">
+                            <img src="{{ asset('images/asistencia.png') }}" alt="Acceso" class="icon2">
+                        </div>
+                       <select class="form-control" name="estado" style="background-color: #ffff; display:block; width: 100%;" required>
+    <option value="">Selecciona</option>
+    <option value="asistencia">Asistencia</option>
+    <option value="falta">Falta</option>
+    <option value="permiso">Permiso</option>
+    <option value="vacaciones">Vacaciones</option>
+    <option value="retardo">Retardo</option>
+    <option value="salida">Salida</option> <!-- Nueva opción -->
+</select>
+
+                    </div>
+                </div>
+                            <div class="form-group">
     <label for="fecha" class="label_nomina">Fecha:</label>
     <input type="date" class="form-control select" name="fecha" required value="{{ \Carbon\Carbon::today()->toDateString() }}">
 </div>
@@ -92,23 +112,6 @@
     <label for="hora" class="label_nomina">Hora:</label>
     <input type="time" class="form-control select" name="hora" id="hora" required>
 </div>
-            <div class="form-group">
-                <label for="estado" class="label_nomina">Estado:</label>
-                <div class="form-group">
-                    <div class="input_consulta">
-                        <div class="icon-container2">
-                            <img src="{{ asset('images/asistencia.png') }}" alt="Acceso" class="icon2">
-                        </div>
-                        <select class="form-control" name="estado" style="background-color: #ffff; display:block; width: 100%;" required>
-                            <option value="">Selecciona</option>
-                            <option value="asistencia">Asistencia</option>
-                            <option value="falta">Falta</option>
-                            <option value="permiso">Permiso</option>
-                            <option value="vacaciones">Vacaciones</option>
-                            <option value="retardo">Retardo</option>
-                        </select>
-                    </div>
-                </div>
             </div>
 
             <button type="submit" class="btn btn-primary btn-custom">Registrar</button>
@@ -127,5 +130,82 @@
         document.getElementById("hora").value = `${hours}:${minutes}`;
     });
 </script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const estadoSelect = document.querySelector('select[name="estado"]');
+    const horaGroup = document.querySelector('input[name="hora"]').closest('.form-group');
+    const horaInput = document.querySelector('input[name="hora"]');
+
+    function toggleHora() {
+        const estado = estadoSelect.value.toLowerCase();
+        if (estado === 'falta' || estado === 'permiso' || estado === 'vacaciones') {
+            // Ocultar hora y no requerir
+            horaGroup.style.display = 'none';
+            horaInput.required = false;
+            horaInput.value = ''; // opcional: limpiar valor
+        } else {
+            // Mostrar hora y requerir
+            horaGroup.style.display = 'block';
+            horaInput.required = true;
+            // Opción: si quieres volver a establecer la hora actual cuando se muestre, descomenta la siguiente línea:
+            // let now = new Date(); horaInput.value = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+        }
+    }
+
+    estadoSelect.addEventListener('change', toggleHora);
+
+    // Ejecutar al cargar para estado predeterminado (por si hay valor seleccionado)
+    toggleHora();
+});
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const userSelect = document.querySelector('select[name="user_id"]');
+    const fechaInput = document.querySelector('input[name="fecha"]');
+    const estadoSelect = document.querySelector('select[name="estado"]');
+
+    async function verificarAsistencia() {
+        const userId = userSelect.value;
+        const fecha = fechaInput.value;
+
+        if (!userId || !fecha) return;
+
+        try {
+            const response = await fetch(`/asistencia/verificar?user_id=${userId}&fecha=${fecha}`);
+            const data = await response.json();
+
+            if (data.tieneEntrada) {
+                // Cambiar estado a "salida"
+                estadoSelect.value = 'salida';
+                estadoSelect.dispatchEvent(new Event('change'));
+
+                // Mostrar Toast minimalista
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'info',
+                    title: 'Empleado ya registrado',
+                    text: 'El estado se cambió a "Salida" automáticamente.',
+                    showConfirmButton: false,
+                    timer: 4000,
+                    timerProgressBar: true,
+                    didOpen: (toast) => {
+                        toast.addEventListener('mouseenter', Swal.stopTimer)
+                        toast.addEventListener('mouseleave', Swal.resumeTimer)
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Error al verificar asistencia:', error);
+        }
+    }
+
+    userSelect.addEventListener('change', verificarAsistencia);
+    fechaInput.addEventListener('change', verificarAsistencia);
+});
+</script>
+
+
+
 </body>
 @endsection

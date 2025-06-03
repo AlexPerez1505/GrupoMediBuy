@@ -24,7 +24,8 @@ class Cotizacion extends Model
         'nota',
         'valido_hasta',
         'lugar_cotizacion',
-        'registrado_por' // Campo agregado
+        'registrado_por', // Campo agregado
+        'ficha_tecnica_id',
     ];
 
     protected $casts = [
@@ -42,4 +43,24 @@ class Cotizacion extends Model
             }
         });
     }
+    // App\Models\Cotizacion.php
+
+// App\Models\Cotizacion.php
+
+    // Relación con la ficha técnica
+    public function fichaTecnica()
+    {
+        return $this->belongsTo(FichaTecnica::class);
+    }
+
+    public function paquetes()
+    {
+        return $this->hasMany(Paquete::class);
+    }
+    
+    public function productos()
+    {
+        return $this->hasMany(Producto::class);
+    }
+
 }

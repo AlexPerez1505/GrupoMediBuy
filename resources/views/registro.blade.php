@@ -1070,7 +1070,6 @@
                         Inventario
                     </a>
                 </li>
-
                 <!-- Opción de Cotizaciones con Submenú -->
                 @if(Auth::user()->hasRole('admin') || Auth::user()->hasRole('editor'))
                 <li class="menu-items">
@@ -1098,8 +1097,6 @@
                         Agenda
                     </a>
                 </li>
-
-                <!-- Nueva opción: Guias y Entregas, visible para todos los usuarios autenticados -->
                 @auth
                 <li class="menu-items">
                     <a href="#" onclick="toggleSubmenu(event, 'submenu-guias')">
@@ -1113,8 +1110,6 @@
                     </ul>
                 </li>
                 @endauth
-
-                <!-- Nueva opción: Usuarios, visible solo para el Admin con Submenú -->
                 @if(Auth::user()->hasRole('admin'))
                 <li class="menu-items">
                     <a href="#" onclick="toggleSubmenu(event, 'submenu-usuarios')">
@@ -1128,7 +1123,6 @@
                     </ul> 
                 </li>
                 @endif
-
                 @auth
                     <li>
                         <form action="{{ route('logout') }}" method="POST">
@@ -1148,32 +1142,21 @@
                 @endauth
             </ul>
         </nav>
-
-    <!-- Overlay para cerrar el menú -->
     <div id="menu-overlay" class="menu-overlay" onclick="closeMenu()"></div>
 </div>
         <h1 class="titulos">Registro de Inventario</h1>
-        <!-- <img src="{{ asset('images/Medibuy.png') }}" alt="Logo" class="logo">-->
-    
     <div class="gradient-bg-animation"></div>
     </div>
-    <!-- Contenedor para centrar -->
     <div class="contenedor-wrapper">
         <div class="contenedor_general">
         <form id="registroForm" action="{{ route('registro.guardar') }}" method="POST" enctype="multipart/form-data">
-
     @csrf
-
-
-                <!-- Información del Equipo -->
-
                 <div class="row text-start">
                                 <div class="col-10" style="margin-top: 25px;">
                                     <h5 class="titulos_encabezado">Información del Equipo</h5>
                                 </div>
                                 <div class="row" style="margin: 0 auto; gap: 10px;">
    <div class="container">
-    <!-- Primera fila -->
     <div class="row">
         <div class="col-md-4 col-12 mb-3">
             <label for="Tipo de Equipo" class="label_nomina d-block mb-1">Tipo de Equipo</label>
@@ -1205,13 +1188,10 @@
                 <img src="{{ asset('images/producto.png') }}" alt="Subtipo de Equipo" class="icon2">
             </div>
             <select class="form-control" id="subtipoEquipo" name="Subtipo de Equipo" style="background-color: #ffff; display:block; width: 100%;" value="{{ old('Subtipo_de_Equipo') }}"required>
-                <!-- Las opciones se cargarán dinámicamente -->
             </select>
         </div>
     </div>
 </div>
-
-<!-- Contenedor para especificar subtipo -->
 <div class="col-md-4 col-12 mb-3" id="subtipoEquipoOtroContainer" style="display: none;">
     <label for="Subtipo de Equipo" class="label_nomina align-self-start mb-1">Especifica el Subtipo de Equipo</label>
     <div class="form-group">
@@ -1223,7 +1203,6 @@
         </div>
     </div>
 </div>
-
         <div class="col-md-4 col-12 mb-3">
             <label for="Numero de Serie" class="label_nomina align-self-start mb-1">Número de Serie</label>
             <div class="form-group">
@@ -1243,8 +1222,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Segunda fila -->
     <div class="row">
         <div class="col-md-3 col-12 mb-3">
             <label for="Marca" class="label_nomina align-self-start mb-1">Marca</label>
@@ -1300,13 +1277,10 @@
                 maxlength="4"
                 pattern="\d{4}"
                 title="El año debe ser un número de 4 dígitos"
-                value="{{ old('Año') }}"
-            >
+                value="{{ old('Año') }}">
         </div>
     </div>
 </div>
-
-
         <div class="col-md-4 col-12">
             <label for="descripcion" class="label_nomina d-block mb-1">Descripción</label>
             <div class="form-group">
@@ -1315,43 +1289,18 @@
         </div>
     </div>
 </div>
-
-
 <div class="division"></div>
-<!-- Estado y Uso -->
 <div class="row text-start">
     <div class="col-10" style="margin-top: 17px;">
  <h5 class="titulos_encabezado">Evidencia</h5>
  </div>
 <div class="row d-flex justify-content-between align-items-start" style="margin: 15px;">
-    <!-- Estado Actual -->
-   
-
-
-
-
-
-    <!-- Fecha de Adquisición -->
     <div class="col-md-3 col-12 mb-3">
         <label for="fecha_inicial" class="label_nomina mb-1">Fecha de Adquisición</label>
         <div class="form-group">
             <input type="date" class="form-control select" id="fecha_inicial" name="fecha_inicial" value="{{ old('fecha_inicial') }}"required>
         </div>
     </div>
-
-    <!-- Último Mantenimiento -->
-  
-
-    <!-- 
-    <div class="col-md-3 col-12 mb-3">
-        <label for="proximo_mantenimiento" class="label_nomina mb-1">Próximo Mantenimiento</label>
-        <div class="form-group">
-            <input type="date" class="form-control select" id="proximo_mantenimiento" name="proximo_mantenimiento" value="{{ old('proximo_mantenimiento') }}">
-        </div>
-    </div>
- -->
-
-
     <div class="form-grupo col-md-6">
     <div class="d-block w-100">
         <label class="label_nomina mb-1">Fotos del equipo
@@ -1405,14 +1354,8 @@
         <div id="preview3" class="image-preview"></div>
     </div>
 </div>
-
-
-
     </div>
 </div>
-
-
-
 <div class="form-grupo col-md-6" style="margin-top: -200px; position: relative;">
     <div class="d-block w-100">
         <label for="video-evidencia" class="label_nomina mb-1" >Video del equipo
@@ -1440,22 +1383,12 @@
         </div>
     </div>
 </div>
-
 <div class="division"></div>
 
                 <!-- Observaciones -->
                 <h5 class="titulos_encabezado">Notas Adicionales</h5>
                  <!-- Campo para subir PDF -->
                  <div class="cuadro mt-4">
-                 
-  
-
-
-
-
-
-
-
     <!-- Observaciones -->
     <div class="mb-4">
         <label for="observaciones" class="form-label">Observaciones</label>
@@ -1487,10 +1420,8 @@
         </div>
         <input type="hidden" id="firmaInput" name="firmaDigital"value="{{ old('firmaDigital') }}" />
     </div>
-
 </div>
 </div>
-
 <body>
 
 

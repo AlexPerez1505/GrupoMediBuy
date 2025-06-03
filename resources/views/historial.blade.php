@@ -2,6 +2,12 @@
 @section('title', 'Historial')
 @section('titulo', 'Historial de Cotizaciones')
 @section('content')
+<style>
+    body{
+        background: #F5FAFF;
+    }
+</style>
+<body>
 <div class="form-container-lower">
     <div class="table-responsive">
         <table id="cotizacionesTable" class="stripe row-border order-column" style="width:100%">
@@ -12,7 +18,7 @@
                     <th>Fecha</th>
                     <th>Total</th>
                     <th>Estado</th>
-                    <th>Registrado por</th>
+                    <th>Registrado por</th> <!-- Nueva columna -->
                     <th>Acciones</th>
                 </tr>
             </thead>
@@ -32,13 +38,9 @@
                         <td>{{ $estado }}</td>
                         <td>{{ $cotizacion->registrado_por ?: 'Desconocido' }}</td> 
                         <td>
-                            <button class="btn btn-descargapdf descargar-pdf" data-id="{{ $cotizacion->id }}">
-                                Descargar PDF
-                            </button>
+                            <button class="btn btn-descargapdf descargar-pdf" data-id="{{ $cotizacion->id }}">Descargar PDF</button>
+                            <a href="{{ route('cotizaciones.duplicar', $cotizacion->id) }}" class="btn btn-warning">Duplicar</a>
 
-                            <a href="{{ route('cotizaciones.recrear', $cotizacion->id) }}" class="btn btn-primary">
-                                Recrear
-                            </a>
                         </td>
                     </tr>
                 @endforeach
@@ -46,7 +48,6 @@
         </table>
     </div>
 </div>
-
 @endsection
 
 
@@ -130,4 +131,5 @@ $(document).ready(function () {
 });
 
 </script>
+</body>
 @endsection

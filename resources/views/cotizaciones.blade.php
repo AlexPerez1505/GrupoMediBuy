@@ -7,6 +7,7 @@
     body{
         background: #F5FAFF;
     }
+    
 </style>
 <body>
 <div class="container mt-4">
@@ -124,18 +125,6 @@
             + Crear Producto
         </button>
     </li>
-
-    <!-- Mostrar paquetes primero -->
-    @foreach($paquetes as $paquete)
-        <li>
-            <button class="dropdown-item modern-dropdown-item" 
-                    data-id="{{ $paquete->id }}" 
-                    data-productos='@json($paquete->productos)'
-                    onclick="agregarPaqueteDesdeData(this)">
-                📦 {{ strtoupper($paquete->nombre) }} - Paquete
-            </button>
-        </li>
-    @endforeach
 
     <!-- Mostrar productos ordenados alfabéticamente -->
     @foreach($productos->sortBy('tipo_equipo') as $producto)
@@ -305,6 +294,13 @@
     <div id="listaPagosPersonalizados" class="mt-3"></div>
 </div>
 
+<label for="ficha_tecnica_id">Ficha Técnica:</label>
+<select name="ficha_tecnica_id" id="ficha_tecnica_id" required>
+    <option value="">Seleccionar ficha técnica</option>
+    @foreach ($fichas as $ficha)
+        <option value="{{ $ficha->id }}">{{ $ficha->nombre }}</option>
+    @endforeach
+</select>
 
 <div class="d-flex gap-2 mt-3">
     <button id="generate-pdf" class="btn btn-primary">Generar PDF</button>
@@ -523,6 +519,7 @@ document.addEventListener("DOMContentLoaded", function () {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
+              "Accept": "application/json",  
               "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content,
             },
             body: JSON.stringify({ nombre, apellido, telefono, email, comentarios }),
@@ -979,12 +976,6 @@ function actualizarPrecioModificado(event) {
 
     actualizarTotales();
 }
-
-
-
-
-
-
 // Función para eliminar un producto de la lista
 function eliminarProductoSeleccionado(id) {
     productosSeleccionados = productosSeleccionados.filter(p => p.id !== id);
@@ -1103,8 +1094,6 @@ function actualizarPlanPagos(total) {
         planPagosDiv.appendChild(p);
     });
 }
-
-
 function generarPagosPersonalizados(total) {
     let meses = parseInt(document.getElementById('mesesPersonalizado').value) || 1;
     let contenedorPagos = document.getElementById('listaPagosPersonalizados');
@@ -1198,19 +1187,6 @@ function recalcularPagosPersonalizados() {
         sumaPagos = Array.from(listaPagos).reduce((acc, input) => acc + parseFloat(input.value), 0);
     }
 
-    // Mostrar los pagos en plan-pagos con formato de miles
-    listaPagos.forEach((input, index) => {
-        let monto = parseFloat(input.value) || 0;
-        let p = document.createElement('p');
-
-        // Mantener el primer pago como "Pago inicial"
-        p.textContent = index === 0 
-            ? `Pago inicial: $${monto.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`
-            : `Pago ${index}: $${monto.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`;
-
-        planPagosDiv.appendChild(p);
-    });
-
     // Agregar mensaje de validación
     let totalPagosP = document.createElement('p');
     totalPagosP.classList.add('no-imprimir');
@@ -1236,29 +1212,6 @@ document.getElementById('listaPagosPersonalizados').addEventListener('input', fu
         recalcularPagosPersonalizados();
     }
 });
-
-
-// Validar pagos antes de generar PDF
-document.getElementById('generate-pdf').addEventListener('click', function () {
-    let total = parseFloat(document.getElementById('total').textContent.replace('$', '')) || 0;
-    let tipoPago = document.getElementById('tipoPago').value;
-
-    if (tipoPago === 'personalizado') {
-        let listaPagos = document.querySelectorAll('#listaPagosPersonalizados input');
-        let sumaPagos = 0;
-
-        listaPagos.forEach(input => {
-            sumaPagos += parseFloat(input.value.replace(',', '')) || 0;
-
-        });
-
-       
-    }
-
-    // Aquí puedes continuar con la lógica para generar el PDF
-    console.log('Generando PDF con pagos correctos...');
-});
-
 // Eventos
 document.getElementById('tipoPago').addEventListener('change', function() {
     document.getElementById('opcionesDinamicas').style.display = this.value === 'dinamico' ? 'block' : 'none';
@@ -1277,8 +1230,6 @@ document.getElementById('aplicarIva').addEventListener('change', actualizarTotal
 document.getElementById('pagoInicial').addEventListener('input', actualizarTotales);
 document.getElementById('pagoCreditoInicial').addEventListener('input', actualizarTotales);
 document.getElementById('plazoCredito').addEventListener('input', actualizarTotales);
-
-
 </script>
 
 
@@ -1331,7 +1282,8 @@ document.getElementById('generate-pdf').addEventListener('click', function () {
         nota: notaCliente,
         valido_hasta: validoHasta,
         lugar_cotizacion: lugarCotizacion,
-        registrado_por: registradoPor // Se agrega el nombre del usuario autenticado
+        registrado_por: registradoPor, // Se agrega el nombre del usuario autenticado
+        ficha_tecnica_id: document.getElementById('ficha_tecnica_id')?.value || null // <--- ESTA LÍNEA
     };
 
     console.log("Enviando datos:", data); // Verifica en la consola si los datos están correctos
