@@ -239,7 +239,8 @@
 
 
 </div>
-<input type="hidden" id="detalleFinanciamientoInput" name="detalle_financiamiento" value="">
+<input type="hidden" id="pagosJsonInput" name="pagos_json" value="">
+
 
                                <br>
                                <div class="form-group mt-4">
@@ -298,6 +299,10 @@ document.addEventListener('DOMContentLoaded', function () {
         return moneda.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' });
     }
 
+    function formatoFechaISO(date) {
+        return date.toISOString().split('T')[0]; // yyyy-mm-dd
+    }
+
     function actualizarPlanPagos(total) {
         planPagosDiv.innerHTML = '';
         window.pagos = [];
@@ -316,42 +321,44 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-const agregarPago = (cuota, fecha, descripcion) => {
-    const fechaCopia = new Date(fecha); // ✅ Asegura que no se use referencia compartida
-    const fechaStr = fechaCopia.toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' });
-    window.pagos.push({ cuota: formatoMoneda(cuota), mes: fechaCopia, descripcion });
-    const p = document.createElement('p');
-    p.innerHTML = `<strong>${descripcion} - ${fechaStr}:</strong> ${formatear(parseFloat(cuota))}`;
-    planPagosDiv.appendChild(p);
-};
+        const agregarPago = (cuota, fecha, descripcion) => {
+            const fechaCopia = new Date(fecha);
+            const fechaStr = fechaCopia.toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' });
+            const fechaISO = formatoFechaISO(fechaCopia);
+            window.pagos.push({ cuota: formatoMoneda(cuota), mes: fechaISO, descripcion });
 
-if (tipo === 'estatico') {
-    if (total < 500000) {
-        let fechaIni = new Date(fechaPago);
-        agregarPago(total * 0.5, fechaIni, 'Pago inicial');
+            const p = document.createElement('p');
+            p.innerHTML = `<strong>${descripcion} - ${fechaStr}:</strong> ${formatear(parseFloat(cuota))}`;
+            planPagosDiv.appendChild(p);
+        };
 
-        let fecha1 = new Date(fechaPago);
-        fecha1.setMonth(fecha1.getMonth() + 1);
-        agregarPago(total * 0.25, fecha1, 'Primer pago');
+        if (tipo === 'estatico') {
+            if (total < 500000) {
+                let fechaIni = new Date(fechaPago);
+                agregarPago(total * 0.5, fechaIni, 'Pago inicial');
 
-        let fecha2 = new Date(fechaPago);
-        fecha2.setMonth(fecha2.getMonth() + 2);
-        agregarPago(total * 0.25, fecha2, 'Segundo pago');
-    } else {
-        let fechaIni = new Date(fechaPago);
-        let primerPago = total * 0.4;
-        agregarPago(primerPago, fechaIni, 'Pago inicial');
+                let fecha1 = new Date(fechaPago);
+                fecha1.setMonth(fecha1.getMonth() + 1);
+                agregarPago(total * 0.25, fecha1, 'Primer pago');
 
-        let restante = total - primerPago;
-        let numPagos = Math.min(6, Math.max(4, Math.ceil(restante / 50000)));
-        let cuotaRestante = restante / numPagos;
+                let fecha2 = new Date(fechaPago);
+                fecha2.setMonth(fecha2.getMonth() + 2);
+                agregarPago(total * 0.25, fecha2, 'Segundo pago');
+            } else {
+                let fechaIni = new Date(fechaPago);
+                let primerPago = total * 0.4;
+                agregarPago(primerPago, fechaIni, 'Pago inicial');
 
-        for (let i = 0; i < numPagos; i++) {
-            let fecha = new Date(fechaPago);
-            fecha.setMonth(fecha.getMonth() + i + 1); // i+1 porque ya se hizo el pago inicial
-            agregarPago(cuotaRestante, fecha, `${nombresPagos[i] || (i + 1)} pago`);
-        }
-    }
+                let restante = total - primerPago;
+                let numPagos = Math.min(6, Math.max(4, Math.ceil(restante / 50000)));
+                let cuotaRestante = restante / numPagos;
+
+                for (let i = 0; i < numPagos; i++) {
+                    let fecha = new Date(fechaPago);
+                    fecha.setMonth(fecha.getMonth() + i + 1);
+                    agregarPago(cuotaRestante, fecha, `${nombresPagos[i] || (i + 1)} pago`);
+                }
+            }
         } else if (tipo === 'dinamico') {
             let pagoIni = parseFloat(pagoInicial.value) || 0;
             if (pagoIni <= 0 || pagoIni >= total) {
@@ -447,57 +454,62 @@ if (tipo === 'estatico') {
         recalcularPagosPersonalizados();
     }
 
-    function recalcularPagosPersonalizados() {
-        let total = obtenerTotal();
-        let listaPagos = document.querySelectorAll('#listaPagosPersonalizados input');
-        let sumaPagos = 0;
-        let pagosNoEditados = [];
+function recalcularPagosPersonalizados() {
+    let total = obtenerTotal();
+    let listaPagos = document.querySelectorAll('#listaPagosPersonalizados input');
+    let sumaPagos = 0;
+    let pagosNoEditados = [];
+    let nombresPagos = ["Primer", "Segundo", "Tercer", "Cuarto", "Quinto", "Sexto", "Séptimo", "Octavo", "Noveno", "Décimo", "Undécimo", "Duodécimo"];
 
-        listaPagos.forEach((input) => {
-            if (!input.dataset.modificado) pagosNoEditados.push(input);
+    listaPagos.forEach((input) => {
+        if (!input.dataset.modificado) pagosNoEditados.push(input);
+    });
+
+    listaPagos.forEach(input => sumaPagos += parseFloat(input.value) || 0);
+
+    if (Math.abs(sumaPagos - total) > 0.01 && pagosNoEditados.length > 0) {
+        let diferencia = total - sumaPagos;
+        let ajuste = diferencia / pagosNoEditados.length;
+
+        pagosNoEditados.forEach(input => {
+            let nuevo = (parseFloat(input.value) || 0) + ajuste;
+            input.value = nuevo.toFixed(2);
         });
-
-        listaPagos.forEach(input => sumaPagos += parseFloat(input.value) || 0);
-
-        if (Math.abs(sumaPagos - total) > 0.01 && pagosNoEditados.length > 0) {
-            let diferencia = total - sumaPagos;
-            let ajuste = diferencia / pagosNoEditados.length;
-
-            pagosNoEditados.forEach(input => {
-                let nuevo = (parseFloat(input.value) || 0) + ajuste;
-                input.value = nuevo.toFixed(2);
-            });
-        }
-
-        planPagosDiv.innerHTML = "";
-        window.pagos = [];
-
-        let fechaBase = new Date();
-        listaPagos.forEach((input, index) => {
-            let monto = parseFloat(input.value) || 0;
-            let fechaPago = new Date(fechaBase);
-            fechaPago.setMonth(fechaPago.getMonth() + index);
-            const fechaStr = fechaPago.toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' });
-
-            window.pagos.push({
-                cuota: monto.toFixed(2),
-                descripcion: index === 0 ? "Pago inicial" : `Pago ${index}`,
-                mes: fechaPago
-            });
-
-            let p = document.createElement('p');
-            p.innerHTML = `<strong>${index === 0 ? "Pago inicial" : `Pago ${index}`} - ${fechaStr}:</strong> ${formatear(monto)}`;
-            planPagosDiv.appendChild(p);
-        });
-
-        let sumaFinal = Array.from(listaPagos).reduce((acc, input) => acc + (parseFloat(input.value) || 0), 0);
-        let totalPagosP = document.createElement('p');
-        totalPagosP.style.fontWeight = "bold";
-        totalPagosP.textContent = Math.abs(sumaFinal - total) < 0.01
-            ? `Total de pagos: ${formatear(sumaFinal)} ✅ (Coincide)`
-            : `Total de pagos: ${formatear(sumaFinal)} ⚠️ (No coincide)`;
-        planPagosDiv.appendChild(totalPagosP);
     }
+
+    planPagosDiv.innerHTML = "";
+    window.pagos = [];
+
+    let fechaBase = new Date();
+    listaPagos.forEach((input, index) => {
+        let monto = parseFloat(input.value) || 0;
+        let fechaPago = new Date(fechaBase);
+        fechaPago.setMonth(fechaPago.getMonth() + index);
+        const fechaStr = fechaPago.toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' });
+        const fechaISO = formatoFechaISO(fechaPago);
+
+        const descripcion = index === 0 ? "Pago inicial" : `${nombresPagos[index - 1] || (index + 1)} pago`;
+
+        window.pagos.push({
+            cuota: monto.toFixed(2),
+            descripcion,
+            mes: fechaISO
+        });
+
+        let p = document.createElement('p');
+        p.innerHTML = `<strong>${descripcion} - ${fechaStr}:</strong> ${formatear(monto)}`;
+        planPagosDiv.appendChild(p);
+    });
+
+    let sumaFinal = Array.from(listaPagos).reduce((acc, input) => acc + (parseFloat(input.value) || 0), 0);
+    let totalPagosP = document.createElement('p');
+    totalPagosP.style.fontWeight = "bold";
+    totalPagosP.textContent = Math.abs(sumaFinal - total) < 0.01
+        ? `Total de pagos: ${formatear(sumaFinal)} ✅ (Coincide)`
+        : `Total de pagos: ${formatear(sumaFinal)} ⚠️ (No coincide)`;
+    planPagosDiv.appendChild(totalPagosP);
+}
+
 
     tipoPago.addEventListener('change', function () {
         opcionesDinamicas.style.display = tipoPago.value === 'dinamico' ? 'block' : 'none';
@@ -517,47 +529,52 @@ if (tipo === 'estatico') {
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const form = document.getElementById('form-venta');
-    const inputDetalle = document.getElementById('detalleFinanciamientoInput');
-    const selectPlan = document.getElementById('planPago'); // <-- Asegúrate que este ID coincida
+    const inputPagosJson = document.getElementById('pagosJsonInput');
+    const selectPlan = document.getElementById('tipoPago');
 
-    form.addEventListener('submit', function (e) {
-        console.log('✅ Evento submit disparado');
-        console.log('Pagos globales:', window.pagos);
 
-        const planSeleccionado = selectPlan.value;
+   form.addEventListener('submit', function (e) {
+    console.log('Form submit capturado');
+    console.log('window.pagos:', window.pagos);
+    console.log('selectPlan:', selectPlan);
 
-        // Si el plan NO es de contado y no hay pagos, bloqueamos el envío
-        if (planSeleccionado !== 'contado' && (!window.pagos || window.pagos.length === 0)) {
-            alert('No hay pagos definidos, por favor selecciona o genera un plan de pagos.');
-            e.preventDefault();
-            return;
-        }
+    if (!selectPlan) {
+        alert('Error: el select de plan no existe o tiene otro id.');
+        e.preventDefault();
+        return;
+    }
 
-        // Si hay pagos, generamos el detalle
-        if (window.pagos && window.pagos.length > 0) {
-            const detalle = window.pagos.map(pago => {
-                const fechaStr = new Date(pago.mes).toLocaleDateString('es-MX', {
-                    day: '2-digit',
-                    month: 'long',
-                    year: 'numeric'
-                });
+    const planSeleccionado = selectPlan.value;
+    console.log('planSeleccionado:', planSeleccionado);
 
-                const montoStr = parseFloat(pago.cuota).toLocaleString('es-MX', {
-                    style: 'currency',
-                    currency: 'MXN'
-                });
+    if (planSeleccionado !== 'contado' && (!window.pagos || window.pagos.length === 0)) {
+        alert('No hay pagos definidos, por favor selecciona o genera un plan de pagos.');
+        e.preventDefault();
+        return;
+    }
 
-                return `${pago.descripcion} - ${fechaStr}: ${montoStr}`;
-            }).join('; ');
+    if (window.pagos && window.pagos.length > 0) {
+        const pagosFormateados = window.pagos.map(pago => {
+            return {
+                ...pago,
+                mes: pago.mes // ISO format 'YYYY-MM-DD'
+            };
+        });
 
-            inputDetalle.value = detalle;
-        } else {
-            // Si es plan contado y no hay pagos, dejamos el input vacío
-            inputDetalle.value = '';
-        }
-    });
+        inputPagosJson.value = JSON.stringify(pagosFormateados);
+    } else {
+        inputPagosJson.value = '';
+    }
+
+    console.log('Pagos a enviar:', inputPagosJson.value);
+});
+
+   
 });
 </script>
+
+
+
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {

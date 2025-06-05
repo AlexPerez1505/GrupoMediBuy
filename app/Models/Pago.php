@@ -35,4 +35,10 @@ class Pago extends Model
     {
         return $this->belongsTo(ItemRemision::class, 'item_remision_id');
     }
+public function financiamiento()
+{
+    return $this->belongsTo(PagosFinanciamiento::class, 'financiamiento_id');
+}
+
+
 }

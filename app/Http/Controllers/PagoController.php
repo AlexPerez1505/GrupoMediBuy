@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Pago;
 use App\Models\ItemRemision;
+use App\Models\PagoFinanciamiento;  // <--- Importa el modelo aquí
+use App\Models\Venta;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -70,4 +72,5 @@ class PagoController extends Controller
 
     return view('pagos.inteligente_venta', compact('venta', 'detalleFinanciamiento'));
 }
+
 }

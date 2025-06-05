@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\Cliente;
 use App\Models\VentaProducto;
 use App\Models\User;
+use Carbon\Carbon;
+use App\Notifications\ProximoPagoNotification;
 
 class Venta extends Model
 {
@@ -15,7 +17,38 @@ protected $fillable = [
     'carta_garantia_id'  // <-- Aquí lo agregas
 ];
 
+public function notificarSiPagoProximo()
+{
+    if (!$this->detalle_financiamiento || !$this->cliente) {
+        return;
+    }
 
+    // Remover "Pago inicial..." del detalle
+    $detalle = removerPagoInicialDelDetalle($this->detalle_financiamiento);
+
+    preg_match_all(
+        '/\b(\d{2}[\/\-]\d{2}[\/\-]\d{4}|\d{4}[\/\-]\d{2}[\/\-]\d{2}|\d{2}\s+de\s+\w+\s+de\s+\d{4})\b/i',
+        $detalle,
+        $matches
+    );
+
+    $fechas = $matches[0];
+    $hoy = Carbon::now();
+    $limite = $hoy->copy()->addDays(7);
+
+    foreach ($fechas as $fechaTexto) {
+        try {
+            $fecha = Carbon::parse(str_ireplace(' de ', ' ', $fechaTexto));
+
+            if ($fecha->between($hoy, $limite)) {
+                $this->cliente->notify(new ProximoPagoNotification($this, $fecha));
+                break; // Notifica solo una vez por venta
+            }
+        } catch (\Exception $e) {
+            // Log::warning('Error parseando fecha: ' . $fechaTexto);
+        }
+    }
+}
     public function cliente()
     {
         return $this->belongsTo(Cliente::class);
@@ -30,10 +63,11 @@ protected $fillable = [
     {
         return $this->belongsTo(User::class, 'user_id');
     }
-    public function pagos()
+public function pagos()
 {
-    return $this->hasMany(Pago::class);
+    return $this->hasMany(PagoFinanciamiento::class, 'venta_id');
 }
+
 public function cartaGarantia()
 {
     return $this->belongsTo(CartaGarantia::class, 'carta_garantia_id');
@@ -42,5 +76,10 @@ public function remision()
 {
     return $this->belongsTo(Remision::class);
 }
+public function pagosFinanciamiento()
+{
+    return $this->hasMany(PagoFinanciamiento::class);
+}
+
 
 }

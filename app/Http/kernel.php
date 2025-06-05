@@ -62,10 +62,14 @@ class Kernel extends HttpKernel
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'rol' => \App\Http\Middleware\RolMiddleware::class,
     ];
-    protected function schedule(Schedule $schedule)
-    {
-        $schedule->command('reiniciar:asistencias')->twiceMonthly(1, 16);
-    }
+protected function schedule(Schedule $schedule)
+{
+    $schedule->command('reiniciar:asistencias')->twiceMonthly(1, 16);
+
+    // Agrega este para enviar correos por pagos próximos
+    $schedule->command('pagos:notificar-proximos')->dailyAt('08:00');
+}
+
     
 
     

@@ -6,6 +6,7 @@ use App\Models\Cliente;
 use App\Models\Producto;
 use App\Models\Venta;
 use App\Models\VentaProducto;
+use App\Models\PagoFinanciamiento;
 use App\Models\Paquete; // Asegúrate de importar el modelo correcto
 use App\Models\Pago;
 use App\Models\CartaGarantia;
@@ -13,7 +14,7 @@ use PDF;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use Illuminate\Support\Facades\Storage;
 use setasign\Fpdi\Fpdi;
-
+use Carbon\Carbon;
 
 class VentaController extends Controller
 {
@@ -38,6 +39,7 @@ class VentaController extends Controller
          $cartas = CartaGarantia::all();
         return view('venta.create', compact('productos', 'paquetes', 'cartas'));
     }
+
 public function store(Request $request)
 {
     $request->validate([
@@ -45,7 +47,7 @@ public function store(Request $request)
         'subtotal' => 'required|numeric',
         'total' => 'required|numeric',
         'productos_json' => 'required|json',
-        'detalle_financiamiento' => 'nullable|string',
+        'pagos_json' => 'nullable|json',
         'carta_garantia_id' => 'nullable|exists:carta_garantias,id',
     ]);
 
@@ -60,8 +62,8 @@ public function store(Request $request)
         'iva' => $request->iva,
         'total' => $request->total,
         'plan' => $request->plan,
-        'detalle_financiamiento' => $request->detalle_financiamiento,
-        'carta_garantia_id' => $request->carta_garantia_id, // ← GUARDADO
+        'detalle_financiamiento' => null, // ya no se usa
+        'carta_garantia_id' => $request->carta_garantia_id,
     ]);
 
     $productos = json_decode($request->productos_json, true);
@@ -77,16 +79,33 @@ public function store(Request $request)
             'sobreprecio' => $p['sobreprecio'],
         ]);
     }
+if ($request->filled('pagos_json')) {
+    $pagos = json_decode($request->input('pagos_json'), true);
+
+    if (is_array($pagos)) {
+        foreach ($pagos as $pago) {
+            PagoFinanciamiento::create([
+                'venta_id' => $venta->id,
+                'descripcion' => $pago['descripcion'] ?? '',
+                'fecha_pago' => \Carbon\Carbon::parse($pago['mes']),
+                'monto' => $pago['cuota'] ?? 0,
+            ]);
+        }
+    }
+}
+
+\Log::info('Pagos recibidos:', ['pagos_json' => $request->pagos_json]);
 
     return redirect()->route('ventas.show', $venta->id)->with('success', 'Venta guardada exitosamente.');
 }
 
+public function show(Venta $venta)
+{
+    // Carga relaciones necesarias, incluyendo pagosFinanciamiento
+    $venta->load(['productos.producto', 'cliente', 'usuario', 'pagosFinanciamiento']);
 
-    public function show(Venta $venta)
-    {
-        $venta->load(['productos.producto', 'cliente', 'usuario', 'pagos']);
-        return view('venta.show', compact('venta'));
-    }
+    return view('venta.show', compact('venta'));
+}
 
 public function index()
 {
@@ -157,9 +176,9 @@ public function pdf(Venta $venta)
         dd("El archivo PDF final NO se generó");
     }
 
-    return response()->file($rutaFinal);
-}
+    return response()->download($rutaFinal, "venta_{$venta->id}.pdf");
 
+}
 
     public function update(Request $request, $id)
     {
@@ -217,44 +236,12 @@ public function pdf(Venta $venta)
     }
 
 
-
     public function edit($id)
     {
         $venta = Venta::with('productos', 'cliente')->findOrFail($id);
         $clientes = Cliente::all();
         $productos = Producto::all();
         return view('venta.edit', compact('venta', 'clientes', 'productos'));
-    }
-
-    // Métodos para pagos
-
-    public function storePago(Request $request, $ventaId)
-    {
-        $request->validate([
-            'monto' => 'required|numeric|min:0.01',
-            'fecha_pago' => 'required|date',
-            'metodo_pago' => 'required|string|max:255',
-        ]);
-
-        $venta = Venta::findOrFail($ventaId);
-
-        $pago = Pago::create([
-            'venta_id' => $venta->id,
-            'monto' => $request->monto,
-            'fecha_pago' => $request->fecha_pago,
-            'metodo_pago' => $request->metodo_pago,
-        ]);
-
-        return redirect()->route('ventas.show', $venta->id)->with('success', 'Pago registrado exitosamente.');
-    }
-
-    public function indexPagos($ventaId)
-    {
-        $venta = Venta::with('pagos')->findOrFail($ventaId);
-        $pagos = $venta->pagos;
-
-        // Por ejemplo, podrías retornar una vista con los pagos
-        return view('venta.pagos', compact('venta', 'pagos'));
     }
     public function search(Request $request)
 {
@@ -268,10 +255,139 @@ public function pdf(Venta $venta)
 
     return response()->json($paquetes);
 }
-public function seguimiento(Venta $venta)
+   // Métodos para pagos
+
+public function storePago(Request $request, $ventaId)
 {
-    return view('pagos.index', [
-        'venta' => $venta,
+    $request->validate([
+        'monto' => 'required|numeric|min:0.01',
+        'fecha_pago' => 'required|date',
+        'metodo_pago' => 'required|string|max:255',
     ]);
+
+    $venta = Venta::findOrFail($ventaId);
+
+    // Buscar financiamiento relacionado
+    $financiamiento = \App\Models\PagoFinanciamiento::where('venta_id', $ventaId)
+        ->where('monto', $request->monto)
+        ->where('fecha_pago', $request->fecha_pago)
+        ->first();
+
+    // Crear el pago
+    $pago = new \App\Models\Pago();
+    $pago->venta_id = $venta->id;
+    $pago->monto = $request->monto;
+    $pago->fecha_pago = $request->fecha_pago;
+    $pago->metodo_pago = $request->metodo_pago;
+    $pago->aprobado = false; // <-- PAGO PENDIENTE
+
+    if ($financiamiento) {
+        $pago->financiamiento_id = $financiamiento->id;
+        // NO marcar como pagado aún
+    }
+
+    $pago->save();
+
+    return redirect()->route('ventas.pagos.index', $venta->id)
+        ->with('success', 'Pago registrado exitosamente. Está pendiente de aprobación.');
 }
+
+
+public function indexPagos($ventaId)
+{
+    $venta = Venta::with('cliente')->findOrFail($ventaId);
+
+    // Obtener todos los pagos registrados para esa venta
+    $pagos = \App\Models\Pago::where('venta_id', $ventaId)
+        ->orderBy('fecha_pago')
+        ->get();
+
+    // Obtener los financiamientos relacionados a esa venta
+    $financiamientos = \App\Models\PagoFinanciamiento::where('venta_id', $ventaId)->get();
+
+    return view('venta.pagos', compact('venta', 'pagos', 'financiamientos'));
+}
+public function marcarPagado(Request $request, $pagoFinanciamientoId)
+{
+    $pinIngresado = $request->input('pin');
+    $pinCorrecto = env('APROBACION_PIN');
+
+    if ($pinIngresado !== $pinCorrecto) {
+        return redirect()->back()->with('error', 'PIN inválido. Intenta nuevamente.');
+    }
+
+    $financiamiento = \App\Models\PagoFinanciamiento::findOrFail($pagoFinanciamientoId);
+    $financiamiento->pagado = true;
+    $financiamiento->save();
+
+    // Actualizar pago asociado
+    $pago = \App\Models\Pago::where('financiamiento_id', $financiamiento->id)->first();
+    if ($pago) {
+        $pago->aprobado = true;
+        $pago->save();
+    }
+
+    return redirect()->back()->with('success', 'Pago aprobado correctamente.');
+}
+
+
+
+
+public function reciboPago($pagoId)
+{
+    $pago = Pago::with('venta.cliente')->findOrFail($pagoId);
+
+    $pdf = PDF::loadView('venta.recibo', compact('pago'))
+              ->setPaper('a6', 'portrait');
+
+    return $pdf->stream("recibo_pago_{$pago->id}.pdf");
+}
+
+public function deudores()
+{
+    setlocale(LC_TIME, 'es_ES.UTF-8', 'es_ES', 'spanish');
+    Carbon::setLocale('es');
+
+    function parsearFechaEnEsp($fechaTexto) {
+        $fmt = new \IntlDateFormatter('es_ES', \IntlDateFormatter::FULL, \IntlDateFormatter::NONE);
+        $fmt->setPattern("d 'de' MMMM 'de' y");
+        $timestamp = $fmt->parse($fechaTexto);
+        return $timestamp ? Carbon::createFromTimestamp($timestamp) : null;
+    }
+
+    $ventas = \App\Models\Venta::with(['cliente', 'pagos'])
+        ->where('plan', '!=', 'contado')
+        ->whereRaw('
+    (SELECT COALESCE(SUM(monto), 0) 
+     FROM pagos_financiamiento 
+     WHERE pagos_financiamiento.venta_id = ventas.id 
+       AND pagos_financiamiento.pagado = 1
+    ) < ventas.total
+')
+
+        ->get();
+
+    foreach ($ventas as $v) {
+        if (!empty($v->detalle_financiamiento['fecha']) && is_string($v->detalle_financiamiento['fecha'])) {
+            try {
+                $fechaTexto = $v->detalle_financiamiento['fecha'];
+                $fechaCarbon = parsearFechaEnEsp($fechaTexto);
+                $v->detalle_financiamiento['fecha_carbon'] = $fechaCarbon;
+            } catch (\Exception $e) {
+                logger()->error("Error al parsear fecha: $fechaTexto", ['error' => $e->getMessage()]);
+                $v->detalle_financiamiento['fecha_carbon'] = null;
+            }
+        }
+    }
+
+    $clientes = \App\Models\Cliente::orderBy('nombre')->get();
+
+    return view('venta.deudores', compact('ventas', 'clientes'));
+}
+
+
+
+
+
+
 }

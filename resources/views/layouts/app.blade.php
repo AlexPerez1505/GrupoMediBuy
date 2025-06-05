@@ -18,6 +18,65 @@
         <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.8/locales/es.js"></script> <!-- Español -->
     @yield('styles')
 </head>
+<style>
+    .notification-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.notification-icon {
+    background: none;
+    border: none;
+    position: relative;
+    cursor: pointer;
+}
+
+.notification-icon img {
+    width: 30px;
+}
+
+.notification-count {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: red;
+    color: white;
+    font-size: 12px;
+    padding: 2px 6px;
+    border-radius: 50%;
+}
+
+.notification-popup {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 40px;
+    width: 250px;
+    background-color: white;
+    border: 1px solid #ddd;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    z-index: 1000;
+    border-radius: 5px;
+    padding: 10px;
+}
+
+.notification-popup ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.notification-popup li {
+    padding: 8px;
+    border-bottom: 1px solid #eee;
+    font-size: 14px;
+}
+
+.notification-popup li:last-child {
+    border-bottom: none;
+}
+
+</style>
 <body>
 <div class="header-container"> 
     <div class="menu-hamburguesa">
@@ -219,6 +278,24 @@
     </div>
 
         <h1 class="titulos">@yield('titulo', 'Cotizaciones')</h1>
+        <!-- Ícono de notificación -->
+<div class="notification-wrapper">
+    <button class="notification-icon" onclick="toggleNotifications()">
+        <img src="{{ asset('images/notificacion.png') }}" alt="Notificaciones">
+        <span id="notification-count" class="notification-count">3</span> <!-- Número de notificaciones -->
+    </button>
+
+    <!-- Ventana de notificaciones -->
+    <div id="notification-popup" class="notification-popup">
+        <h6>Notificaciones</h6>
+        <ul>
+            <li>📦 Nueva solicitud de material</li>
+            <li>📅 Cita agendada para mañana</li>
+            <li>✅ Vacación aprobada</li>
+        </ul>
+    </div>
+</div>
+
 
 
         <!-- Línea animada -->
@@ -242,13 +319,6 @@
     </footer>
 @endif
 
-
-    
-<!-- jQuery y Bootstrap JS -->
- <!-- Cargar jQuery -->
-
-
-<!-- Cargar Bootstrap JS -->
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -307,6 +377,20 @@ document.addEventListener('touchmove', function (e) {
         closeMenu();
     }
 });
+</script>
+<script>
+    function toggleNotifications() {
+        const popup = document.getElementById('notification-popup');
+        popup.style.display = (popup.style.display === 'block') ? 'none' : 'block';
+    }
+
+    // Cierra la ventana si se hace clic fuera
+    document.addEventListener('click', function(event) {
+        const isClickInside = document.querySelector('.notification-wrapper').contains(event.target);
+        if (!isClickInside) {
+            document.getElementById('notification-popup').style.display = 'none';
+        }
+    });
 </script>
 
 <script>

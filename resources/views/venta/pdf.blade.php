@@ -206,18 +206,16 @@
         </div>
     @else
         @php
-            $detalle = $venta->detalle_financiamiento;
-
-            // Extraer todos los pagos con fechas y montos
-            preg_match_all('/(Pago inicial|[Pp]rimer pago|[Ss]egundo pago|[Tt]ercer pago|[Cc]uarto pago|[Qq]uinto pago|[Ss]exto pago|[Ss]éptimo pago|[Oo]ctavo pago|[Nn]oveno pago|[Dd]écimo pago)\s*-\s*(\d{2} de \w+ de \d{4}):\s*\$(\d[\d,\.]*)/', $detalle, $coincidencias, PREG_SET_ORDER);
+            // Obtener los pagos desde la relación con la tabla pagos_financiamiento
+            $pagosFinanciamiento = $venta->pagosFinanciamiento()->orderBy('fecha_pago')->get();
 
             $pagos = [];
             $montoInicial = 0;
 
-            foreach ($coincidencias as $pago) {
-                $etiqueta = ucfirst(trim($pago[1]));
-                $fecha = $pago[2];
-                $monto = floatval(str_replace([','], '', $pago[3]));
+            foreach ($pagosFinanciamiento as $pago) {
+                $etiqueta = ucfirst($pago->descripcion);
+                $fecha = \Carbon\Carbon::parse($pago->fecha_pago)->format('d \d\e F \d\e Y');
+                $monto = $pago->monto;
 
                 if (strtolower($etiqueta) === 'pago inicial') {
                     $montoInicial = $monto;
@@ -228,7 +226,7 @@
 
             // Calcular datos financieros
             $total = $venta->total;
-            $plazoMeses = count($pagos) - 1; // Excluye pago inicial
+            $plazoMeses = count($pagos) - 1; // excluye pago inicial
             $montoFinanciadoBase = $total - $montoInicial;
             $tasaInteresMensual = 0.05;
 
@@ -240,7 +238,7 @@
                 ? $montoConIntereses / $plazoMeses 
                 : 0;
 
-            // Dividir en 2 columnas
+            // Dividir pagos en columnas para mostrar
             $col1 = array_slice($pagos, 0, 5);
             $col2 = array_slice($pagos, 5);
         @endphp
@@ -304,8 +302,10 @@
                 @endif
             </table>
         </div>
-    @endif
-</div>
+    @endif {{-- Cierre de @else --}}
+</div> {{-- Cierre del div principal --}}
+
+
 <div style="margin-bottom: 2rem;">
     <h3 style="color: #1e73be; font-weight: bold; border-bottom: 2px solid #1e73be; padding-bottom: 4px;">
         Términos y Condiciones

@@ -48,13 +48,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/obtener-detalles/{id}', [RegistroController::class, 'obtenerDetalles']);
 });
 
-// Ruta para restablecer la contraseña (formularios)
-Route::get('/reset-password/{token}', function ($token) {
-    return view('reset_password', ['token' => $token]);
-})->name('password.reset');
 
-// Ruta para actualizar la contraseña
-Route::post('/reset-password', [ResetPasswordController::class, 'reset'])->name('password.update');
+
 
 // Ruta para mostrar el formulario
 Route::get('/auth/change-password', [UserController::class, 'showChangePasswordForm'])
@@ -117,7 +112,7 @@ Route::get('/historial-cotizaciones', function () {
     $cotizaciones = Cotizacion::all();
     return view('historial', compact('cotizaciones'));
 })->name('historial-cotizaciones');
-Route::get('/cotizaciones/descargarPDF/{id}', [CotizacionesController::class, 'descargarPDF'])->name('cotizaciones.descargarPDF');
+
 
 // routes/api.php
 
@@ -317,15 +312,16 @@ Route::get('/validar-email', function (\Illuminate\Http\Request $request) {
 // routes/web.php
 Route::get('/cotizaciones/duplicar/{id}', [CotizacionController::class, 'duplicar'])->name('cotizaciones.duplicar');
 Route::get('/cuentas-por-cobrar', [RemisionController::class, 'cuentasPorCobrar'])->name('remisions.cuentasPorCobrar');
+Route::put('/pagos_financiamiento/{id}/marcar-pagado', [VentaController::class, 'marcarPagado'])->name('pagos.marcarPagado');
 Route::post('/pagos', [PagoController::class, 'store'])->name('pagos.store');
-Route::post('/pagos', [PagoController::class, 'store'])->name('pagos.store');
+Route::get('/pagos/{pago}/recibo', [VentaController::class, 'reciboPago'])->name('pagos.recibo');
 Route::get('/pagos/{item}', [PagoController::class, 'index'])->name('pagos.index');
 Route::get('/pagos/{item}/recibo', [PagoController::class, 'generarPDF'])->name('pagos.recibo.pdf');
 Route::get('/pagos/generar-pdf', [PagoController::class, 'generarPDF'])->name('pagos.generarPDF');
 Route::middleware('auth')->group(function () {
     Route::get('/ventas/crear', [VentaController::class, 'create'])->name('ventas.create');
     Route::post('/ventas', [VentaController::class, 'store'])->name('ventas.store');
-    
+    Route::get('/ventas/deudores', [VentaController::class, 'deudores'])->name('ventas.deudores');
     // Nueva ruta para PDF
     Route::get('/ventas/{venta}/pdf', [VentaController::class, 'pdf'])->name('ventas.pdf');
 });
@@ -344,11 +340,10 @@ Route::get('/mi-historial', [AsistenciaController::class, 'miHistorial'])
     ->middleware('auth');
 
 
-// Mostrar todos los pagos de una venta (opcional)
-Route::get('/ventas/{venta}/pagos', [VentaController::class, 'indexPagos'])->name('ventas.pagos');
 
 // Guardar un nuevo pago para una venta
-Route::post('/ventas/{venta}/pagos', [VentaController::class, 'storePago'])->name('ventas.pagos.store');
+
+
 
 Route::get('/clientes', [VentaController::class, 'clientes'])->name('clientes.search');
 Route::get('/api/ventas', [VentaController::class, 'apiVentas']);
@@ -358,5 +353,14 @@ Route::post('/carta-garantia', [CartaGarantiaController::class, 'store'])->name(
 Route::get('/carta-garantia/{id}/descargar', [CartaGarantiaController::class, 'descargar'])->name('carta.descargar');
 Route::delete('/carta-garantia/{id}', [CartaGarantiaController::class, 'destroy'])->name('carta.destroy');
 Route::get('/pagos/seguimiento/{item_id}', [PagoController::class, 'seguimientoInteligente'])->name('pagos.seguimiento');
+Route::get('/ventas/{venta}/pagos', [VentaController::class, 'indexPagos'])->name('ventas.pagos.index');
+Route::post('/ventas/{venta}/pagos', [VentaController::class, 'storePago'])->name('ventas.pagos.store');
 
-Route::get('/ventas/seguimiento/{venta}', [App\Http\Controllers\VentaController::class, 'seguimiento'])->name('pagos.index');
+
+
+
+
+
+
+
+

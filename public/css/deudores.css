@@ -1,0 +1,111 @@
+
+    body {
+        background-color: #f8f9fa;
+    }
+
+    .titulo-principal {
+        font-size: 2rem;
+        font-weight: 600;
+        margin-bottom: 2rem;
+        color: #343a40;
+    }
+
+    .contenedor-filtros .form-select, .contenedor-filtros button {
+        font-size: 0.95rem;
+        padding: 0.55rem 0.75rem;
+        border-radius: 10px;
+        border: 1px solid #ced4da;
+    }
+
+    .contenedor-filtros button {
+        background-color: #a5d6a7;
+        color: #2e7d32;
+        border: none;
+        transition: background-color 0.3s ease;
+    }
+
+    .contenedor-filtros button:hover {
+        background-color: #81c784;
+    }
+
+    .card-venta {
+        background: #fffefc;
+        border: 1px solid #ececec;
+        border-left: 6px solid #ffccbc;
+        border-radius: 16px;
+        padding: 1.6rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        transition: transform 0.25s ease, box-shadow 0.3s ease;
+        height: 100%;
+    }
+
+    .card-venta:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+    }
+
+    .card-venta-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+    }
+
+    .cliente-nombre {
+        font-size: 1.15rem;
+        font-weight: 600;
+        color: #37474f;
+    }
+
+    .venta-id {
+        font-size: 0.85rem;
+        color: #9e9e9e;
+        margin-top: 4px;
+    }
+
+    .estado-pendiente {
+        background-color: #ffebee;
+        color: #c62828;
+        font-weight: 600;
+        font-size: 0.75rem;
+        padding: 6px 12px;
+        border-radius: 8px;
+        border: 1px solid #ffcdd2;
+    }
+
+    .detalle-venta p {
+        font-size: 0.95rem;
+        color: #555;
+        margin: 0.3rem 0;
+    }
+
+    .restante {
+        color: #d84315;
+        font-weight: bold;
+    }
+
+    .btn-ver-abonar {
+        display: inline-block;
+        padding: 0.55rem 1.4rem;
+        font-size: 0.9rem;
+        color: #fff;
+        background-color: #4db6ac;
+        border: none;
+        border-radius: 10px;
+        text-decoration: none;
+        transition: background-color 0.3s ease;
+    }
+
+    .btn-ver-abonar:hover {
+        background-color: #00897b;
+    }
+
+    .no-ventas {
+        text-align: center;
+        font-size: 1.1rem;
+        color: #888;
+        margin-top: 3rem;
+    }
