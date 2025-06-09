@@ -208,6 +208,36 @@
                 </table>
             </div>
         </div>
+<h4>Pagos Planeados (Financiamiento)</h4>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Fecha</th>
+            <th>Monto</th>
+            <th>¿Eliminar?</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach($venta->pagoFinanciamiento as $pago)
+        <tr>
+            <td>
+                <input type="date" name="pagos_financiamiento[{{ $pago->id }}][fecha_pago]" value="{{ \Carbon\Carbon::parse($pago->fecha_pago)->format('Y-m-d') }}" class="form-control">
+            </td>
+            <td>
+                <input type="number" step="0.01" name="pagos_financiamiento[{{ $pago->id }}][monto]" value="{{ $pago->monto }}" class="form-control">
+            </td>
+            <td>
+                <input type="checkbox" name="pagos_financiamiento[{{ $pago->id }}][eliminar]" value="1"> Eliminar
+            </td>
+        </tr>
+        @endforeach
+    </tbody>
+</table>
+
+<div id="error-total-pagos" class="alert alert-danger d-none mt-3">
+    La suma de los pagos planeados debe ser igual al total de la venta.
+</div>
+
 
         <input type="hidden" name="productos_json" id="productos_json">
 
@@ -217,6 +247,34 @@
     </form>
 
 
+<script>
+document.getElementById('form-venta').addEventListener('submit', function(event) {
+    const totalVenta = parseFloat(document.getElementById('total').value) || 0;
+    let sumaPagos = 0;
+
+    const filas = document.querySelectorAll('input[name^="pagos_financiamiento"]');
+    filas.forEach(input => {
+        if (input.name.includes('[monto]')) {
+            const monto = parseFloat(input.value) || 0;
+            const tr = input.closest('tr');
+            const eliminar = tr.querySelector('input[type="checkbox"]');
+            if (!eliminar || !eliminar.checked) {
+                sumaPagos += monto;
+            }
+        }
+    });
+
+    const errorDiv = document.getElementById('error-total-pagos');
+
+    if (Math.abs(sumaPagos - totalVenta) > 0.01) {
+        event.preventDefault();
+        errorDiv.classList.remove('d-none');
+        errorDiv.scrollIntoView({ behavior: 'smooth' });
+    } else {
+        errorDiv.classList.add('d-none');
+    }
+});
+</script>
 
 
     <script>

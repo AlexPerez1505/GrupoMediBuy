@@ -71,7 +71,7 @@
             text-align: right;
             font-size: 13px;
             padding: 10px;
-            margin-top: 20px;
+            margin-top: -20px;
         }
 
         .footer-container {
@@ -128,7 +128,7 @@
 @endif
     <p><strong>LUGAR:</strong> {{ $venta->lugar }}
           <span style="float: right;">
-        <strong>RÉGIMEN FISCAL:</strong> <em>PERSONA FISICA CON ACTIVIDAD EMPRESARIAL</em>
+       <strong>EMISOR:</strong> <em>ANAHÍ TELLEZ ORTIZ</em>
     </span>
 </p>
 </div>
@@ -180,7 +180,7 @@
 @if($venta->nota)
     <p><strong>Nota:</strong> {{ $venta->nota }}</p>
 @endif
-<div style="text-align: center; margin-top: 40px;">
+<div style="text-align: center; margin-top: 10px;">
     <p><strong>Escanea este código QR para acceder a esta venta:</strong></p>
     <img src="data:image/png;base64,{{ $qr }}" alt="QR Code">
 </div>
@@ -205,102 +205,136 @@
             </div>
         </div>
     @else
-        @php
-            // Obtener los pagos desde la relación con la tabla pagos_financiamiento
-            $pagosFinanciamiento = $venta->pagosFinanciamiento()->orderBy('fecha_pago')->get();
 
-            $pagos = [];
-            $montoInicial = 0;
 
-            foreach ($pagosFinanciamiento as $pago) {
-                $etiqueta = ucfirst($pago->descripcion);
-                $fecha = \Carbon\Carbon::parse($pago->fecha_pago)->format('d \d\e F \d\e Y');
-                $monto = $pago->monto;
+@php
+    // Función para traducir meses inglés -> español
+    function traducirMes($fecha) {
+        $meses = [
+            'January' => 'enero',
+            'February' => 'febrero',
+            'March' => 'marzo',
+            'April' => 'abril',
+            'May' => 'mayo',
+            'June' => 'junio',
+            'July' => 'julio',
+            'August' => 'agosto',
+            'September' => 'septiembre',
+            'October' => 'octubre',
+            'November' => 'noviembre',
+            'December' => 'diciembre',
+        ];
 
-                if (strtolower($etiqueta) === 'pago inicial') {
-                    $montoInicial = $monto;
-                }
+        $dia = $fecha->format('d');
+        $mesIngles = $fecha->format('F');
+        $mesEspanol = $meses[$mesIngles] ?? $mesIngles;
+        $anio = $fecha->format('Y');
 
-                $pagos[] = "{$etiqueta} - {$fecha}: $" . number_format($monto, 2, '.', ',');
-            }
+        return "{$dia} de {$mesEspanol} de {$anio}";
+    }
 
-            // Calcular datos financieros
-            $total = $venta->total;
-            $plazoMeses = count($pagos) - 1; // excluye pago inicial
-            $montoFinanciadoBase = $total - $montoInicial;
-            $tasaInteresMensual = 0.05;
+    // Obtener los pagos desde la relación con la tabla pagos_financiamiento
+    $pagosFinanciamiento = $venta->pagosFinanciamiento()->orderBy('fecha_pago')->get();
 
-            $montoConIntereses = $plazoMeses > 0 
-                ? $montoFinanciadoBase * pow(1 + $tasaInteresMensual, $plazoMeses) 
-                : $montoFinanciadoBase;
+    $pagos = [];
+    $montoInicial = 0;
 
-            $cuotaMensual = $plazoMeses > 0 
-                ? $montoConIntereses / $plazoMeses 
-                : 0;
+    foreach ($pagosFinanciamiento as $pago) {
+        $etiqueta = ucfirst($pago->descripcion);
+        $fechaCarbon = \Carbon\Carbon::parse($pago->fecha_pago);
+        $fecha = traducirMes($fechaCarbon);
+        $monto = $pago->monto;
 
-            // Dividir pagos en columnas para mostrar
-            $col1 = array_slice($pagos, 0, 5);
-            $col2 = array_slice($pagos, 5);
-        @endphp
+        if (strtolower($etiqueta) === 'pago inicial') {
+            $montoInicial = $monto;
+        }
 
-        @if (!empty($pagos))
-            <div style="margin-bottom: 1.5rem;">
-                <h3 style="color: #1e73be; font-weight: bold; border-bottom: 2px solid #1e73be; padding-bottom: 4px;">
-                    Detalles del Financiamiento
-                </h3>
+        $pagos[] = "{$etiqueta} - {$fecha}: $" . number_format($monto, 2, '.', ',');
+    }
 
-                <table width="100%" style="background-color: #eef4fb; border-left: 4px solid #1e73be; font-size: 13px; padding: 10px;">
-                    <tr valign="top">
-                        <td width="50%" style="padding-right: 15px;">
-                            @foreach ($col1 as $linea)
-                                <p style="margin: 0 0 6px; color: #333;"><strong>{{ $linea }}</strong></p>
-                            @endforeach
-                        </td>
-                        <td width="50%">
-                            @foreach ($col2 as $linea)
-                                <p style="margin: 0 0 6px; color: #333;"><strong>{{ $linea }}</strong></p>
-                            @endforeach
-                        </td>
-                    </tr>
-                </table>
-            </div>
+    // Calcular datos financieros correctamente
+    $total = $venta->total;
+    $plazoMeses = count($pagos) - 1; // excluye el pago inicial
+    $montoFinanciadoBase = $total - $montoInicial;
+    $tasaInteresMensual = 0.05;
+
+    // Usar pagos reales para calcular monto con intereses
+    $totalPagosMensuales = $pagosFinanciamiento->filter(function ($p) {
+        return strtolower($p->descripcion) !== 'pago inicial';
+    })->sum('monto');
+
+    $montoConIntereses = $totalPagosMensuales;
+
+    $cuotaMensual = $plazoMeses > 0 
+        ? $montoConIntereses / $plazoMeses 
+        : 0;
+
+    // Dividir pagos en columnas para mostrar
+    $col1 = array_slice($pagos, 0, 5);
+    $col2 = array_slice($pagos, 5);
+@endphp
+
+@if (!empty($pagos))
+    <div style="margin-bottom: 1.5rem;">
+        <h3 style="color: #1e73be; font-weight: bold; border-bottom: 2px solid #1e73be; padding-bottom: 4px;">
+            Detalles del Financiamiento
+        </h3>
+
+        <table width="100%" style="background-color: #eef4fb; border-left: 4px solid #1e73be; font-size: 13px; padding: 10px;">
+            <tr valign="top">
+                <td width="50%" style="padding-right: 15px;">
+                    @foreach ($col1 as $linea)
+                        <p style="margin: 0 0 6px; color: #333;"><strong>{{ $linea }}</strong></p>
+                    @endforeach
+                </td>
+                <td width="50%">
+                    @foreach ($col2 as $linea)
+                        <p style="margin: 0 0 6px; color: #333;"><strong>{{ $linea }}</strong></p>
+                    @endforeach
+                </td>
+            </tr>
+        </table>
+    </div>
+@endif
+
+
+<div style="margin-bottom: 2rem;">
+    <h3 style="color: #1e73be; font-weight: bold; border-bottom: 2px solid #1e73be; padding-bottom: 4px;">
+        Resumen del Financiamiento
+    </h3>
+    <table style="width: 100%; font-size: 13px; margin-top: 0.5rem;">
+        <tr>
+            <td><strong>Total de la venta:</strong></td>
+            <td>${{ number_format($total, 2, '.', ',') }}</td>
+        </tr>
+        <tr>
+            <td><strong>Pago inicial:</strong></td>
+            <td>${{ number_format($montoInicial, 2, '.', ',') }}</td>
+        </tr>
+        <tr>
+            <td><strong>Monto financiado (sin intereses):</strong></td>
+            <td>${{ number_format($montoFinanciadoBase, 2, '.', ',') }}</td>
+        </tr>
+        <tr>
+            <td><strong>Plazo:</strong></td>
+            <td>{{ $plazoMeses }} {{ Str::plural('meses', $plazoMeses) }}</td>
+        </tr>
+
+        @if($venta->plan === 'credito')
+            <tr>
+                <td><strong>Tasa de interés mensual:</strong></td>
+                <td>5%</td>
+            </tr>
+            <tr>
+                <td><strong>Total a pagar con intereses:</strong></td>
+                <td><span style="color: #1e73be; font-weight: bold;">
+                    ${{ number_format($montoConIntereses, 2, '.', ',') }}
+                </span></td>
+            </tr>
         @endif
+    </table>
+</div>
 
-        <div style="margin-bottom: 2rem;">
-            <h3 style="color: #1e73be; font-weight: bold; border-bottom: 2px solid #1e73be; padding-bottom: 4px;">
-                Resumen del Financiamiento
-            </h3>
-            <table style="width: 100%; font-size: 13px; margin-top: 0.5rem;">
-                <tr>
-                    <td><strong>Total de la venta:</strong></td>
-                    <td>${{ number_format($total, 2, '.', ',') }}</td>
-                </tr>
-                <tr>
-                    <td><strong>Pago inicial:</strong></td>
-                    <td>${{ number_format($montoInicial, 2, '.', ',') }}</td>
-                </tr>
-                <tr>
-                    <td><strong>Monto financiado (sin intereses):</strong></td>
-                    <td>${{ number_format($montoFinanciadoBase, 2, '.', ',') }}</td>
-                </tr>
-                <tr>
-                    <td><strong>Plazo:</strong></td>
-                    <td>{{ $plazoMeses }} {{ Str::plural('meses', $plazoMeses) }}</td>
-                </tr>
-
-                @if($venta->plan === 'credito')
-                    <tr>
-                        <td><strong>Tasa de interés mensual:</strong></td>
-                        <td>5%</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Total a pagar con intereses:</strong></td>
-                        <td><span style="color: #1e73be; font-weight: bold;">
-                            ${{ number_format($montoConIntereses, 2, '.', ',') }}
-                        </span></td>
-                    </tr>
-                @endif
-            </table>
         </div>
     @endif {{-- Cierre de @else --}}
 </div> {{-- Cierre del div principal --}}
@@ -370,7 +404,7 @@
         </table>
     @endif
     <p style="margin-top: 0.5rem; font-size: 12px;">
-        Por favor, envíe el comprobante de pago al correo: <strong>pagos@grupomedibuy.com</strong> o vía WhatsApp al <strong>+52 722 448 5191</strong>.
+        Por favor, envíe el comprobante de pago al correo: <strong>compras@grupomedibuy.com</strong> o vía WhatsApp al <strong>+52 722 448 5191</strong>.
     </p>
 </div>
 </body>

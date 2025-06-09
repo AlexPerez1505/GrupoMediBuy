@@ -22,6 +22,7 @@ class Pago extends Model
     protected $casts = [
         'fecha_pago' => 'date',
         'monto' => 'decimal:2',
+        'aprobado' => 'boolean',
     ];
 
     // Relación con Venta
@@ -35,9 +36,10 @@ class Pago extends Model
     {
         return $this->belongsTo(ItemRemision::class, 'item_remision_id');
     }
-public function financiamiento()
+
+public function detalleFinanciamiento()
 {
-    return $this->belongsTo(PagosFinanciamiento::class, 'financiamiento_id');
+    return $this->belongsTo(PagoFinanciamiento::class, 'financiamiento_id');
 }
 
 

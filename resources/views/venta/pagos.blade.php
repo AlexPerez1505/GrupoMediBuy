@@ -1,4 +1,6 @@
 @extends('layouts.app')
+@section('title', 'Remisión')
+@section('titulo', 'Remisión No' . $venta->id)
 
 @section('content')
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -12,18 +14,50 @@
 @endif
 
 <div class="container my-5">
-    <h2 class="mb-4 text-center">Pagos de la Venta #{{ $venta->id }}</h2>
+ 
 
-    <div class="row g-4">
+    <div class="row g-4" style="margin-top:90px;">
         <!-- Información de la venta -->
         <div class="col-lg-5">
             <div class="card shadow-sm">
                 <div class="card-body">
                     <h5 class="card-title mb-3">{{ $venta->cliente->nombre }} {{ $venta->cliente->apellido }}</h5>
-                    <p><strong>Plan:</strong> {{ $venta->plan }}</p>
-                    <p><strong>Total:</strong> ${{ number_format($venta->total, 2) }}</p>
-                    <p><strong>Total pagado:</strong> ${{ number_format($venta->pagos->sum('monto'), 2) }}</p>
-                    <p><strong>Saldo restante:</strong> ${{ number_format($venta->total - $venta->pagos->sum('monto'), 2) }}</p>
+                @php
+    $pagosAprobados = $pagos->filter(function($p) {
+        return $p->aprobado;
+    });
+
+    $totalPagado = $pagosAprobados->sum('monto');
+    $saldoRestante = $venta->total - $totalPagado;
+    $porcentajePagado = min(100, round(($totalPagado / $venta->total) * 100, 2));
+    $tooltipText = "Has pagado $" . number_format($totalPagado, 2) . " de $" . number_format($venta->total, 2);
+@endphp
+
+<p><strong>Plan:</strong> {{ $venta->plan }}</p>
+<p><strong>Total:</strong> ${{ number_format($venta->total, 2) }}</p>
+<p><strong>Total pagado:</strong> ${{ number_format($totalPagado, 2) }}</p>
+<p><strong>Saldo restante:</strong> ${{ number_format($saldoRestante, 2) }}</p>
+
+<div class="mt-4">
+    <label class="form-label fw-semibold">Progreso del pago: {{ $porcentajePagado }}%</label>
+    <div class="progress position-relative" style="height: 20px; border-radius: 12px;">
+        <div class="progress-bar 
+                    @if($porcentajePagado < 50) bg-danger 
+                    @elseif($porcentajePagado < 100) bg-warning 
+                    @else bg-success @endif"
+             role="progressbar"
+             style="width: {{ $porcentajePagado }}%; transition: width 0.6s ease;"
+             data-bs-toggle="tooltip"
+             data-bs-placement="top"
+             title="{{ $tooltipText }}"
+             aria-valuenow="{{ $porcentajePagado }}"
+             aria-valuemin="0"
+             aria-valuemax="100">
+        </div>
+    </div>
+</div>
+
+
                 </div>
             </div>
 
@@ -100,30 +134,30 @@
                                             @endif
                                         </td>
                                         <td>
-    @if(!$pago->aprobado)
-        @if($pago->financiamiento_id)
-            <button 
-                class="btn btn-sm btn-success aprobar-pago-btn" 
-                data-id="{{ $pago->financiamiento_id }}" 
-                data-form-id="form-{{ $pago->id }}">
-                Aprobar
-            </button>
+                                            @if(!$pago->aprobado)
+                                                @if($pago->financiamiento_id)
+                                                    <button 
+                                                        class="btn btn-sm btn-success aprobar-pago-btn" 
+                                                        data-id="{{ $pago->financiamiento_id }}" 
+                                                        data-form-id="form-{{ $pago->id }}">
+                                                        Aprobar
+                                                    </button>
 
-            <form id="form-{{ $pago->id }}" 
-                  action="{{ route('pagos.marcarPagado', $pago->financiamiento_id) }}" 
-                  method="POST" 
-                  class="d-none">
-                @csrf
-                @method('PUT')
-                <input type="hidden" name="pin" class="pin-input">
-            </form>
-        @else
-            <span class="text-muted small">Sin financiamiento</span>
-        @endif
-    @else
-        <button class="btn btn-sm btn-secondary" disabled>Pagado</button>
-    @endif
-</td>
+                                                    <form id="form-{{ $pago->id }}" 
+                                                          action="{{ route('pagos.marcarPagado', $pago->financiamiento_id) }}" 
+                                                          method="POST" 
+                                                          class="d-none">
+                                                        @csrf
+                                                        @method('PUT')
+                                                        <input type="hidden" name="pin" class="pin-input">
+                                                    </form>
+                                                @else
+                                                    <span class="text-muted small">Sin financiamiento</span>
+                                                @endif
+                                            @else
+                                                <button class="btn btn-sm btn-secondary" disabled>Pagado</button>
+                                            @endif
+                                        </td>
                                     </tr>
                                 @endforeach
                             </tbody>
@@ -134,6 +168,18 @@
         </div>
     </div>
 </div>
+
+<!-- Inicializa tooltips -->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        })
+    });
+</script>
+
+
 
 @include('partials.pago-modal')
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

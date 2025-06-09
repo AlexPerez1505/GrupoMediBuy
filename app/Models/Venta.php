@@ -81,5 +81,17 @@ public function pagosFinanciamiento()
     return $this->hasMany(PagoFinanciamiento::class);
 }
 
+public function pagosReales()
+{
+    return $this->hasMany(Pago::class, 'venta_id');
+}
+public function pagosFinanciamientoConfirmados()
+{
+    return $this->hasMany(PagoFinanciamiento::class, 'venta_id')->where('pagado', 1);
+}
+public function pagoFinanciamiento()
+{
+    return $this->hasMany(PagoFinanciamiento::class, 'venta_id');
+}
 
 }

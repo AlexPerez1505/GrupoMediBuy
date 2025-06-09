@@ -99,14 +99,6 @@ if ($request->filled('pagos_json')) {
     return redirect()->route('ventas.show', $venta->id)->with('success', 'Venta guardada exitosamente.');
 }
 
-public function show(Venta $venta)
-{
-    // Carga relaciones necesarias, incluyendo pagosFinanciamiento
-    $venta->load(['productos.producto', 'cliente', 'usuario', 'pagosFinanciamiento']);
-
-    return view('venta.show', compact('venta'));
-}
-
 public function index()
 {
     $ventas = Venta::with(['cliente', 'usuario'])
@@ -129,18 +121,14 @@ public function pdf(Venta $venta)
             ->generate($url)
     );
 
-    // Obtener el plan de la venta
-    $plan = $venta->plan; // 👈 Se obtiene el plan aquí
+    $plan = $venta->plan;
 
-    // Generar el PDF de la venta
-    $pdfVenta = PDF::loadView('venta.pdf', compact('venta', 'qr', 'pagos', 'totalPagado', 'plan')) // 👈 Lo pasamos a la vista
+    $pdfVenta = PDF::loadView('venta.pdf', compact('venta', 'qr', 'pagos', 'totalPagado', 'plan'))
                    ->setPaper('a4', 'portrait');
 
-    // Guardar temporalmente el PDF de la venta
     $rutaVenta = storage_path("app/public/temp/venta_{$venta->id}.pdf");
     file_put_contents($rutaVenta, $pdfVenta->output());
 
-    // Obtener ruta carta garantía
     $rutaCarta = $venta->cartaGarantia?->archivo
         ? storage_path("app/public/" . $venta->cartaGarantia->archivo)
         : null;
@@ -155,7 +143,6 @@ public function pdf(Venta $venta)
         dd("Archivo PDF carta garantía NO existe en: " . $rutaCarta);
     }
 
-    // Fusionar los PDFs
     $pdf = new Fpdi();
     $archivos = [$rutaVenta, $rutaCarta];
 
@@ -176,9 +163,15 @@ public function pdf(Venta $venta)
         dd("El archivo PDF final NO se generó");
     }
 
-    return response()->download($rutaFinal, "venta_{$venta->id}.pdf");
+    // Limpiar el nombre del cliente para que sea válido en el nombre del archivo
+    $clienteNombre = preg_replace('/[^A-Za-z0-9 _-]/', '', $venta->cliente->nombre);
 
+    // Usar "Remisión" en lugar de "venta"
+    $nombreArchivo = "Remisión_{$venta->id}_{$clienteNombre}.pdf";
+
+    return response()->download($rutaFinal, $nombreArchivo);
 }
+
 
     public function update(Request $request, $id)
     {
@@ -231,18 +224,37 @@ public function pdf(Venta $venta)
                 return redirect()->back()->withErrors('Falta el producto_id para uno de los productos.');
             }
         }
+if ($request->has('pagos_financiamiento')) {
+    foreach ($request->pagos_financiamiento as $pagoId => $datos) {
+        $pago = \App\Models\PagoFinanciamiento::find($pagoId);
+        if (!$pago) continue;
+
+        if (!empty($datos['eliminar'])) {
+            $pago->delete();
+            continue;
+        }
+
+        $pago->update([
+            'fecha_pago' => $datos['fecha_pago'],
+            'monto' => $datos['monto'],
+        ]);
+    }
+}
+
 
         return redirect()->route('ventas.show', $venta->id)->with('success', 'Venta actualizada exitosamente.');
     }
 
 
-    public function edit($id)
-    {
-        $venta = Venta::with('productos', 'cliente')->findOrFail($id);
-        $clientes = Cliente::all();
-        $productos = Producto::all();
-        return view('venta.edit', compact('venta', 'clientes', 'productos'));
-    }
+public function edit($id)
+{
+    $venta = Venta::with(['productos.producto', 'cliente', 'pagoFinanciamiento'])->findOrFail($id);
+    $clientes = Cliente::all();
+    $productos = Producto::all();
+
+    return view('venta.edit', compact('venta', 'clientes', 'productos'));
+}
+
     public function search(Request $request)
 {
     $query = $request->input('search');
@@ -292,6 +304,26 @@ public function storePago(Request $request, $ventaId)
         ->with('success', 'Pago registrado exitosamente. Está pendiente de aprobación.');
 }
 
+public function show(Venta $venta)
+{
+    $venta->load([
+        'cliente',
+        'productos.producto',
+        'usuario',
+        'cartaGarantia',
+        'remision',
+    ]);
+
+    // Traer TODOS los pagos planeados, y si existe, el pago real asociado
+    $pagos = \App\Models\PagoFinanciamiento::with('pago')
+        ->where('venta_id', $venta->id)
+        ->orderBy('fecha_pago')
+        ->get();
+
+    return view('venta.show', compact('venta', 'pagos'));
+}
+
+
 
 public function indexPagos($ventaId)
 {
@@ -307,6 +339,40 @@ public function indexPagos($ventaId)
 
     return view('venta.pagos', compact('venta', 'pagos', 'financiamientos'));
 }
+
+public function reciboPago($pagoId)
+{
+    $pago = Pago::with('venta.cliente')->findOrFail($pagoId);
+
+    $pdf = PDF::loadView('venta.recibo', compact('pago'))
+              ->setPaper('a6', 'portrait');
+
+    return $pdf->stream("recibo_pago_{$pago->id}.pdf");
+}
+public function reciboFinal(Venta $venta)
+{
+    // Verificar si todos los pagos están liquidados
+    $pendientes = PagoFinanciamiento::where('venta_id', $venta->id)
+        ->where('pagado', false)
+        ->count();
+
+    if ($pendientes > 0) {
+        return redirect()->back()->with('error', 'Aún hay pagos pendientes.');
+    }
+
+    // Cargar cliente, productos, total pagado, etc.
+    $venta->load(['cliente', 'productos.producto']);
+
+    $totalPagado = Pago::where('venta_id', $venta->id)->sum('monto');
+
+    $pdf = PDF::loadView('venta.recibo_final', [
+        'venta' => $venta,
+        'totalPagado' => $totalPagado,
+    ])->setPaper('a5', 'portrait');
+
+    return $pdf->stream("recibo_final_venta_{$venta->id}.pdf");
+}
+
 public function marcarPagado(Request $request, $pagoFinanciamientoId)
 {
     $pinIngresado = $request->input('pin');
@@ -329,20 +395,6 @@ public function marcarPagado(Request $request, $pagoFinanciamientoId)
 
     return redirect()->back()->with('success', 'Pago aprobado correctamente.');
 }
-
-
-
-
-public function reciboPago($pagoId)
-{
-    $pago = Pago::with('venta.cliente')->findOrFail($pagoId);
-
-    $pdf = PDF::loadView('venta.recibo', compact('pago'))
-              ->setPaper('a6', 'portrait');
-
-    return $pdf->stream("recibo_pago_{$pago->id}.pdf");
-}
-
 public function deudores()
 {
     setlocale(LC_TIME, 'es_ES.UTF-8', 'es_ES', 'spanish');
@@ -355,17 +407,8 @@ public function deudores()
         return $timestamp ? Carbon::createFromTimestamp($timestamp) : null;
     }
 
-    $ventas = \App\Models\Venta::with(['cliente', 'pagos'])
-        ->where('plan', '!=', 'contado')
-        ->whereRaw('
-    (SELECT COALESCE(SUM(monto), 0) 
-     FROM pagos_financiamiento 
-     WHERE pagos_financiamiento.venta_id = ventas.id 
-       AND pagos_financiamiento.pagado = 1
-    ) < ventas.total
-')
-
-        ->get();
+    // ✅ Traer todas las ventas, no solo las pendientes
+    $ventas = \App\Models\Venta::with(['cliente', 'pagos'])->get();
 
     foreach ($ventas as $v) {
         if (!empty($v->detalle_financiamiento['fecha']) && is_string($v->detalle_financiamiento['fecha'])) {
@@ -384,6 +427,7 @@ public function deudores()
 
     return view('venta.deudores', compact('ventas', 'clientes'));
 }
+
 
 
 

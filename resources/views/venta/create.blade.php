@@ -207,9 +207,10 @@
                                 <p><strong>Total: $<span id="total">0.00</span></strong></p>
                                 <input type="hidden" name="total" id="total_input" value="0">
 
-                    <div class="form-group">
+               <div class="form-group">
     <label for="tipoPago">Selecciona Plan:</label>
-    <select id="tipoPago" name="plan" class="form-control modern-input w-50">
+    <select id="tipoPago" name="plan" class="form-control modern-input w-50" required>
+        <option value="" selected disabled>Selecciona un plan</option>
         <option value="contado">Pago de Contado</option>
         <option value="personalizado">Plan Personalizado</option>
         <option value="estatico">Plan Fijo</option>
@@ -217,6 +218,7 @@
         <option value="credito">Plan a Crédito</option>
     </select>
 </div>
+
 
 
 <div id="opcionesDinamicas" style="display: none; margin-top: 1rem;">
@@ -252,7 +254,7 @@
         @endforeach
     </select>
 </div>
-
+<br>
 
                                 <input type="hidden" name="productos" id="productos_input">
                                 <button type="submit" class="btn btn-success">Guardar</button>
@@ -405,7 +407,10 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         } else if (tipo === 'personalizado') {
             generarPagosPersonalizados(total);
-        }
+        }else if (tipo === 'contado') {
+    let fechaPagoUnico = new Date();
+    agregarPago(total, fechaPagoUnico, 'Pago único');
+}
     }
 
     function generarPagosPersonalizados(total) {
@@ -525,53 +530,47 @@ function recalcularPagosPersonalizados() {
     actualizarPlanPagos(obtenerTotal());
 });
 </script>
-
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const form = document.getElementById('form-venta');
     const inputPagosJson = document.getElementById('pagosJsonInput');
     const selectPlan = document.getElementById('tipoPago');
 
+    form.addEventListener('submit', function (e) {
+        console.log('Form submit capturado');
+        console.log('window.pagos:', window.pagos);
+        console.log('selectPlan:', selectPlan);
 
-   form.addEventListener('submit', function (e) {
-    console.log('Form submit capturado');
-    console.log('window.pagos:', window.pagos);
-    console.log('selectPlan:', selectPlan);
+        if (!selectPlan) {
+            alert('Error: el select de plan no existe o tiene otro id.');
+            e.preventDefault();
+            return;
+        }
 
-    if (!selectPlan) {
-        alert('Error: el select de plan no existe o tiene otro id.');
-        e.preventDefault();
-        return;
-    }
+        const planSeleccionado = selectPlan.value;
+        console.log('planSeleccionado:', planSeleccionado);
 
-    const planSeleccionado = selectPlan.value;
-    console.log('planSeleccionado:', planSeleccionado);
+        // ✅ Validación general: debe haber al menos un pago, sin importar el tipo de plan
+        if (!window.pagos || window.pagos.length === 0) {
+            alert('No hay pagos definidos, por favor selecciona o genera un plan de pagos.');
+            e.preventDefault();
+            return;
+        }
 
-    if (planSeleccionado !== 'contado' && (!window.pagos || window.pagos.length === 0)) {
-        alert('No hay pagos definidos, por favor selecciona o genera un plan de pagos.');
-        e.preventDefault();
-        return;
-    }
-
-    if (window.pagos && window.pagos.length > 0) {
+        // ✅ Formatear los pagos y pasarlos al input oculto como JSON
         const pagosFormateados = window.pagos.map(pago => {
             return {
                 ...pago,
-                mes: pago.mes // ISO format 'YYYY-MM-DD'
+                mes: pago.mes // Asegúrate que esté en formato 'YYYY-MM-DD'
             };
         });
 
         inputPagosJson.value = JSON.stringify(pagosFormateados);
-    } else {
-        inputPagosJson.value = '';
-    }
-
-    console.log('Pagos a enviar:', inputPagosJson.value);
-});
-
-   
+        console.log('Pagos a enviar:', inputPagosJson.value);
+    });
 });
 </script>
+
 
 
 

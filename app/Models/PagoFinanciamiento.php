@@ -29,6 +29,12 @@ public function pagos()
 {
     return $this->hasMany(Pago::class, 'financiamiento_id');
 }
+// app/Models/PagoFinanciamiento.php
+public function pago()
+{
+    return $this->hasOne(\App\Models\Pago::class, 'financiamiento_id');
+}
+
 
 
 }

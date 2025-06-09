@@ -33,6 +33,7 @@ use App\Models\Cliente;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\VentaController;
 use App\Http\Controllers\CartaGarantiaController;
+use App\Http\Controllers\ReciboController;
 
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login'])->name('Login');
@@ -358,7 +359,10 @@ Route::post('/ventas/{venta}/pagos', [VentaController::class, 'storePago'])->nam
 
 
 
+Route::get('/verificar-recibo', [ReciboController::class, 'formularioVerificacion'])->name('recibo.verificar');
+Route::post('/verificar-recibo', [ReciboController::class, 'verificar'])->name('recibo.verificar.post');
 
+Route::get('/venta/{venta}/recibo-final', [VentaController::class, 'reciboFinal'])->name('venta.recibo.final');
 
 
 
