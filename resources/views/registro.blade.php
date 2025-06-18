@@ -1058,18 +1058,31 @@
 
             <!-- Ítems del menú -->
             <ul class="menu-items">
-                <li>
-                    <a href="{{ url('/') }}">
-                        <img src="{{ asset('images/registro.png') }}" alt="Icono Registro de Inventario" class="menu-icon-image">
-                        Registro de Inventario
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ url('/inventario') }}">
-                        <img src="{{ asset('images/inventario.png') }}" alt="Icono de Inventario" class="menu-icon-image">
-                        Inventario
-                    </a>
-                </li>
+                <li class="menu-items">
+    <a href="#" onclick="toggleSubmenu(event, 'submenu-publicacion')">
+        <img src="{{ asset('images/publicacion.png') }}" alt="Icono de Publicacion" class="menu-icon-image">
+        Publicaciones
+    </a>
+    <ul id="submenu-publicacion" class="submenu">
+        <li><a href="{{ url('/publicaciones') }}">Ver publicaciones</a></li>
+        <li><a href="{{ url('/publicaciones/crear') }}">+ Agregar</a></li>
+
+    </ul>
+</li>
+            <li class="menu-items">
+    <a href="#" onclick="toggleSubmenu(event, 'submenu-inventario')">
+        <img src="{{ asset('images/inventario.png') }}" alt="Icono de Inventario" class="menu-icon-image">
+        Inventario
+    </a>
+    <ul id="submenu-inventario" class="submenu">
+        <li><a href="{{ url('/') }}">Registro Interno</a></li>
+        <li><a href="{{ url('/inventario') }}">Inventario Interno</a></li>
+        <li><a href="{{ url('/servicio') }}">Registro Externo</a></li>
+        <li><a href="{{ url('/inventario/servicio') }}">Inventario Externo</a></li>
+    </ul>
+</li>
+
+
                 <!-- Opción de Cotizaciones con Submenú -->
                 @if(Auth::user()->hasRole('admin') || Auth::user()->hasRole('editor'))
                 <li class="menu-items">
@@ -1081,6 +1094,19 @@
                         <li><a href="{{ url('/cotizaciones') }}">+ Crear Cotización</a></li>
                         <li><a href="{{ url('/clientes/vista') }}">Clientes</a></li>
                         <li><a href="{{ route('historial-cotizaciones') }}">Historial de Cotizaciones</a></li>
+                    </ul>
+                </li>
+                @endif
+                <!-- Opción de mantenimiento con Submenú -->
+                @if(Auth::user()->hasRole('admin') || Auth::user()->hasRole('editor'))
+                <li class="menu-items">
+                    <a href="#" onclick="toggleSubmenu(event, 'submenu-orden')">
+                        <img src="{{ asset('images/orden.png') }}" alt="Icono de Orden" class="menu-icon-image">
+                        Mantenimiento
+                    </a>
+                    <ul id="submenu-orden" class="submenu">
+                        <li><a href="{{ url('/remisions/create') }}">+ Crear Orden</a></li>
+                        <li><a href="{{ url('/remisions') }}">Historial</a></li>
                     </ul>
                 </li>
                 @endif
@@ -1097,6 +1123,14 @@
                         Agenda
                     </a>
                 </li>
+                       <li>
+    <a href="{{ route('fichas.index') }}">
+        <img src="{{ asset('images/documento.png') }}" alt="Icono de fichas técnicas" class="menu-icon-image">
+        Fichas Técnicas
+    </a>
+</li>
+
+                <!-- Nueva opción: Guias y Entregas, visible para todos los usuarios autenticados -->
                 @auth
                 <li class="menu-items">
                     <a href="#" onclick="toggleSubmenu(event, 'submenu-guias')">
@@ -1110,6 +1144,38 @@
                     </ul>
                 </li>
                 @endauth
+                 @auth
+                <li class="menu-items">
+    <a href="#" onclick="toggleSubmenu(event, 'submenu-camionetas')">
+        <img src="{{ asset('images/cady.png') }}" alt="Icono de Camionetas" class="menu-icon-image">
+        Camionetas
+    </a>
+    <ul id="submenu-camionetas" class="submenu">
+        <li><a href="{{ route('camionetas.create') }}">+ Agregar Camioneta</a></li>
+        <li><a href="{{ route('camionetas.index') }}">Lista de Camionetas</a></li>
+    </ul>
+</li>
+@endauth
+<!-- Nueva opción: Solicitudes de Material (visible para todos los autenticados) -->
+@auth
+<li class="menu-items">
+    <a href="#" onclick="toggleSubmenu(event, 'submenu-solicitudes-material')">
+        <img src="{{ asset('images/material.png') }}" alt="Icono de Solicitudes de Material" class="menu-icon-image">
+        Solicitudes de Material
+    </a>
+    <ul id="submenu-solicitudes-material" class="submenu">
+        <!-- Solo visible para admin -->
+        @if(Auth::user()->hasRole('admin'))
+            <li><a href="{{ route('solicitudes.admin') }}">Solicitudes Pendientes</a></li>
+        @endif
+        <!-- Visible para todos los autenticados -->
+        <li><a href="{{ route('solicitudes.index') }}">Ver Mis Solicitudes</a></li>
+        <li><a href="{{ route('solicitudes.create') }}">+ Crear Solicitud</a></li>
+    </ul>
+</li>
+@endauth
+
+                <!-- Nueva opción: Usuarios, visible solo para el Admin con Submenú -->
                 @if(Auth::user()->hasRole('admin'))
                 <li class="menu-items">
                     <a href="#" onclick="toggleSubmenu(event, 'submenu-usuarios')">
@@ -1119,10 +1185,20 @@
                     <ul id="submenu-usuarios" class="submenu">
                         <li><a href="{{ route('users.create') }}">+ Agregar Usuario</a></li>
                         <li><a href="{{ url('/usuarios') }}">Lista de Usuarios</a></li>
+                        <li><a href="{{ url('/asistencias/historial') }}">Reporte Asistencias</a></li>
                         <li> <a href="{{ route('asistencias.index') }}"> Registrar Asistencias</a></li>
                     </ul> 
                 </li>
                 @endif
+                @auth
+<li>
+    <a href="{{ route('prestamos.index') }}">
+        <img src="{{ asset('images/endoscopia.png') }}" alt="Icono de Préstamos" class="menu-icon-image">
+        Préstamos
+    </a>
+</li>
+@endauth
+
                 @auth
                     <li>
                         <form action="{{ route('logout') }}" method="POST">
@@ -1142,8 +1218,9 @@
                 @endauth
             </ul>
         </nav>
-    <div id="menu-overlay" class="menu-overlay" onclick="closeMenu()"></div>
-</div>
+        <!-- Overlay para cerrar el menú -->
+        <div id="menu-overlay" class="menu-overlay" onclick="closeMenu()"></div>
+    </div>
         <h1 class="titulos">Registro de Inventario</h1>
     <div class="gradient-bg-animation"></div>
     </div>
@@ -1173,6 +1250,7 @@
                         <option value="hospitalizacion">Hospitalización</option>
                         <option value="cirujia">Cirujia</option>
                         <option value="artroscopia">Artroscopia</option>
+                        <option value="autoclave">Autoclave</option>
                         <option value="ginecologia">Ginecología</option>
                         <option value="otros">Otros</option>
                     </select>
@@ -1424,61 +1502,80 @@
 </div>
 <body>
 
-
-
 <script>
+document.addEventListener('DOMContentLoaded', () => {
     const canvas = document.getElementById('firmaCanvas');
     const ctx = canvas.getContext('2d');
     const limpiarFirma = document.getElementById('limpiarFirma');
     const firmaInput = document.getElementById('firmaInput');
     let dibujando = false;
 
-    function obtenerPosicionCanvas(event) {
+    // Establecer dimensiones responsivas del canvas
+    function ajustarCanvas() {
+        const ratio = window.devicePixelRatio || 1;
+        canvas.width = canvas.offsetWidth * ratio;
+        canvas.height = canvas.offsetHeight * ratio;
+        ctx.scale(ratio, ratio);
+        ctx.lineCap = 'round';
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#333';
+    }
+    ajustarCanvas();
+    window.addEventListener('resize', ajustarCanvas);
+
+    function obtenerPosicion(event) {
         const rect = canvas.getBoundingClientRect();
-        const x = (event.touches ? event.touches[0].clientX : event.clientX) - rect.left;
-        const y = (event.touches ? event.touches[0].clientY : event.clientY) - rect.top;
-        return { x, y };
+        const clientX = event.touches ? event.touches[0].clientX : event.clientX;
+        const clientY = event.touches ? event.touches[0].clientY : event.clientY;
+        return {
+            x: clientX - rect.left,
+            y: clientY - rect.top
+        };
     }
 
     function comenzarDibujo(event) {
+        event.preventDefault();
         dibujando = true;
-        const { x, y } = obtenerPosicionCanvas(event);
+        const { x, y } = obtenerPosicion(event);
         ctx.beginPath();
         ctx.moveTo(x, y);
-        event.preventDefault();
-    }
-
-    function detenerDibujo() {
-        dibujando = false;
-        ctx.beginPath();
-        firmaInput.value = canvas.toDataURL();
     }
 
     function dibujar(event) {
         if (!dibujando) return;
-        const { x, y } = obtenerPosicionCanvas(event);
-        ctx.lineTo(x, y);
-        ctx.strokeStyle = '#333';
-        ctx.lineWidth = 2;
-        ctx.lineCap = 'round';
-        ctx.stroke();
         event.preventDefault();
+        const { x, y } = obtenerPosicion(event);
+        ctx.lineTo(x, y);
+        ctx.stroke();
     }
 
+    function detenerDibujo(event) {
+        if (!dibujando) return;
+        dibujando = false;
+        ctx.closePath();
+        firmaInput.value = canvas.toDataURL('image/png');
+    }
+
+    // Soporte para mouse
     canvas.addEventListener('mousedown', comenzarDibujo);
     canvas.addEventListener('mousemove', dibujar);
     canvas.addEventListener('mouseup', detenerDibujo);
-    canvas.addEventListener('mouseout', detenerDibujo);
-    canvas.addEventListener('touchstart', comenzarDibujo);
-    canvas.addEventListener('touchmove', dibujar);
+    canvas.addEventListener('mouseleave', detenerDibujo);
+
+    // Soporte para touch
+    canvas.addEventListener('touchstart', comenzarDibujo, { passive: false });
+    canvas.addEventListener('touchmove', dibujar, { passive: false });
     canvas.addEventListener('touchend', detenerDibujo);
     canvas.addEventListener('touchcancel', detenerDibujo);
 
+    // Botón limpiar
     limpiarFirma.addEventListener('click', () => {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         firmaInput.value = '';
     });
+});
 </script>
+
 <script>
 function updatePreview(input, previewId) {
     const file = input.files[0];
@@ -1763,7 +1860,7 @@ document.addEventListener('DOMContentLoaded', () => {
             "Adaptador USB", "Adaptador para Sonda", "Bomba de Irrigación", "Bomba de Secreción", "Boquillas", "Broncoscopio", 
             "Cable", "Cable Bipolar", "Cable USB", "Cámara con Cabezal", "Carrito", "Cepillo de Limpieza", "Colonoscopio", 
             "Contenedor de Liquidos", "Duodenoscopio", "Eliminador", "Fuente de Luz", "Gastroscopio", "Kit de Limpieza", 
-            "Lineas de Irrigación", "Mause", "Pigtail", "Pigtel", "Pinza de Biopsia", "Pinza de Biopsia Hot", 
+            "Lineas de Irrigación", "Mause", "Monitor", "Pigtail", "Pigtel", "Pinza de Biopsia", "Pinza de Biopsia Hot", 
             "Pinza de Extracción", "Pinza de Polipectomia", "Probador", "Probador de Fuga", "Procesador", 
             "Proctector", "Sistema", "Sistema Endoscopia", "Tapon-ETO", "Teclado", "Video Carro","Regulador de CO2 Endoscopia", "Argon Plasma", "Electrocauterio"
         ],
@@ -1776,18 +1873,21 @@ document.addEventListener('DOMContentLoaded', () => {
         ],
 
         quirofano: [
-            "Desfibrador", "Electrocauterio", "Eliminador", "Lámpara de Cirugía", "Lámpara de Quirofano", 
-            "Máquina de Anestesia", "Mesa de Cirugía", "Consola Quirurjica", "Monitor Signos Vitales"
+            "Arco en C", "Desfibrador", "Electrocauterio", "Eliminador", "Lámpara de Cirugía", "Lámpara de Quirofano", 
+            "Máquina de Anestesia", "Mesa de Cirugía", "Consola Quirurjica", "Monitor Signos Vitales","Pedal Monopolar", "Pedal Bipolar"
         ],
 
         hospitalizacion: [
-             "Aspirador", "Cama Hospitalaria Eléctrica", "Camilla", "Incubadora", "Mesa de Exploración"
+             "Aspirador", "Cama Hospitalaria Eléctrica", "Camilla", "Cuna Térmica", "Incubadora", "Mesa de Exploración" ,"Ventilador"
         ],
         cirujia: [
             "Lapíz para Electrocauterio", "Placa para Electrocauterio", "Brazalete"
         ],
         artroscopia: [
-            "Set de Taladros de Artroscopia"
+            "Set de Taladros de Artroscopia", "Serfas de radiofrecuencia"
+        ],
+        autoclave :[
+          "Autoclave de cámara 95 L " 
         ],
         ginecologia: [
             "Mesa de Exploración", "Cama de Ginecología"

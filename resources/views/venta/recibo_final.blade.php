@@ -21,24 +21,23 @@
 
         .header {
             text-align: center;
-            border-bottom: 1px solid #dcdcdc;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #19589d;
         }
 
         .header img {
-            height: 55px;
-            margin-bottom: 5px;
+            height: 60px;
         }
 
         .header h1 {
             margin: 5px 0;
-            font-size: 20px;
-            color: #407b38;
+            font-size: 22px;
+            color: #19589d;
         }
 
         .header p {
-            margin: 0;
+            margin: 2px 0;
             font-size: 12px;
             color: #555;
         }
@@ -47,68 +46,98 @@
             font-size: 14px;
             font-weight: bold;
             color: #19589d;
-            margin-top: 30px;
-            margin-bottom: 8px;
+            margin-top: 25px;
+            margin-bottom: 10px;
             border-bottom: 1px solid #dcdcdc;
-            padding-bottom: 5px;
+            padding-bottom: 4px;
         }
 
-        .client-info {
-            line-height: 1.6;
-            margin-bottom: 20px;
+        .client-info, .summary-info {
+            line-height: 1.7;
+            margin-bottom: 15px;
+            background-color: #f7f9fc;
+            padding: 12px 16px;
+            border-left: 4px solid #19589d;
+            border-radius: 5px;
         }
 
-        .client-info strong {
+        .client-info p,
+        .summary-info p {
+            margin: 4px 0;
+        }
+
+        .client-info strong,
+        .summary-info strong {
             display: inline-block;
             width: 140px;
-            color: #34495e;
+            color: #2c3e50;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
 
-        th {
-            background-color: #f5f6fa;
-            color: #2c3e50;
+thead th {
+    background-color: #eef2f6; /* azul grisáceo suave */
+    color: #2c3e50; /* gris oscuro profesional */
+    padding: 8px 10px;
+    font-weight: 600;
+    font-size: 12px;
+    text-align: left;
+    border-bottom: 1px solid #d3dce6;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+
+        tbody td {
             padding: 8px;
-            font-weight: 600;
             font-size: 12px;
-            border: 1px solid #eaeaea;
+            border: none;
+            vertical-align: top;
         }
 
-        td {
-            padding: 8px;
-            font-size: 12px;
-            border: 1px solid #eaeaea;
+        tbody tr {
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        tbody img {
+            border-radius: 4px;
         }
 
         .summary {
-            margin-top: 25px;
-            width: 100%;
+            background-color: #f5f7fa;
+            border-left: 4px solid #27ae60;
+            border-radius: 5px;
+            padding: 12px 16px;
         }
 
-        .summary td {
-            padding: 10px;
-            font-weight: bold;
+        .summary p {
+            margin: 5px 0;
             font-size: 13px;
         }
 
+        .summary strong {
+            width: 150px;
+            display: inline-block;
+        }
+
         .badge {
-            color: #27ae60;
-            font-weight: bold;
-            font-size: 12px;
+            color: #fff;
+            background-color: #27ae60;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
         }
 
         .footer {
             text-align: center;
             font-size: 11px;
             color: #7f8c8d;
-            margin-top: 40px;
+            margin-top: 35px;
             border-top: 1px solid #dcdcdc;
-            padding-top: 15px;
+            padding-top: 10px;
         }
     </style>
 </head>
@@ -136,17 +165,23 @@
         <thead>
         <tr>
             <th>Producto</th>
+            <th>Descripción</th>
             <th>Cantidad</th>
-            <th>Precio Unitario</th>
             <th>Subtotal</th>
         </tr>
         </thead>
         <tbody>
         @foreach($venta->productos as $detalle)
             <tr>
-                <td>{{ $detalle->producto->nombre }}</td>
+                <td>
+                    <img src="{{ public_path('storage/' . ($detalle->producto->imagen ?? 'default.jpg')) }}" width="50" alt="Imagen del producto">
+                </td>
+                <td>
+                    {{ mb_strtoupper($detalle->producto->tipo_equipo ?? '—', 'UTF-8') }}
+                    {{ mb_strtoupper($detalle->producto->modelo ?? '', 'UTF-8') }}<br>
+                    {{ mb_strtoupper($detalle->producto->marca ?? '', 'UTF-8') }}
+                </td>
                 <td>{{ $detalle->cantidad }}</td>
-                <td>${{ number_format($detalle->precio_unitario, 2) }}</td>
                 <td>${{ number_format($detalle->cantidad * $detalle->precio_unitario, 2) }}</td>
             </tr>
         @endforeach
@@ -174,20 +209,11 @@
     </table>
 
     <div class="section-title">Resumen de la Venta</div>
-    <table class="summary">
-        <tr>
-            <td>Total de venta:</td>
-            <td>${{ number_format($venta->total, 2) }}</td>
-        </tr>
-        <tr>
-            <td>Total pagado:</td>
-            <td>${{ number_format($venta->pagos->sum('monto'), 2) }}</td>
-        </tr>
-        <tr>
-            <td>Estado:</td>
-            <td><span class="badge"> CUENTA LÍQUIDADA</span></td>
-        </tr>
-    </table>
+    <div class="summary">
+        <p><strong>Total de venta:</strong> ${{ number_format($venta->total, 2) }}</p>
+        <p><strong>Total pagado:</strong> ${{ number_format($venta->pagos->sum('monto'), 2) }}</p>
+        <p><strong>Estado:</strong> <span class="badge">CUENTA LÍQUIDADA</span></p>
+    </div>
 
     <div class="footer">
         Gracias por confiar en Grupo MediBuy.<br>

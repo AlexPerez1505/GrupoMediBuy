@@ -134,7 +134,7 @@
                 $hash = strtoupper(substr(sha1($pago->id . $pago->monto . $pago->fecha_pago), 0, 12));
             @endphp
             <p>Código único: <span class="code">{{ $hash }}</span></p>
-            <p>Puede validar este recibo en <strong>www.medibuy.grupomedibuy.com/verificar</strong> ingresando el código mostrado.</p>
+            <p>Puede validar este recibo en <strong>https://medibuy.grupomedibuy.com/verificar-recibo</strong> ingresando el código mostrado.</p>
         </div>
 
         <div class="divider"></div>

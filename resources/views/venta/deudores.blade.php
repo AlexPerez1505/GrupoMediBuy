@@ -4,7 +4,6 @@
 @section('content')
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="{{ asset('css/deudores.css') }}?v={{ time() }}">
-
 @php
 use Carbon\Carbon;
 
@@ -52,7 +51,6 @@ foreach ($ventas as $ventaTmp) {
     }
 }
 @endphp
-
 @if(count($ventasConPagosProximos))
 <div class="alert alert-warning d-flex align-items-center mb-4" style="background-color: #fff8e1; border: 1px solid #ffca28; border-radius: 6px; padding: 10px 15px; margin-top:90px;">
     <svg xmlns="http://www.w3.org/2000/svg" class="me-2" width="22" height="22" fill="#ff9800" viewBox="0 0 24 24">
@@ -61,13 +59,36 @@ foreach ($ventas as $ventaTmp) {
     <div>
         <strong>Atención:</strong> Hay {{ count($ventasConPagosProximos) }} venta(s) con pago próximo.
         @foreach($ventasConPagosProximos as $vp)
-            <br>
-            <strong>#Venta:</strong> {{ $vp['venta']->id }} – Cliente: {{ optional($vp['venta']->cliente)->nombre }} {{ optional($vp['venta']->cliente)->apellido }} – Fecha: {{ $vp['fecha']->format('d/m/Y') }}
+            @php
+              $pagoPendiente = $vp['venta']->pagosFinanciamiento
+    ->where('pagado', false)
+    ->first(function ($pago) use ($vp) {
+        return $pago->fecha_pago && \Carbon\Carbon::parse($pago->fecha_pago)->isSameDay($vp['fecha']);
+    });
+
+
+                $puedeNotificar = $pagoPendiente && !$pagoPendiente->notificado;
+            @endphp
+
+            <div class="mt-2">
+                <strong>#Venta:</strong> {{ $vp['venta']->id }} – 
+                Cliente: {{ optional($vp['venta']->cliente)->nombre }} {{ optional($vp['venta']->cliente)->apellido }} – 
+                Fecha: {{ $vp['fecha']->format('d/m/Y') }}
+
+                @if($puedeNotificar)
+                    <button class="btn btn-sm btn-outline-primary ms-2 reenviar-btn"
+                        data-pago-id="{{ $pagoPendiente->id }}"
+                        style="padding: 2px 8px; font-size: 0.8rem;">
+                        Reenviar correo
+                    </button>
+                @else
+                    <span class="badge bg-secondary ms-2" style="font-size: 0.7rem;">Notificado</span>
+                @endif
+            </div>
         @endforeach
     </div>
 </div>
 @endif
-
 <div class="container py-4">
     <h1 class="titulo-principal">Ventas con saldo pendiente</h1>
 
@@ -176,4 +197,35 @@ foreach ($ventas as $ventaTmp) {
         </div>
     @endif
 </div>
+<script>
+document.querySelectorAll('.reenviar-btn').forEach(button => {
+    button.addEventListener('click', function () {
+        const pagoId = this.dataset.pagoId;
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+        this.disabled = true;
+        this.textContent = 'Enviando...';
+
+        fetch(`/financiamientos/notificar/${pagoId}`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json'
+            }
+        }).then(response => {
+            if (response.ok) {
+                this.textContent = 'Correo enviado';
+                this.classList.remove('btn-outline-primary');
+                this.classList.add('btn-success');
+            } else {
+                this.textContent = 'Error';
+                this.disabled = false;
+            }
+        }).catch(() => {
+            this.textContent = 'Error';
+            this.disabled = false;
+        });
+    });
+});
+</script>
 @endsection

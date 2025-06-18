@@ -15,10 +15,12 @@ class PagoFinanciamiento extends Model
         'monto',
         'pagado',
         'metodo_pago',
+        'notificado', // <-- agregado aquí
     ];
 
     protected $casts = [
         'pagado' => 'boolean',
+        'notificado' => 'boolean', // <-- para que se comporte como booleano
     ];
 
     public function venta()

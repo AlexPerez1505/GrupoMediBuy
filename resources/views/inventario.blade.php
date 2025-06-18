@@ -2699,6 +2699,7 @@ textarea {
     <ul id="submenu-publicacion" class="submenu">
         <li><a href="{{ url('/publicaciones') }}">Ver publicaciones</a></li>
         <li><a href="{{ url('/publicaciones/crear') }}">+ Agregar</a></li>
+
     </ul>
 </li>
             <li class="menu-items">
@@ -2729,7 +2730,7 @@ textarea {
                     </ul>
                 </li>
                 @endif
-                <!-- Opción de Cotizaciones con Submenú -->
+   <!-- Opción de mantenimiento con Submenú -->
                 @if(Auth::user()->hasRole('admin') || Auth::user()->hasRole('editor'))
                 <li class="menu-items">
                     <a href="#" onclick="toggleSubmenu(event, 'submenu-orden')">
@@ -2742,7 +2743,6 @@ textarea {
                     </ul>
                 </li>
                 @endif
-
                 <li>
                     <a href="{{ url('/remisiones') }}">
                         <img src="{{ asset('images/remisiones.png') }}" alt="Icono de remisiones" class="menu-icon-image">
@@ -2817,6 +2817,7 @@ textarea {
                     <ul id="submenu-usuarios" class="submenu">
                         <li><a href="{{ route('users.create') }}">+ Agregar Usuario</a></li>
                         <li><a href="{{ url('/usuarios') }}">Lista de Usuarios</a></li>
+                        <li><a href="{{ url('/asistencias/historial') }}">Reporte Asistencias</a></li>
                         <li> <a href="{{ route('asistencias.index') }}"> Registrar Asistencias</a></li>
                     </ul> 
                 </li>
@@ -3815,7 +3816,8 @@ $(document).ready(function () {
                 }
 
                 // Procesos
-                $('#procesosContainer').empty();
+// Procesos
+$('#procesosContainer').empty();
 
 if (response.procesos && response.procesos.length > 0) {
     response.procesos.forEach(function (proceso) {
@@ -3824,6 +3826,30 @@ if (response.procesos && response.procesos.length > 0) {
                 ⚙️ <strong>Proceso Técnico</strong>
             </div>`;
 
+        // Fecha formateada
+let fechaCreacion = 'Fecha no disponible';
+
+if (proceso.created_at && typeof proceso.created_at === 'string') {
+    const raw = proceso.created_at.replace(' ', 'T');
+    const fecha = new Date(raw);
+
+    if (!isNaN(fecha)) {
+        fechaCreacion = fecha.toLocaleString('es-MX', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        });
+    } else {
+        console.warn(`❌ Fecha inválida para proceso ${proceso.id}:`, proceso.created_at);
+    }
+} else {
+    console.warn(`❌ created_at no existe o no es string para proceso ${proceso.id}`);
+}
+
+
         let procesoHTML = `
             <div class="col-12 d-flex justify-content-center align-items-center">
                 <div class="proceso-wrapper text-center">
@@ -3831,6 +3857,9 @@ if (response.procesos && response.procesos.length > 0) {
                     <label for="descripcion_proceso_${proceso.id}" class="video-label">
                         Descripción del Proceso (ID: ${proceso.id}):
                     </label>
+                    <p class="text-muted mb-2">
+                        🕒 Creado el: ${fechaCreacion}
+                    </p>
                     <div class="d-flex justify-content-center">
                         <textarea id="descripcion_proceso_${proceso.id}" rows="4" class="form-controln form-controlqueja-lj w-100 text-center" readonly>${proceso.descripcion_proceso}</textarea>
                     </div>
@@ -3838,7 +3867,7 @@ if (response.procesos && response.procesos.length > 0) {
             </div>
         `;
 
-        // Defectos (checklist-style)
+        // Defectos
         if (proceso.defectos && proceso.defectos.trim() !== '') {
             let defectosList = proceso.defectos.split(',').map(defecto => {
                 defecto = defecto.replace(/\\u[\dA-F]{4}/gi, match => decodeURIComponent('%' + match.replace(/\\u/g, '')));
@@ -3934,6 +3963,7 @@ if (response.procesos && response.procesos.length > 0) {
 } else {
     $('#procesosContainer').hide();
 }
+
 
             },
             error: function (xhr, status, error) {

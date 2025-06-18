@@ -8,48 +8,67 @@
 <style>
     body {
         background: linear-gradient(120deg, #f0f4ff, #e8f9f3);
+        font-family: 'Segoe UI', sans-serif;
+        font-size: 0.95rem;
     }
 
-    h1, h3 {
-        color: #3a3a3a;
+    h1, h3, h4 {
+        color: #333;
         font-weight: 600;
     }
 
     .form-section {
         background: #ffffff;
-        border-radius: 1rem;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
-        padding: 2rem;
-        margin-bottom: 2rem;
-        border-left: 6px solid #a7d6ff;
+        border-radius: 0.8rem;
+        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.03);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border-left: 4px solid #8ec9ff;
+    }
+
+    @media (min-width: 768px) {
+        .form-section.double {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .form-section.double > .form-section-inner {
+            flex: 1;
+        }
     }
 
     label {
         font-weight: 500;
-        color: #495057;
+        color: #444;
+        margin-bottom: 0.4rem;
     }
 
     .form-control {
-        border-radius: 0.6rem;
+        border-radius: 0.5rem;
         border: 1px solid #d0dce9;
-        background-color: #fefefe;
+        background-color: #fff;
+        font-size: 0.92rem;
     }
 
     .form-control:focus {
-        border-color: #a7d6ff;
-        box-shadow: 0 0 0 0.2rem rgba(167, 214, 255, 0.4);
+        border-color: #8ec9ff;
+        box-shadow: 0 0 0 0.15rem rgba(167, 214, 255, 0.35);
+    }
+
+    .btn {
+        font-weight: 500;
+        border-radius: 0.5rem;
     }
 
     .btn-primary {
-        background-color: #a7d6ff;
-        border-color: #a7d6ff;
+        background-color: #8ec9ff;
+        border-color: #8ec9ff;
         color: #1f1f1f;
-        font-weight: 500;
     }
 
     .btn-primary:hover {
-        background-color: #8ec9ff;
-        border-color: #8ec9ff;
+        background-color: #73bdf8;
+        border-color: #73bdf8;
     }
 
     .btn-danger {
@@ -63,13 +82,28 @@
         border-color: #f69c9c;
     }
 
+    .btn-success {
+        background-color: #c1f3d3;
+        border-color: #c1f3d3;
+        color: #215c3b;
+    }
+
+    .btn-success:hover {
+        background-color: #a8e9bf;
+    }
+
     .table thead {
-        background: #e1f0ff;
+        background: #e7f3ff;
     }
 
     .table th {
-        color: #3a3a3a;
+        color: #333;
         font-weight: 500;
+        font-size: 0.92rem;
+    }
+
+    .table td {
+        font-size: 0.9rem;
     }
 
     .table td, .table th {
@@ -78,15 +112,12 @@
     }
 
     .table img {
-        border-radius: 0.5rem;
+        border-radius: 0.4rem;
     }
 
-    .text-center {
-        text-align: center;
-    }
-
-    select.form-control {
-        background-color: #f4f8ff;
+    .alert-danger {
+        font-size: 0.9rem;
+        padding: 0.6rem 1rem;
     }
 </style>
 
@@ -97,59 +128,7 @@
         @csrf
         @method('PUT')
 
-        <div class="row form-section">
-            <div class="col-md-6 mb-3">
-                <label for="cliente_id">Cliente</label>
-                <select name="cliente_id" id="cliente_id" class="form-control" required>
-                    @foreach($clientes as $cliente)
-                        <option value="{{ $cliente->id }}" {{ $venta->cliente_id == $cliente->id ? 'selected' : '' }}>
-                            {{ $cliente->nombre }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-
-            <div class="col-md-6 mb-3">
-                <label for="lugar">Lugar</label>
-                <input type="text" name="lugar" id="lugar" class="form-control" value="{{ $venta->lugar }}" required>
-            </div>
-
-            <div class="col-12 mb-3">
-                <label for="nota">Nota</label>
-                <textarea name="nota" id="nota" class="form-control" rows="2">{{ $venta->nota }}</textarea>
-            </div>
-
-            <div class="col-md-4 mb-3">
-                <label for="subtotal">Subtotal</label>
-                <input type="number" name="subtotal" id="subtotal" class="form-control" value="{{ $venta->subtotal }}" required>
-            </div>
-
-            <div class="col-md-4 mb-3">
-                <label for="descuento">Descuento</label>
-                <input type="number" name="descuento" id="descuento" class="form-control" value="{{ $venta->descuento }}" step="0.01">
-            </div>
-
-            <div class="col-md-4 mb-3">
-                <label for="envio">Envío</label>
-                <input type="number" name="envio" id="envio" class="form-control" value="{{ $venta->envio }}" step="0.01">
-            </div>
-
-            <div class="col-md-6 mb-3">
-                <label for="iva">IVA</label>
-                <input type="number" name="iva" id="iva" class="form-control" value="{{ $venta->iva }}" step="0.01">
-            </div>
-
-            <div class="col-md-6 mb-3">
-                <label for="total">Total</label>
-                <input type="number" name="total" id="total" class="form-control" value="{{ $venta->total }}" required readonly>
-            </div>
-
-            <div class="col-12 mb-3">
-                <label for="plan">Plan</label>
-                <input type="text" name="plan" id="plan" class="form-control" value="{{ $venta->plan }}">
-            </div>
-        </div>
-
+        <!-- Productos -->
         <div class="form-section">
             <h3 class="mb-3">Productos</h3>
 
@@ -208,36 +187,101 @@
                 </table>
             </div>
         </div>
-<h4>Pagos Planeados (Financiamiento)</h4>
-<table class="table">
-    <thead>
-        <tr>
-            <th>Fecha</th>
-            <th>Monto</th>
-            <th>¿Eliminar?</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach($venta->pagoFinanciamiento as $pago)
-        <tr>
-            <td>
-                <input type="date" name="pagos_financiamiento[{{ $pago->id }}][fecha_pago]" value="{{ \Carbon\Carbon::parse($pago->fecha_pago)->format('Y-m-d') }}" class="form-control">
-            </td>
-            <td>
-                <input type="number" step="0.01" name="pagos_financiamiento[{{ $pago->id }}][monto]" value="{{ $pago->monto }}" class="form-control">
-            </td>
-            <td>
-                <input type="checkbox" name="pagos_financiamiento[{{ $pago->id }}][eliminar]" value="1"> Eliminar
-            </td>
-        </tr>
-        @endforeach
-    </tbody>
-</table>
 
-<div id="error-total-pagos" class="alert alert-danger d-none mt-3">
-    La suma de los pagos planeados debe ser igual al total de la venta.
+        <!-- Datos Cliente y Totales -->
+        <div class="form-section double">
+            <div class="form-section-inner">
+                <div class="mb-3">
+                    <label for="cliente_id">Cliente</label>
+                    <select name="cliente_id" id="cliente_id" class="form-control" required>
+                        @foreach($clientes as $cliente)
+                            <option value="{{ $cliente->id }}" {{ $venta->cliente_id == $cliente->id ? 'selected' : '' }}>
+                                {{ $cliente->nombre }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="lugar">Lugar</label>
+                    <input type="text" name="lugar" id="lugar" class="form-control" value="{{ $venta->lugar }}" required>
+                </div>
+                <div class="mb-3">
+                    <label for="nota">Nota</label>
+                    <textarea name="nota" id="nota" class="form-control" rows="2">{{ $venta->nota }}</textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="plan">Plan</label>
+                    <input type="text" name="plan" id="plan" class="form-control" value="{{ $venta->plan }}">
+                </div>
+            </div>
+
+            <div class="form-section-inner">
+                <div class="mb-3">
+                    <label for="subtotal">Subtotal</label>
+                    <input type="number" name="subtotal" id="subtotal" class="form-control" value="{{ $venta->subtotal }}" required>
+                </div>
+                <div class="mb-3">
+                    <label for="descuento">Descuento</label>
+                    <input type="number" name="descuento" id="descuento" class="form-control" value="{{ $venta->descuento }}" step="0.01" oninput="actualizarTotal()">
+                </div>
+                <div class="mb-3">
+                    <label for="envio">Envío</label>
+                    <input type="number" name="envio" id="envio" class="form-control" value="{{ $venta->envio }}" step="0.01" oninput="actualizarTotal()">
+                </div>
+                <div class="mb-3">
+                    <label for="iva">IVA</label>
+                    <input type="number" name="iva" id="iva" class="form-control" readonly>
+                    <div class="form-check form-switch mt-1">
+                        <input class="form-check-input" type="checkbox" id="toggleIva">
+                        <label class="form-check-label" for="toggleIva">Aplicar IVA (16%)</label>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="total">Total</label>
+                    <input type="number" name="total" id="total" class="form-control" value="{{ $venta->total }}" required readonly>
+                </div>
+            </div>
+        </div>
+
+<!-- Pagos Planeados -->
+<div class="form-section">
+    <h4 class="mb-3">Pagos Planeados (Financiamiento)</h4>
+    <table id="tabla-pagos" class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Descripción</th>
+                <th>Fecha</th>
+                <th>Monto</th>
+                <th>¿Eliminar?</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach($venta->pagoFinanciamiento as $pago)
+            <tr>
+                <td>
+                    <input type="text" name="pagos_financiamiento[{{ $pago->id }}][descripcion]" value="{{ $pago->descripcion }}" class="form-control" required>
+                </td>
+                <td>
+                    <input type="date" name="pagos_financiamiento[{{ $pago->id }}][fecha_pago]" value="{{ \Carbon\Carbon::parse($pago->fecha_pago)->format('Y-m-d') }}" class="form-control" required>
+                </td>
+                <td>
+                    <input type="number" step="0.01" name="pagos_financiamiento[{{ $pago->id }}][monto]" value="{{ $pago->monto }}" class="form-control" required>
+<td>
+    <button type="button" class="btn btn-sm btn-danger eliminar-fila">Eliminar</button>
+    <input type="hidden" name="pagos_financiamiento[{{ $pago->id }}][eliminar]" value="0" class="eliminar-hidden">
+</td>
+
+            </tr>
+            @endforeach
+        </tbody>
+    </table>
+
+    <button type="button" id="agregarPago" class="btn btn-success btn-sm mb-3">Agregar Pago</button>
+
+    <div id="error-total-pagos" class="alert alert-danger d-none">
+        La suma de los pagos planeados debe ser igual al total de la venta.
+    </div>
 </div>
-
 
         <input type="hidden" name="productos_json" id="productos_json">
 
@@ -245,6 +289,8 @@
             <button type="submit" class="btn btn-primary px-5 py-2">Guardar Cambios</button>
         </div>
     </form>
+</div>
+
 
 
 <script>
@@ -275,99 +321,244 @@ document.getElementById('form-venta').addEventListener('submit', function(event)
     }
 });
 </script>
+<script>
+$(document).ready(function () {
+    actualizarTotal();
 
+    $('#producto').change(function () {
+        const selected = $(this).find(':selected');
+        const id = selected.val();
+        const nombre = selected.data('nombre');
+        const modelo = selected.data('modelo');
+        const marca = selected.data('marca');
+        const precio = parseFloat(selected.data('precio'));
+        const imagen = selected.data('imagen');
 
-    <script>
-        $(document).ready(function () {
-            // Agregar producto
-            $('#producto').change(function () {
-                const selected = $(this).find(':selected');
-                const id = selected.val();
-                const nombre = selected.data('nombre');
-                const modelo = selected.data('modelo');
-                const marca = selected.data('marca');
-                const precio = parseFloat(selected.data('precio'));
-                const imagen = selected.data('imagen');
+        if (!id || !nombre) return;
 
-                if (!id || !nombre) return;
-
-                if ($(`#tabla-productos tbody tr[data-id="${id}"]`).length > 0) {
-                    alert('Este producto ya ha sido agregado.');
-                    return;
-                }
-                const fila = `
-                <tr data-id="${id}" data-precio="${precio}">
-                    <td><img src="${imagen}" width="50"></td>
-                    <td class="equipo">${nombre}</td>
-                    <td>${modelo}</td>
-                    <td>${marca}</td>
-                    <td><input type="number" class="form-control cantidad" name="productos[${id}][cantidad]" value="1" min="1" onchange="actualizarSubtotal(this)"></td>
-                    <td class="subtotal">${precio.toFixed(2)}</td>
-                    <td><input type="number" class="form-control sobreprecio" name="productos[${id}][sobreprecio]" value="0" min="0" onchange="actualizarSubtotal(this)"></td>
-                    <td>
-                        <button type="button" class="btn btn-sm btn-danger" onclick="eliminarFila(this)">Eliminar</button>
-                    </td>
-                    <input type="hidden" class="precio_unitario" name="productos[${id}][precio_unitario]" value="${precio}">
-                </tr>
-                `;
-                $('#tabla-productos tbody').append(fila);
-                actualizarTotal();
-                $(this).val('');  // Limpiar la selección
-            });
-
-            // Preparar JSON al enviar formulario
-            $('#form-venta').submit(function () {
-                prepararProductosJSON();
-            });
-        });
-
-        function eliminarFila(btn) {
-            $(btn).closest('tr').remove();
-            actualizarTotal();
+        if ($(`#tabla-productos tbody tr[data-id="${id}"]`).length > 0) {
+            alert('Este producto ya ha sido agregado.');
+            return;
         }
 
-        function actualizarSubtotal(input) {
-            const tr = $(input).closest('tr');
-            const cantidad = tr.find('.cantidad').val();
-            const precioUnitario = tr.find('.precio_unitario').val();
-            const sobreprecio = tr.find('.sobreprecio').val();
-            const subtotal = (cantidad * precioUnitario) + parseFloat(sobreprecio || 0);
+        const fila = `
+            <tr data-id="${id}" data-precio="${precio}">
+                <td><img src="${imagen}" width="50"></td>
+                <td class="equipo">${nombre}</td>
+                <td>${modelo}</td>
+                <td>${marca}</td>
+                <td><input type="number" class="form-control cantidad" name="productos[${id}][cantidad]" value="1" min="1" onchange="actualizarSubtotal(this)"></td>
+                <td class="subtotal">${precio.toFixed(2)}</td>
+                <td><input type="number" class="form-control sobreprecio" name="productos[${id}][sobreprecio]" value="0" min="0" onchange="actualizarSubtotal(this)"></td>
+                <td><button type="button" class="btn btn-sm btn-danger" onclick="eliminarFila(this)">Eliminar</button></td>
+                <input type="hidden" class="precio_unitario" name="productos[${id}][precio_unitario]" value="${precio}">
+            </tr>`;
+        $('#tabla-productos tbody').append(fila);
+        actualizarTotal();
+        $(this).val('');
+    });
 
-            tr.find('.subtotal').text(subtotal.toFixed(2));
-            actualizarTotal();
+    $('#descuento, #envio').on('input', actualizarTotal);
+    $('#toggleIva').on('change', function () {
+        if (navigator.vibrate) navigator.vibrate(80);
+        $('#iva').prop('readonly', true);
+        actualizarTotal();
+    });
+
+    $(document).on('input', 'input[name^="pagos_financiamiento"][name$="[monto]"]', function () {
+        ajustarPagos($(this));
+    });
+    // Eliminar fila al hacer clic en el botón "Eliminar"
+$(document).on('click', '.eliminar-fila', function () {
+    $(this).closest('tr').remove();
+    actualizarPagos();
+});
+
+
+    let contadorNuevoPago = 0;
+$('#agregarPago').on('click', function () {
+    const nuevoId = 'nuevo_' + contadorNuevoPago++;
+
+    // Filtrar pagos que no están marcados para eliminar
+    const filasPagos = $('#tabla-pagos tbody tr').filter(function () {
+        return !$(this).find('input[type="checkbox"]').is(':checked');
+    });
+
+    // Ignorar el primero (ej. "Pago inicial")
+    const filasSinInicial = filasPagos.slice(1);
+
+    const descripcion = `${numeroEnLetras(filasSinInicial.length + 1)} pago`;
+
+    // Obtener última fecha del resto (sin contar el primero)
+    let ultimaFecha = null;
+    filasSinInicial.each(function () {
+        const inputFecha = $(this).find('input[name$="[fecha_pago]"]');
+        const fecha = inputFecha.val();
+        if (fecha && (!ultimaFecha || new Date(fecha) > new Date(ultimaFecha))) {
+            ultimaFecha = fecha;
         }
+    });
+
+    let nuevaFecha = '';
+    if (ultimaFecha) {
+        const fecha = new Date(ultimaFecha);
+        fecha.setMonth(fecha.getMonth() + 1);
+        nuevaFecha = fecha.toISOString().split('T')[0];
+    }
+
+    const fila = `
+        <tr>
+            <td>
+                <input type="hidden" name="pagos_financiamiento[${nuevoId}][descripcion]" value="${descripcion}">
+                ${descripcion}
+            </td>
+            <td><input type="date" name="pagos_financiamiento[${nuevoId}][fecha_pago]" class="form-control" value="${nuevaFecha}" required></td>
+            <td><input type="number" step="0.01" name="pagos_financiamiento[${nuevoId}][monto]" class="form-control" required></td>
+            <td><button type="button" class="btn btn-sm btn-danger eliminar-fila">Eliminar</button></td>
+        </tr>`;
+
+    $('#tabla-pagos tbody').append(fila);
+    actualizarPagos();
+});
+
+
+    $('#form-venta').submit(function (e) {
+        if (!validarTotalPagos()) {
+            e.preventDefault();
+        }
+        prepararProductosJSON();
+    });
+});
+
+function eliminarFila(btn) {
+    $(btn).closest('tr').remove();
+    actualizarTotal();
+}
+
 function actualizarSubtotal(input) {
     const tr = $(input).closest('tr');
     const cantidad = parseFloat(tr.find('.cantidad').val()) || 0;
-    const precioUnitario = parseFloat(tr.find('.precio_unitario').val()) || 0;
+    const precio = parseFloat(tr.find('.precio_unitario').val()) || 0;
     const sobreprecio = parseFloat(tr.find('.sobreprecio').val()) || 0;
-    const subtotal = (cantidad * precioUnitario) + sobreprecio;
-
+    const subtotal = (cantidad * precio) + sobreprecio;
     tr.find('.subtotal').text(subtotal.toFixed(2));
     actualizarTotal();
 }
 
+function actualizarTotal() {
+    let subtotal = 0;
+    $('#tabla-productos tbody tr').each(function () {
+        const cantidad = parseFloat($(this).find('.cantidad').val()) || 0;
+        const precio = parseFloat($(this).find('.precio_unitario').val()) || 0;
+        const sobreprecio = parseFloat($(this).find('.sobreprecio').val()) || 0;
+        const filaSubtotal = (cantidad * precio) + sobreprecio;
+        subtotal += filaSubtotal;
+        $(this).find('.subtotal').text(filaSubtotal.toFixed(2));
+    });
+
+    $('#subtotal').val(subtotal.toFixed(2));
+    const descuento = parseFloat($('#descuento').val()) || 0;
+    const envio = parseFloat($('#envio').val()) || 0;
+    const base = subtotal - descuento + envio;
+    let iva = $('#toggleIva').is(':checked') ? base * 0.16 : 0;
+    $('#iva').val(iva.toFixed(2));
+    const total = base + iva;
+    $('#total').val(total.toFixed(2));
+    actualizarPagos();
+}
+
+function actualizarPagos() {
+    const total = parseFloat($('#total').val()) || 0;
+    const filas = $('input[name^="pagos_financiamiento"][name$="[monto]"]').closest('tr')
+        .filter(function () {
+            return !$(this).find('input[type="checkbox"]').is(':checked');
+        });
+
+    const num = filas.length;
+    if (num === 0) return;
+
+    const monto = (total / num).toFixed(2);
+    filas.each(function () {
+        $(this).find('input[name$="[monto]"]').val(monto);
+    });
+
+    validarTotalPagos();
+}
+
+function ajustarPagos(inputModificado) {
+    const total = parseFloat($('#total').val()) || 0;
+    const filas = $('input[name^="pagos_financiamiento"][name$="[monto]"]').closest('tr')
+        .filter(function () {
+            return !$(this).find('input[type="checkbox"]').is(':checked');
+        });
+
+    const pagos = [];
+    let totalManual = 0;
+
+    filas.each(function (i, tr) {
+        const inputMonto = $(tr).find('input[name$="[monto]"]');
+        const monto = parseFloat(inputMonto.val()) || 0;
+        pagos.push({ input: inputMonto, monto, modificado: false });
+    });
+
+    const modIndex = filas.index(inputModificado.closest('tr'));
+    if (modIndex !== -1) {
+        pagos[modIndex].modificado = true;
+        totalManual += pagos[modIndex].monto;
+    }
+
+    const restantes = pagos.filter((_, i) => i !== modIndex);
+    const montoRestante = (total - totalManual) / restantes.length;
+
+    restantes.forEach(pago => {
+        pago.input.val(montoRestante.toFixed(2));
+    });
+
+    validarTotalPagos();
+}
+
+function validarTotalPagos() {
+    const total = parseFloat($('#total').val()) || 0;
+    let suma = 0;
+
+    $('input[name^="pagos_financiamiento"][name$="[monto]"]').each(function () {
+        const fila = $(this).closest('tr');
+        if (!fila.find('input[type="checkbox"]').is(':checked')) {
+            suma += parseFloat($(this).val()) || 0;
+        }
+    });
+
+    const errorDiv = $('#error-total-pagos');
+    if (Math.abs(suma - total) > 0.01) {
+        errorDiv.removeClass('d-none');
+        return false;
+    } else {
+        errorDiv.addClass('d-none');
+        return true;
+    }
+}
 
 function prepararProductosJSON() {
     const productos = [];
     $('#tabla-productos tbody tr').each(function () {
-        const id = $(this).data('id'); // este es el producto_id
-        const cantidad = $(this).find('.cantidad').val();
-        const precioUnitario = $(this).find('.precio_unitario').val();
-        const sobreprecio = $(this).find('.sobreprecio').val();
-        const subtotal = $(this).find('.subtotal').text();
-
         productos.push({
-            producto_id: id, // 👈 ESTO es lo que faltaba
-            cantidad: cantidad,
-            precio_unitario: precioUnitario,
-            subtotal: subtotal,
-            sobreprecio: sobreprecio
+            producto_id: $(this).data('id'),
+            cantidad: $(this).find('.cantidad').val(),
+            precio_unitario: $(this).find('.precio_unitario').val(),
+            sobreprecio: $(this).find('.sobreprecio').val(),
+            subtotal: $(this).find('.subtotal').text()
         });
     });
-
     $('#productos_json').val(JSON.stringify(productos));
 }
 
-    </script>
+// Ordinal en español
+function numeroEnLetras(num) {
+    const lista = ['Primer', 'Segundo', 'Tercer', 'Cuarto', 'Quinto', 'Sexto', 'Séptimo', 'Octavo', 'Noveno', 'Décimo',
+                   'Undécimo', 'Duodécimo', 'Décimotercer', 'Décimocuarto', 'Décimoquinto', 'Décimosexto'];
+    return lista[num - 1] || `${num}°`;
+}
+</script>
+
+
 @endsection

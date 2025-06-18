@@ -862,7 +862,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Función para cargar clientes dinámicamente desde el backend
     function loadClients(search = "") {
-        fetch(`/clientes?search=${search}`, {
+        fetch(`/buscar-clientes?search=${search}`, {
             method: "GET",
             headers: {
                 "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content,

@@ -128,7 +128,7 @@
 @endif
     <p><strong>LUGAR:</strong> {{ $venta->lugar }}
           <span style="float: right;">
-       <strong>EMISOR:</strong> <em>ANAHÍ TELLEZ ORTIZ</em>
+       <strong>RÈGIMEN FICAL::</strong> <em>Personas Fìsicas con Actividades Empresariales y Profesionales</em>
     </span>
 </p>
 </div>
@@ -275,7 +275,7 @@
 @endphp
 
 @if (!empty($pagos))
-    <div style="margin-bottom: 1.5rem;">
+    <div style="margin-bottom: 1rem;">
         <h3 style="color: #1e73be; font-weight: bold; border-bottom: 2px solid #1e73be; padding-bottom: 4px;">
             Detalles del Financiamiento
         </h3>
@@ -298,7 +298,7 @@
 @endif
 
 
-<div style="margin-bottom: 2rem;">
+<div style="margin-bottom: 1rem;">
     <h3 style="color: #1e73be; font-weight: bold; border-bottom: 2px solid #1e73be; padding-bottom: 4px;">
         Resumen del Financiamiento
     </h3>

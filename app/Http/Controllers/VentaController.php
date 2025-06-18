@@ -15,21 +15,28 @@ use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use Illuminate\Support\Facades\Storage;
 use setasign\Fpdi\Fpdi;
 use Carbon\Carbon;
+use App\Mail\PagoPendienteHoyMail;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
+
 
 class VentaController extends Controller
 {
-    // Método para devolver clientes con filtro (para fetch AJAX)
-    public function clientes(Request $request)
-    {
-        $search = $request->input('search', '');
+// Método para devolver clientes con filtro (para fetch AJAX)
+// Método alternativo para devolver clientes con filtro (para fetch AJAX)
+public function buscarClientes(Request $request)
+{
+    $search = $request->input('search', '');
 
-        $clientes = Cliente::query()
-            ->where('nombre', 'LIKE', "%{$search}%")
-            ->orWhere('apellido', 'LIKE', "%{$search}%")
-            ->get(['id', 'nombre', 'apellido', 'telefono', 'email', 'comentarios']); // 👈 asegúrate de incluir el id
+    $clientes = Cliente::query()
+        ->where('nombre', 'LIKE', "%{$search}%")
+        ->orWhere('apellido', 'LIKE', "%{$search}%")
+        ->get(['id', 'nombre', 'apellido', 'telefono', 'email', 'comentarios']);
 
-        return response()->json($clientes);
-    }
+    return response()->json($clientes);
+}
+
+
 
     public function create()
     {
@@ -173,77 +180,93 @@ public function pdf(Venta $venta)
 }
 
 
-    public function update(Request $request, $id)
-    {
-        $request->validate([
-            'cliente_id' => 'required|exists:clientes,id',
-            'lugar' => 'required|string|max:255',
-            'nota' => 'nullable|string',
-            'subtotal' => 'required|numeric',
-            'descuento' => 'nullable|numeric',
-            'envio' => 'nullable|numeric',
-            'iva' => 'nullable|numeric',
-            'total' => 'required|numeric',
-            'plan' => 'nullable|string|max:255',
-            'productos_json' => 'required',
-        ]);
+public function update(Request $request, $id)
+{
+    $request->validate([
+        'cliente_id' => 'required|exists:clientes,id',
+        'lugar' => 'required|string|max:255',
+        'nota' => 'nullable|string',
+        'subtotal' => 'required|numeric',
+        'descuento' => 'nullable|numeric',
+        'envio' => 'nullable|numeric',
+        'iva' => 'nullable|numeric',
+        'total' => 'required|numeric',
+        'plan' => 'nullable|string|max:255',
+        'productos_json' => 'required',
+    ]);
 
-        $venta = Venta::findOrFail($id);
+    $venta = Venta::findOrFail($id);
 
-        $venta->update([
-            'cliente_id' => $request->cliente_id,
-            'lugar' => $request->lugar,
-            'nota' => $request->nota,
-            'subtotal' => $request->subtotal,
-            'descuento' => $request->descuento,
-            'envio' => $request->envio,
-            'iva' => $request->iva,
-            'total' => $request->total,
-            'plan' => $request->plan,
-        ]);
+    $venta->update([
+        'cliente_id' => $request->cliente_id,
+        'lugar' => $request->lugar,
+        'nota' => $request->nota,
+        'subtotal' => $request->subtotal,
+        'descuento' => $request->descuento,
+        'envio' => $request->envio,
+        'iva' => $request->iva,
+        'total' => $request->total,
+        'plan' => $request->plan,
+    ]);
 
-        VentaProducto::where('venta_id', $venta->id)->delete();
+    // Eliminar productos anteriores y registrar los nuevos
+    VentaProducto::where('venta_id', $venta->id)->delete();
+    $productos = json_decode($request->productos_json, true);
 
-        $productos = json_decode($request->productos_json, true);
-
-        foreach ($productos as $p) {
-            if (isset($p['producto_id']) && !empty($p['producto_id'])) {
-                $producto = Producto::find($p['producto_id']);
-                if (!$producto) {
-                    return redirect()->back()->withErrors('Producto no encontrado para el ID: ' . $p['producto_id']);
-                }
-                VentaProducto::create([
-                    'venta_id' => $venta->id,
-                    'producto_id' => $producto->id,
-                    'cantidad' => $p['cantidad'],
-                    'precio_unitario' => $p['precio_unitario'],
-                    'subtotal' => $p['subtotal'],
-                    'sobreprecio' => $p['sobreprecio'],
-                ]);
-            } else {
-                return redirect()->back()->withErrors('Falta el producto_id para uno de los productos.');
+    foreach ($productos as $p) {
+        if (isset($p['producto_id']) && !empty($p['producto_id'])) {
+            $producto = Producto::find($p['producto_id']);
+            if (!$producto) {
+                return redirect()->back()->withErrors('Producto no encontrado para el ID: ' . $p['producto_id']);
             }
+
+            VentaProducto::create([
+                'venta_id' => $venta->id,
+                'producto_id' => $producto->id,
+                'cantidad' => $p['cantidad'],
+                'precio_unitario' => $p['precio_unitario'],
+                'subtotal' => $p['subtotal'],
+                'sobreprecio' => $p['sobreprecio'],
+            ]);
+        } else {
+            return redirect()->back()->withErrors('Falta el producto_id para uno de los productos.');
         }
+    }
+
 if ($request->has('pagos_financiamiento')) {
     foreach ($request->pagos_financiamiento as $pagoId => $datos) {
-        $pago = \App\Models\PagoFinanciamiento::find($pagoId);
-        if (!$pago) continue;
+        // Pago nuevo (ej. nuevo_0, nuevo_1...)
+        if (Str::startsWith($pagoId, 'nuevo_')) {
+            if (!empty($datos['eliminar'])) continue;
 
-        if (!empty($datos['eliminar'])) {
-            $pago->delete();
-            continue;
+            PagoFinanciamiento::create([
+                'venta_id' => $venta->id,
+                'fecha_pago' => $datos['fecha_pago'],
+                'monto' => $datos['monto'],
+                'descripcion' => $datos['descripcion'] ?? 'Pago planeado', // <- línea agregada
+            ]);
+        } else {
+            // Pago existente
+            $pago = PagoFinanciamiento::find($pagoId);
+            if (!$pago) continue;
+
+            if (!empty($datos['eliminar'])) {
+                $pago->delete();
+                continue;
+            }
+
+            $pago->update([
+                'fecha_pago' => $datos['fecha_pago'],
+                'monto' => $datos['monto'],
+                'descripcion' => $datos['descripcion'] ?? $pago->descripcion, // <- también la actualizamos si viene
+            ]);
         }
-
-        $pago->update([
-            'fecha_pago' => $datos['fecha_pago'],
-            'monto' => $datos['monto'],
-        ]);
     }
 }
 
 
-        return redirect()->route('ventas.show', $venta->id)->with('success', 'Venta actualizada exitosamente.');
-    }
+    return redirect()->route('ventas.show', $venta->id)->with('success', 'Venta actualizada correctamente.');
+}
 
 
 public function edit($id)
@@ -407,7 +430,7 @@ public function deudores()
         return $timestamp ? Carbon::createFromTimestamp($timestamp) : null;
     }
 
-    // ✅ Traer todas las ventas, no solo las pendientes
+    // Traer todas las ventas con sus clientes y pagos
     $ventas = \App\Models\Venta::with(['cliente', 'pagos'])->get();
 
     foreach ($ventas as $v) {
@@ -419,6 +442,32 @@ public function deudores()
             } catch (\Exception $e) {
                 logger()->error("Error al parsear fecha: $fechaTexto", ['error' => $e->getMessage()]);
                 $v->detalle_financiamiento['fecha_carbon'] = null;
+            }
+        }
+
+        // Buscar pagos planeados para hoy
+        $pagosHoy = \App\Models\PagoFinanciamiento::where('venta_id', $v->id)
+            ->whereDate('fecha_pago', Carbon::today())
+            ->where('pagado', false)
+            ->get();
+
+        foreach ($pagosHoy as $pago) {
+            if (!$pago->notificado) {
+                try {
+                    // Enviar al cliente
+                    if (!empty($v->cliente->email)) {
+                        Mail::to($v->cliente->email)->send(new PagoPendienteHoyMail($v));
+                    }
+
+                    // Enviarte a ti
+                    Mail::to('tu_correo@ejemplo.com')->send(new PagoPendienteHoyMail($v));
+
+                    // Marcar como notificado
+                    $pago->notificado = true;
+                    $pago->save();
+                } catch (\Exception $e) {
+                    logger()->error("Error al enviar email de pago pendiente: " . $e->getMessage());
+                }
             }
         }
     }

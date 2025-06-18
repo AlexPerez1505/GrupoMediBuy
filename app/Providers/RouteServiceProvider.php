@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Providers;
-
+use App\Models\PagoFinanciamiento;
 use Illuminate\Support\ServiceProvider;
 
 class RouteServiceProvider extends ServiceProvider

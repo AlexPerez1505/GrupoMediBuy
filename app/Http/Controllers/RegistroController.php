@@ -135,7 +135,7 @@ public function mostrarProductos()
 }
 public function obtenerDetalles($id)
 {
-    // Cargar el registro con la relación 'procesos'
+    // Cargar el registro con la relación 'procesos' y 'fichaTecnica'
     $registro = Registro::with('procesos.fichaTecnica')->findOrFail($id);
 
     // Definir los estados posibles
@@ -147,20 +147,20 @@ public function obtenerDetalles($id)
     ];
     $estadoActual = $estados[$registro->estado_actual] ?? 'Estado desconocido';
 
+    // Mapear procesos con los datos requeridos
     $procesos = $registro->procesos->map(function ($proceso) {
-        // Verificar y ajustar la ruta de la ficha técnica
         $fichaArchivo = $proceso->fichaTecnica ? $proceso->fichaTecnica->archivo : null;
+
         $defectos = is_array($proceso->defectos)
-    ? implode("\n", array_filter($proceso->defectos)) // filtra vacíos si es array
-    : (trim($proceso->defectos) !== '' && strtolower($proceso->defectos) !== 'null'
-        ? $proceso->defectos
-        : null);
-        if ($fichaArchivo) {
-            // Verifica si la ruta ya tiene el prefijo 'fichas_tecnicas/'
-            if (!str_contains($fichaArchivo, 'fichas_tecnicas/')) {
-                $fichaArchivo = 'fichas_tecnicas/' . $fichaArchivo;
-            }
+            ? implode("\n", array_filter($proceso->defectos))
+            : (trim($proceso->defectos) !== '' && strtolower($proceso->defectos) !== 'null'
+                ? $proceso->defectos
+                : null);
+
+        if ($fichaArchivo && !str_contains($fichaArchivo, 'fichas_tecnicas/')) {
+            $fichaArchivo = 'fichas_tecnicas/' . $fichaArchivo;
         }
+
         return [
             'id' => $proceso->id,
             'descripcion_proceso' => $proceso->descripcion_proceso ?? 'No disponible',
@@ -168,19 +168,24 @@ public function obtenerDetalles($id)
             'evidencia2' => $proceso->evidencia2 ? asset('storage/' . $proceso->evidencia2) : null,
             'evidencia3' => $proceso->evidencia3 ? asset('storage/' . $proceso->evidencia3) : null,
             'video' => $proceso->video ? asset('storage/' . $proceso->video) : null,
-            'ficha_tecnica_archivo' => $fichaArchivo, // Agregar la ruta de la ficha técnica
-            'ficha_tecnica_nombre' => $proceso->fichaTecnica ? $proceso->fichaTecnica->nombre : 'No disponible', // Agregar el nombre
-            'defectos' => $defectos, // Aquí se asigna directamente la cadena
+            'ficha_tecnica_archivo' => $fichaArchivo,
+            'ficha_tecnica_nombre' => $proceso->fichaTecnica ? $proceso->fichaTecnica->nombre : 'No disponible',
+            'defectos' => $defectos,
+            'created_at' => $proceso->created_at ? $proceso->created_at->format('Y-m-d H:i:s') : null,
         ];
     });
+
+    // Formatear ruta de firma digital
     $firmaPath = $registro->firma_digital;
     if ($firmaPath && str_contains($firmaPath, 'storage/')) {
-        $firmaUrl = asset($firmaPath); // ya tiene /storage
+        $firmaUrl = asset($firmaPath);
     } elseif ($firmaPath) {
         $firmaUrl = asset('storage/' . $firmaPath);
     } else {
         $firmaUrl = null;
     }
+
+    // Retornar la respuesta JSON
     return response()->json([
         'tipo_equipo' => $registro->tipo_equipo,
         'subtipo_equipo' => $registro->subtipo_equipo,
@@ -197,13 +202,12 @@ public function obtenerDetalles($id)
         'evidencia1' => $registro->evidencia1,
         'evidencia2' => $registro->evidencia2,
         'evidencia3' => $registro->evidencia3,
-        'documentoPDF' => $registro->documentoPDF, 
-        'video' => $registro->video, 
-                'firma_digital' => $firmaUrl,
-'user_name' => $registro->user_name,
+        'documentoPDF' => $registro->documentoPDF,
+        'video' => $registro->video,
+        'firma_digital' => $firmaUrl,
+        'user_name' => $registro->user_name,
         'procesos' => $procesos,
     ]);
-    return view('inventario', compact('registro', 'procesos', 'estadoActual'));
 }
 
 public function actualizarRegistro(Request $request, $id)

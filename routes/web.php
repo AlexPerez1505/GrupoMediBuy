@@ -34,6 +34,10 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\VentaController;
 use App\Http\Controllers\CartaGarantiaController;
 use App\Http\Controllers\ReciboController;
+use App\Http\Controllers\NotificacionPagoController;
+use App\Http\Controllers\CategoriaController;
+use App\Http\Controllers\SeguimientoController;
+
 
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login'])->name('Login');
@@ -366,5 +370,37 @@ Route::get('/venta/{venta}/recibo-final', [VentaController::class, 'reciboFinal'
 
 
 
+
+Route::post('/financiamientos/notificar/{pago}', [NotificacionPagoController::class, 'reenviar']);
+// Clientes
+Route::get('/clientes', [ClienteController::class, 'index'])->name('clientes.index');
+Route::get('/clientes/create', [ClienteController::class, 'create'])->name('clientes.create'); // NUEVA RUTA
+Route::post('/clientes', [ClienteController::class, 'store'])->name('clientes.store');        // NUEVA RUTA
+Route::get('/clientes/{cliente}/edit', [ClienteController::class, 'edit'])->name('clientes.edit');
+Route::put('/clientes/{id}', [ClienteController::class, 'update'])->name('clientes.update');
+
+
+
+Route::post('/clientes/update-asesor', [ClienteController::class, 'updateAsesor']);
+
+
+// Categorías
+Route::get('/categorias', [CategoriaController::class, 'index'])->name('categorias.index');
+Route::get('/categorias/create', [CategoriaController::class, 'create'])->name('categorias.create');
+Route::post('/categorias', [CategoriaController::class, 'store'])->name('categorias.store');
+Route::delete('/categorias/{id}', [CategoriaController::class, 'destroy'])->name('categorias.destroy');
+
+
+// Seguimientos
+Route::get('/clientes/{cliente}/seguimientos', [SeguimientoController::class, 'index'])->name('seguimientos.index');
+Route::post('/clientes/{cliente}/seguimientos', [SeguimientoController::class, 'store'])->name('seguimientos.store');
+Route::delete('/seguimientos/{id}', [SeguimientoController::class, 'destroy'])->name('seguimientos.destroy');
+
+Route::get('/buscar-clientes', [VentaController::class, 'buscarClientes'])->name('clientes.buscar');
+Route::post('/clientes/check-unique', [ClienteController::class, 'checkUnique'])->name('clientes.check-unique');
+
+
+Route::get('/whatsapp/enviar/{venta}', [App\Http\Controllers\WhatsAppController::class, 'enviarRecordatorio']);
+Route::patch('/seguimientos/{id}/completar', [SeguimientoController::class, 'completar'])->name('seguimientos.completar');
 
 
