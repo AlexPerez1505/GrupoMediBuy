@@ -37,6 +37,8 @@ use App\Http\Controllers\ReciboController;
 use App\Http\Controllers\NotificacionPagoController;
 use App\Http\Controllers\CategoriaController;
 use App\Http\Controllers\SeguimientoController;
+use App\Http\Controllers\CuentaController;
+use App\Http\Controllers\PropuestaController;
 
 
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
@@ -72,8 +74,6 @@ Route::get('/buscar-registros', [CotizacionController::class, 'buscarRegistros']
 
 
 
-Route::post('/clientes', [ClienteController::class, 'store'])->name('clientes.store');
-Route::post('/clientes/check_unique', [ClienteController::class, 'checkUnique'])->name('clientes.check_unique');
 
 Route::get('/remisiones', function () {
     return view('remisiones');
@@ -82,7 +82,7 @@ Route::get('/agenda', function () {
     return view('agenda');
 });
 
-Route::get('/clientes', [ClienteController::class, 'getClients'])->name('clientes.get');
+
 
 
 Route::post('/productos', [ProductoController::class, 'store'])->name('productos.store');
@@ -110,9 +110,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/perfil/foto', [PerfilController::class, 'updatePhoto'])->name('perfil.updatePhoto');
 });
 Route::get('/usuarios', [PerfilController::class, 'allUsers'])->middleware('auth');
-Route::get('/clientes/vista', [ClienteController::class, 'index'])->name('clientes.index');
 
-Route::post('/clientes/update-asesor', [ClienteController::class, 'updateAsesor'])->name('clientes.updateAsesor');
 Route::get('/historial-cotizaciones', function () {
     $cotizaciones = Cotizacion::all();
     return view('historial', compact('cotizaciones'));
@@ -350,7 +348,6 @@ Route::get('/mi-historial', [AsistenciaController::class, 'miHistorial'])
 
 
 
-Route::get('/clientes', [VentaController::class, 'clientes'])->name('clientes.search');
 Route::get('/api/ventas', [VentaController::class, 'apiVentas']);
 Route::get('/carta-garantia', [CartaGarantiaController::class, 'index'])->name('carta.index');
 Route::get('/carta-garantia/create', [CartaGarantiaController::class, 'create'])->name('carta.create');
@@ -373,6 +370,12 @@ Route::get('/venta/{venta}/recibo-final', [VentaController::class, 'reciboFinal'
 
 Route::post('/financiamientos/notificar/{pago}', [NotificacionPagoController::class, 'reenviar']);
 // Clientes
+Route::post('/clientes', [ClienteController::class, 'store'])->name('clientes.store');
+Route::post('/clientes/check_unique', [ClienteController::class, 'checkUnique'])->name('clientes.check_unique');
+Route::get('/clientes', [ClienteController::class, 'getClients'])->name('clientes.get');
+Route::get('/clientes/vista', [ClienteController::class, 'index'])->name('clientes.index');
+Route::post('/clientes/update-asesor', [ClienteController::class, 'updateAsesor'])->name('clientes.updateAsesor');
+Route::get('/clientes', [VentaController::class, 'clientes'])->name('clientes.search');
 Route::get('/clientes', [ClienteController::class, 'index'])->name('clientes.index');
 Route::get('/clientes/create', [ClienteController::class, 'create'])->name('clientes.create'); // NUEVA RUTA
 Route::post('/clientes', [ClienteController::class, 'store'])->name('clientes.store');        // NUEVA RUTA
@@ -396,11 +399,48 @@ Route::get('/clientes/{cliente}/seguimientos', [SeguimientoController::class, 'i
 Route::post('/clientes/{cliente}/seguimientos', [SeguimientoController::class, 'store'])->name('seguimientos.store');
 Route::delete('/seguimientos/{id}', [SeguimientoController::class, 'destroy'])->name('seguimientos.destroy');
 
+Route::get('/encontrar-clientes', [PropuestaController::class, 'encontrarClientes'])->name('clientes.encontrar');
 Route::get('/buscar-clientes', [VentaController::class, 'buscarClientes'])->name('clientes.buscar');
+
+
+
+
 Route::post('/clientes/check-unique', [ClienteController::class, 'checkUnique'])->name('clientes.check-unique');
 
 
 Route::get('/whatsapp/enviar/{venta}', [App\Http\Controllers\WhatsAppController::class, 'enviarRecordatorio']);
 Route::patch('/seguimientos/{id}/completar', [SeguimientoController::class, 'completar'])->name('seguimientos.completar');
 
+Route::get('/cuentas/crear', [CuentaController::class, 'create'])->name('cuentas.create');
+Route::post('/cuentas', [CuentaController::class, 'store'])->name('cuentas.store');
+Route::get('/cuentas', [CuentaController::class, 'index'])->name('cuentas.index');
+Route::delete('/cuentas/{id}', [CuentaController::class, 'destroy'])->name('cuentas.destroy');
+Route::get('/cuentas/exportar/pdf', [CuentaController::class, 'exportarPDF'])->name('cuentas.exportar.pdf');
+Route::get('/cuentas/{cuenta}/edit', [CuentaController::class, 'edit'])->name('cuentas.edit');
+Route::put('/cuentas/{cuenta}', [CuentaController::class, 'update'])->name('cuentas.update');
+
+// Mostrar listado de propuestas
+Route::get('propuestas', [PropuestaController::class, 'index'])->name('propuestas.index');
+
+// Formulario para crear nueva propuesta
+Route::get('propuestas/create', [PropuestaController::class, 'create'])->name('propuestas.create');
+
+// Guardar nueva propuesta
+Route::post('propuestas', [PropuestaController::class, 'store'])->name('propuestas.store');
+
+// Ver detalles de una propuesta
+Route::get('propuestas/{propuesta}', [PropuestaController::class, 'show'])->name('propuestas.show');
+
+// Formulario para editar propuesta
+Route::get('propuestas/{propuesta}/edit', [PropuestaController::class, 'edit'])->name('propuestas.edit');
+
+// Actualizar propuesta
+Route::put('propuestas/{propuesta}', [PropuestaController::class, 'update'])->name('propuestas.update');
+Route::patch('propuestas/{propuesta}', [PropuestaController::class, 'update']);
+
+// Eliminar propuesta
+Route::delete('propuestas/{propuesta}', [PropuestaController::class, 'destroy'])->name('propuestas.destroy');
+
+// Generar PDF de la propuesta
+Route::get('propuestas/{propuesta}/pdf', [PropuestaController::class, 'pdf'])->name('propuestas.pdf');
 

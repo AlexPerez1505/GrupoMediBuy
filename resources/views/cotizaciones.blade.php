@@ -454,8 +454,6 @@ function cerrarModal() {
         new bootstrap.Modal(modal).hide();
     }
 }
-
-
 </script>
 
 
@@ -570,8 +568,6 @@ document.addEventListener("DOMContentLoaded", function () {
     location.reload();
   });
 });
-
-
 </script>
 
 <script>
@@ -581,7 +577,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Función para cargar clientes dinámicamente desde el backend
     function loadClients(search = "") {
-        fetch(`/clientes?search=${search}`, {
+       fetch(`/buscar-clientes?search=${search}`, {
+
             method: "GET",
             headers: {
                 "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content,
@@ -689,7 +686,7 @@ document.addEventListener("DOMContentLoaded", function () {
 </script>
 
 
-  <script>
+<script>
 document.getElementById("formProducto").addEventListener("submit", function (event) {
     event.preventDefault(); // Evita la recarga de la página
 

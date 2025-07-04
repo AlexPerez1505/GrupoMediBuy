@@ -16,8 +16,12 @@ use Illuminate\Support\Facades\Storage;
 use setasign\Fpdi\Fpdi;
 use Carbon\Carbon;
 use App\Mail\PagoPendienteHoyMail;
+use App\Mail\PagoPendienteHoyAdminMail;
+use App\Models\User;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Str;
+use Illuminate\Support\Str;  // <-- Aquí IMPORTA Str correctamente
+use App\Models\DocumentoPago;
 
 
 class VentaController extends Controller
@@ -73,19 +77,26 @@ public function store(Request $request)
         'carta_garantia_id' => $request->carta_garantia_id,
     ]);
 
-    $productos = json_decode($request->productos_json, true);
-    foreach ($productos as $p) {
-        $producto = Producto::where('tipo_equipo', $p['equipo'])->first();
+$productos = json_decode($request->productos_json, true);
 
-        VentaProducto::create([
-            'venta_id' => $venta->id,
-            'producto_id' => $producto ? $producto->id : null,
-            'cantidad' => $p['cantidad'],
-            'precio_unitario' => $p['precio_unitario'],
-            'subtotal' => $p['subtotal'],
-            'sobreprecio' => $p['sobreprecio'],
-        ]);
+foreach ($productos as $p) {
+    $producto = Producto::find($p['producto_id']);
+
+    // Validación simple, si el producto no existe lo ignoras
+    if (!$producto) {
+        continue;
     }
+
+    VentaProducto::create([
+        'venta_id' => $venta->id,
+        'producto_id' => $producto->id,
+        'cantidad' => $p['cantidad'],
+        'precio_unitario' => $p['precio_unitario'],
+        'subtotal' => $p['subtotal'],
+        'sobreprecio' => $p['sobreprecio'],
+    ]);
+}
+
 if ($request->filled('pagos_json')) {
     $pagos = json_decode($request->input('pagos_json'), true);
 
@@ -193,6 +204,7 @@ public function update(Request $request, $id)
         'total' => 'required|numeric',
         'plan' => 'nullable|string|max:255',
         'productos_json' => 'required',
+        // Nota: la validación de archivos la hacemos manual más abajo
     ]);
 
     $venta = Venta::findOrFail($id);
@@ -209,7 +221,7 @@ public function update(Request $request, $id)
         'plan' => $request->plan,
     ]);
 
-    // Eliminar productos anteriores y registrar los nuevos
+    // Productos
     VentaProducto::where('venta_id', $venta->id)->delete();
     $productos = json_decode($request->productos_json, true);
 
@@ -233,40 +245,87 @@ public function update(Request $request, $id)
         }
     }
 
-if ($request->has('pagos_financiamiento')) {
-    foreach ($request->pagos_financiamiento as $pagoId => $datos) {
-        // Pago nuevo (ej. nuevo_0, nuevo_1...)
-        if (Str::startsWith($pagoId, 'nuevo_')) {
-            if (!empty($datos['eliminar'])) continue;
+    // Pagos y documentos
+    if ($request->has('pagos_financiamiento')) {
+        foreach ($request->pagos_financiamiento as $pagoId => $datos) {
+            // Pago nuevo
+            if (Str::startsWith($pagoId, 'nuevo_')) {
+                if (!empty($datos['eliminar'])) continue;
 
-            PagoFinanciamiento::create([
-                'venta_id' => $venta->id,
-                'fecha_pago' => $datos['fecha_pago'],
-                'monto' => $datos['monto'],
-                'descripcion' => $datos['descripcion'] ?? 'Pago planeado', // <- línea agregada
-            ]);
-        } else {
-            // Pago existente
-            $pago = PagoFinanciamiento::find($pagoId);
-            if (!$pago) continue;
+                $pago = PagoFinanciamiento::create([
+                    'venta_id' => $venta->id,
+                    'fecha_pago' => $datos['fecha_pago'],
+                    'monto' => $datos['monto'],
+                    'descripcion' => $datos['descripcion'] ?? 'Pago planeado',
+                ]);
 
-            if (!empty($datos['eliminar'])) {
-                $pago->delete();
-                continue;
+                // Si se subió documento para pago nuevo
+                if ($request->hasFile("pagos_financiamiento.$pagoId.documento")) {
+                    $archivo = $request->file("pagos_financiamiento.$pagoId.documento");
+
+                    // Validar que sea pdf
+                    if ($archivo->isValid() && $archivo->extension() === 'pdf') {
+                        $ruta = $archivo->store('public/documentos_pagos');
+
+                        DocumentoPago::create([
+                            'pago_id' => $pago->id,
+                            'ruta_archivo' => $ruta,
+                            'nombre_original' => $archivo->getClientOriginalName(),
+                        ]);
+                    }
+                }
+
+            } else {
+                // Pago existente
+                $pago = PagoFinanciamiento::find($pagoId);
+                if (!$pago) continue;
+
+                if (!empty($datos['eliminar'])) {
+                    // Opcional: eliminar documento si existe?
+                    $documento = DocumentoPago::where('pago_financiamiento_id', $pago->id)->first();
+                    if ($documento) {
+                        Storage::delete($documento->ruta_archivo);
+                        $documento->delete();
+                    }
+                    $pago->delete();
+                    continue;
+                }
+
+                $pago->update([
+                    'fecha_pago' => $datos['fecha_pago'],
+                    'monto' => $datos['monto'],
+                    'descripcion' => $datos['descripcion'] ?? $pago->descripcion,
+                ]);
+
+                // Actualizar documento si se subió uno nuevo
+                if ($request->hasFile("pagos_financiamiento.$pagoId.documento")) {
+                    $archivo = $request->file("pagos_financiamiento.$pagoId.documento");
+
+                    if ($archivo->isValid() && $archivo->extension() === 'pdf') {
+                        // Eliminar documento anterior si existe
+                        $documento = DocumentoPago::where('pago_id', $pago->id)->first();
+
+                        if ($documento) {
+                            Storage::delete($documento->ruta_archivo);
+                            $documento->delete();
+                        }
+
+                        $ruta = $archivo->store('public/documentos_pagos');
+
+                        DocumentoPago::create([
+                            'pago_id' => $pago->id,
+                            'ruta_archivo' => $ruta,
+                            'nombre_original' => $archivo->getClientOriginalName(),
+                        ]);
+                    }
+                }
             }
-
-            $pago->update([
-                'fecha_pago' => $datos['fecha_pago'],
-                'monto' => $datos['monto'],
-                'descripcion' => $datos['descripcion'] ?? $pago->descripcion, // <- también la actualizamos si viene
-            ]);
         }
     }
-}
-
 
     return redirect()->route('ventas.show', $venta->id)->with('success', 'Venta actualizada correctamente.');
 }
+
 
 
 public function edit($id)
@@ -338,10 +397,12 @@ public function show(Venta $venta)
     ]);
 
     // Traer TODOS los pagos planeados, y si existe, el pago real asociado
-    $pagos = \App\Models\PagoFinanciamiento::with('pago')
-        ->where('venta_id', $venta->id)
-        ->orderBy('fecha_pago')
-        ->get();
+$pagos = \App\Models\PagoFinanciamiento::with(['pago', 'documentos'])
+    ->where('venta_id', $venta->id)
+    ->orderBy('fecha_pago')
+    ->get();
+
+
 
     return view('venta.show', compact('venta', 'pagos'));
 }
@@ -418,6 +479,8 @@ public function marcarPagado(Request $request, $pagoFinanciamientoId)
 
     return redirect()->back()->with('success', 'Pago aprobado correctamente.');
 }
+
+
 public function deudores()
 {
     setlocale(LC_TIME, 'es_ES.UTF-8', 'es_ES', 'spanish');
@@ -430,7 +493,6 @@ public function deudores()
         return $timestamp ? Carbon::createFromTimestamp($timestamp) : null;
     }
 
-    // Traer todas las ventas con sus clientes y pagos
     $ventas = \App\Models\Venta::with(['cliente', 'pagos'])->get();
 
     foreach ($ventas as $v) {
@@ -445,7 +507,7 @@ public function deudores()
             }
         }
 
-        // Buscar pagos planeados para hoy
+        // Buscar pagos programados para HOY que no han sido pagados
         $pagosHoy = \App\Models\PagoFinanciamiento::where('venta_id', $v->id)
             ->whereDate('fecha_pago', Carbon::today())
             ->where('pagado', false)
@@ -454,28 +516,39 @@ public function deudores()
         foreach ($pagosHoy as $pago) {
             if (!$pago->notificado) {
                 try {
-                    // Enviar al cliente
+                    // Correo al cliente
                     if (!empty($v->cliente->email)) {
                         Mail::to($v->cliente->email)->send(new PagoPendienteHoyMail($v));
+                        Log::info("Correo enviado al cliente: {$v->cliente->email}");
                     }
 
-                    // Enviarte a ti
-                    Mail::to('tu_correo@ejemplo.com')->send(new PagoPendienteHoyMail($v));
+                    // Correos a administradores
+                    $adminEmails = User::where('role', 'admin')
+                        ->whereNotNull('email')
+                        ->pluck('email')
+                        ->filter();
+
+                    Log::debug('Correos de administradores: ' . implode(', ', $adminEmails->toArray()));
+
+                    foreach ($adminEmails as $adminEmail) {
+                        Mail::to($adminEmail)->send(new PagoPendienteHoyAdminMail($v));
+                        Log::info("Correo enviado al administrador: {$adminEmail}");
+                    }
 
                     // Marcar como notificado
                     $pago->notificado = true;
                     $pago->save();
                 } catch (\Exception $e) {
-                    logger()->error("Error al enviar email de pago pendiente: " . $e->getMessage());
+                    logger()->error("Error al enviar notificaciones: " . $e->getMessage());
                 }
             }
         }
     }
 
     $clientes = \App\Models\Cliente::orderBy('nombre')->get();
-
     return view('venta.deudores', compact('ventas', 'clientes'));
 }
+
 
 
 

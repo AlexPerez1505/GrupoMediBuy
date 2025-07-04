@@ -325,18 +325,28 @@
         @endif
     </table>
 </div>
+@php
+    $mostrarColumnaDocumento = $pagos->contains(function ($p) {
+        return $p->documentos && $p->documentos->isNotEmpty();
+    });
+@endphp
+
 <h5 class="card-title mb-3">Pagos</h5>
 <div class="table-responsive">
     <table class="table table-hover align-middle">
-        <thead class="table-light">
-            <tr>
-                <th>Descripción</th>
-                <th>Fecha</th>
-                <th>Monto</th>
-                <th>Recibo</th>
-                <th>Estado</th>
-            </tr>
-        </thead>
+<thead class="table-light">
+    <tr>
+        <th>Descripción</th>
+        <th>Fecha</th>
+        <th>Monto</th>
+        <th>Recibo</th>
+        @if($mostrarColumnaDocumento)
+            <th>Documento PDF</th>
+        @endif
+        <th>Estado</th>
+    </tr>
+</thead>
+
         <tbody>
 @forelse ($pagos as $pagoFin)
     <tr>
@@ -350,6 +360,19 @@
                 <span class="text-muted small">—</span>
             @endif
         </td>
+
+        @if($mostrarColumnaDocumento)
+            <td>
+                @if($pagoFin->documentos && $pagoFin->documentos->isNotEmpty())
+                    <a href="{{ Storage::url($pagoFin->documentos->first()->ruta_archivo) }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-file-earmark-pdf"></i> Abrir
+                    </a>
+                @else
+                    <span class="text-muted small">—</span>
+                @endif
+            </td>
+        @endif
+
         <td>
             @if($pagoFin->pago && $pagoFin->pago->aprobado)
                 <span class="badge bg-success">Pagado</span>
@@ -360,13 +383,11 @@
     </tr>
 @empty
     <tr>
-        <td colspan="5" class="text-center">No hay pagos programados</td>
+        <td colspan="{{ $mostrarColumnaDocumento ? 6 : 5 }}" class="text-center">No hay pagos programados</td>
     </tr>
 @endforelse
+</tbody>
 
-
-
-        </tbody>
     </table>
 </div>
 

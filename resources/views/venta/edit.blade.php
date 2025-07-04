@@ -124,7 +124,8 @@
 <div class="container mt-4">
     <h1 class="mb-4 text-center">Editar Venta</h1>
 
-    <form action="{{ route('ventas.update', $venta->id) }}" method="POST" id="form-venta">
+    <form action="{{ route('ventas.update', $venta->id) }}" method="POST" id="form-venta" enctype="multipart/form-data">
+
         @csrf
         @method('PUT')
 
@@ -196,7 +197,7 @@
                     <select name="cliente_id" id="cliente_id" class="form-control" required>
                         @foreach($clientes as $cliente)
                             <option value="{{ $cliente->id }}" {{ $venta->cliente_id == $cliente->id ? 'selected' : '' }}>
-                                {{ $cliente->nombre }}
+                                {{ $cliente->nombre }} {{ $cliente->apellido }}
                             </option>
                         @endforeach
                     </select>
@@ -242,7 +243,6 @@
                 </div>
             </div>
         </div>
-
 <!-- Pagos Planeados -->
 <div class="form-section">
     <h4 class="mb-3">Pagos Planeados (Financiamiento)</h4>
@@ -252,6 +252,7 @@
                 <th>Descripción</th>
                 <th>Fecha</th>
                 <th>Monto</th>
+                <th>Documento (PDF)</th>
                 <th>¿Eliminar?</th>
             </tr>
         </thead>
@@ -266,11 +267,17 @@
                 </td>
                 <td>
                     <input type="number" step="0.01" name="pagos_financiamiento[{{ $pago->id }}][monto]" value="{{ $pago->monto }}" class="form-control" required>
-<td>
-    <button type="button" class="btn btn-sm btn-danger eliminar-fila">Eliminar</button>
-    <input type="hidden" name="pagos_financiamiento[{{ $pago->id }}][eliminar]" value="0" class="eliminar-hidden">
-</td>
-
+                </td>
+                <td>
+                    <input type="file" name="pagos_financiamiento[{{ $pago->id }}][documento]" accept="application/pdf" class="form-control">
+                    @if($pago->documentos && $pago->documentos->count() > 0)
+                        <a href="{{ Storage::url($pago->documentos->first()->ruta_archivo) }}" target="_blank" class="btn btn-sm btn-info mt-1">Ver PDF</a>
+                    @endif
+                </td>
+                <td>
+                    <button type="button" class="btn btn-sm btn-danger eliminar-fila">Eliminar</button>
+                    <input type="hidden" name="pagos_financiamiento[{{ $pago->id }}][eliminar]" value="0" class="eliminar-hidden">
+                </td>
             </tr>
             @endforeach
         </tbody>
@@ -282,6 +289,7 @@
         La suma de los pagos planeados debe ser igual al total de la venta.
     </div>
 </div>
+
 
         <input type="hidden" name="productos_json" id="productos_json">
 
@@ -368,59 +376,59 @@ $(document).ready(function () {
     $(document).on('input', 'input[name^="pagos_financiamiento"][name$="[monto]"]', function () {
         ajustarPagos($(this));
     });
-    // Eliminar fila al hacer clic en el botón "Eliminar"
-$(document).on('click', '.eliminar-fila', function () {
-    $(this).closest('tr').remove();
-    actualizarPagos();
-});
 
+    // Eliminar fila al hacer clic en el botón "Eliminar"
+    $(document).on('click', '.eliminar-fila', function () {
+        $(this).closest('tr').remove();
+        actualizarPagos();
+    });
 
     let contadorNuevoPago = 0;
-$('#agregarPago').on('click', function () {
-    const nuevoId = 'nuevo_' + contadorNuevoPago++;
+    $('#agregarPago').on('click', function () {
+        const nuevoId = 'nuevo_' + contadorNuevoPago++;
 
-    // Filtrar pagos que no están marcados para eliminar
-    const filasPagos = $('#tabla-pagos tbody tr').filter(function () {
-        return !$(this).find('input[type="checkbox"]').is(':checked');
-    });
+        // Filtrar pagos que no están marcados para eliminar
+        const filasPagos = $('#tabla-pagos tbody tr');
 
-    // Ignorar el primero (ej. "Pago inicial")
-    const filasSinInicial = filasPagos.slice(1);
+        // Ignorar el primero (ej. "Pago inicial")
+        const filasSinInicial = filasPagos.slice(1);
 
-    const descripcion = `${numeroEnLetras(filasSinInicial.length + 1)} pago`;
+        const descripcion = `${numeroEnLetras(filasSinInicial.length + 1)} pago`;
 
-    // Obtener última fecha del resto (sin contar el primero)
-    let ultimaFecha = null;
-    filasSinInicial.each(function () {
-        const inputFecha = $(this).find('input[name$="[fecha_pago]"]');
-        const fecha = inputFecha.val();
-        if (fecha && (!ultimaFecha || new Date(fecha) > new Date(ultimaFecha))) {
-            ultimaFecha = fecha;
+        // Obtener última fecha del resto (sin contar el primero)
+        let ultimaFecha = null;
+        filasSinInicial.each(function () {
+            const inputFecha = $(this).find('input[name$="[fecha_pago]"]');
+            const fecha = inputFecha.val();
+            if (fecha && (!ultimaFecha || new Date(fecha) > new Date(ultimaFecha))) {
+                ultimaFecha = fecha;
+            }
+        });
+
+        let nuevaFecha = '';
+        if (ultimaFecha) {
+            const fecha = new Date(ultimaFecha);
+            fecha.setMonth(fecha.getMonth() + 1);
+            nuevaFecha = fecha.toISOString().split('T')[0];
         }
+
+        const fila = `
+            <tr>
+                <td>
+                    <input type="hidden" name="pagos_financiamiento[${nuevoId}][descripcion]" value="${descripcion}">
+                    ${descripcion}
+                </td>
+                <td><input type="date" name="pagos_financiamiento[${nuevoId}][fecha_pago]" class="form-control" value="${nuevaFecha}" required></td>
+                <td><input type="number" step="0.01" name="pagos_financiamiento[${nuevoId}][monto]" class="form-control" required></td>
+                <td>
+                    <input type="file" name="pagos_financiamiento[${nuevoId}][documento]" accept="application/pdf" class="form-control">
+                </td>
+                <td><button type="button" class="btn btn-sm btn-danger eliminar-fila">Eliminar</button></td>
+            </tr>`;
+
+        $('#tabla-pagos tbody').append(fila);
+        actualizarPagos();
     });
-
-    let nuevaFecha = '';
-    if (ultimaFecha) {
-        const fecha = new Date(ultimaFecha);
-        fecha.setMonth(fecha.getMonth() + 1);
-        nuevaFecha = fecha.toISOString().split('T')[0];
-    }
-
-    const fila = `
-        <tr>
-            <td>
-                <input type="hidden" name="pagos_financiamiento[${nuevoId}][descripcion]" value="${descripcion}">
-                ${descripcion}
-            </td>
-            <td><input type="date" name="pagos_financiamiento[${nuevoId}][fecha_pago]" class="form-control" value="${nuevaFecha}" required></td>
-            <td><input type="number" step="0.01" name="pagos_financiamiento[${nuevoId}][monto]" class="form-control" required></td>
-            <td><button type="button" class="btn btn-sm btn-danger eliminar-fila">Eliminar</button></td>
-        </tr>`;
-
-    $('#tabla-pagos tbody').append(fila);
-    actualizarPagos();
-});
-
 
     $('#form-venta').submit(function (e) {
         if (!validarTotalPagos()) {
@@ -469,10 +477,7 @@ function actualizarTotal() {
 
 function actualizarPagos() {
     const total = parseFloat($('#total').val()) || 0;
-    const filas = $('input[name^="pagos_financiamiento"][name$="[monto]"]').closest('tr')
-        .filter(function () {
-            return !$(this).find('input[type="checkbox"]').is(':checked');
-        });
+    const filas = $('input[name^="pagos_financiamiento"][name$="[monto]"]').closest('tr');
 
     const num = filas.length;
     if (num === 0) return;
@@ -487,10 +492,7 @@ function actualizarPagos() {
 
 function ajustarPagos(inputModificado) {
     const total = parseFloat($('#total').val()) || 0;
-    const filas = $('input[name^="pagos_financiamiento"][name$="[monto]"]').closest('tr')
-        .filter(function () {
-            return !$(this).find('input[type="checkbox"]').is(':checked');
-        });
+    const filas = $('input[name^="pagos_financiamiento"][name$="[monto]"]').closest('tr');
 
     const pagos = [];
     let totalManual = 0;
@@ -522,10 +524,7 @@ function validarTotalPagos() {
     let suma = 0;
 
     $('input[name^="pagos_financiamiento"][name$="[monto]"]').each(function () {
-        const fila = $(this).closest('tr');
-        if (!fila.find('input[type="checkbox"]').is(':checked')) {
-            suma += parseFloat($(this).val()) || 0;
-        }
+        suma += parseFloat($(this).val()) || 0;
     });
 
     const errorDiv = $('#error-total-pagos');
@@ -559,6 +558,7 @@ function numeroEnLetras(num) {
     return lista[num - 1] || `${num}°`;
 }
 </script>
+
 
 
 @endsection

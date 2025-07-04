@@ -32,11 +32,13 @@ public function pagos()
     return $this->hasMany(Pago::class, 'financiamiento_id');
 }
 // app/Models/PagoFinanciamiento.php
+public function documentos()
+{
+    return $this->hasMany(DocumentoPago::class, 'pago_id'); // ✅ usa la columna correcta
+}
 public function pago()
 {
-    return $this->hasOne(\App\Models\Pago::class, 'financiamiento_id');
+    return $this->hasOne(Pago::class, 'financiamiento_id');
 }
-
-
 
 }

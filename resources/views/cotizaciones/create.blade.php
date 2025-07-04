@@ -1,57 +1,51 @@
 @extends('layouts.app')
-@section('title', 'Remisión')
-@section('titulo', 'Remisión')
+@section('title', 'Cotización')
+@section('titulo', 'Cotización')
 @section('content')
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<div class="container"  style="margin-top: 80px;">
-    <form id="form-venta" method="POST" action="{{ route('ventas.store') }}">
+<div class="container" style="margin-top: 80px;">
+    <form id="form-cotizacion" method="POST" action="{{ route('cotizaciones.store') }}">
         @csrf
         <div class="row">
             <div class="col-md-3 mt-3">
+                
                 <!-- Tarjeta de Cliente -->
- <div class="card modern-card mb-3">
-    <div class="card-header modern-heade">Cliente</div>
-    <div class="card-body">
-        <div class="dropdown">
-            <input 
-                type="text" 
-                id="search-client" 
-                class="form-control modern-input dropdown-toggle" 
-                data-bs-toggle="dropdown" 
-                placeholder="Buscar cliente..."
-                autocomplete="off"
-            >
-            <ul class="dropdown-menu modern-dropdown w-100" id="client-list">
-                <li>
-                   <button type="button" class="dropdown-item modern-dropdown-item" onclick='selectClient({
-    id: 1,
-    nombre: "Público en General",
-    apellido: "",
-    telefono: "",
-    email: "",
-    comentarios: ""
-})'>
-    Público en General
-</button>
-                </li>
-                <li>
-                    <button type="button" class="dropdown-item modern-dropdown-item" onclick="openCreateClientModal()">
-                        + Crear nuevo cliente
-                    </button>
-                </li>
-                <!-- Aquí se insertarán dinámicamente los clientes -->
-            </ul>
-        </div>
-
-        <!-- Campo oculto para enviar ID del cliente seleccionado -->
-        <input type="hidden" name="cliente_id" id="cliente_id">
-
-    </div>
-
-    <!-- Detalles del cliente -->
-    <div id="client-details" class="mt-3"></div>
-</div>
-
+                <div class="card modern-card mb-3">
+                    <div class="card-header modern-heade">Cliente</div>
+                    <div class="card-body">
+                        <div class="dropdown">
+                            <input 
+                                type="text" 
+                                id="search-client" 
+                                class="form-control modern-input dropdown-toggle" 
+                                data-bs-toggle="dropdown" 
+                                placeholder="Buscar cliente..."
+                                autocomplete="off"
+                            >
+                            <ul class="dropdown-menu modern-dropdown w-100" id="client-list">
+                                <li>
+                                    <button type="button" class="dropdown-item modern-dropdown-item" onclick='selectClient({
+                                        id: 1,
+                                        nombre: "Público en General",
+                                        apellido: "",
+                                        telefono: "",
+                                        email: "",
+                                        comentarios: ""
+                                    })'>
+                                        Público en General
+                                    </button>
+                                </li>
+                                <li>
+                                    <button type="button" class="dropdown-item modern-dropdown-item" onclick="openCreateClientModal()">
+                                        + Crear nuevo cliente
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+                        <input type="hidden" name="cliente_id" id="cliente_id">
+                    </div>
+                    <div id="client-details" class="mt-3"></div>
+                </div>
 
                 <!-- Tarjeta de Lugar de la Cotización -->
                 <div class="card modern-card mb-3">
@@ -94,190 +88,14 @@
                 </div>
             </div>
 
-
-
-            
- <div class="col-md-9">
-     <div class="card modern-card mt-3">
-         <div class="card-header modern-header">Productos</div>
-    <div class="card-body">
-
-    <div class="dropdown">
-        <input 
-            type="text" 
-            id="buscarProducto" 
-            class="form-control modern-input dropdown-toggle" 
-            data-bs-toggle="dropdown" 
-            placeholder="Buscar producto..." 
-            autocomplete="off"
-            onkeyup="filtrarProductos(this.value)"
-        >
-
-        <ul class="dropdown-menu modern-dropdown w-100" id="dropdownProductos">
-            <!-- Opción para crear producto -->
-            <li>
-                <button class="dropdown-item modern-dropdown-item" data-bs-toggle="modal" data-bs-target="#modal1">
-                    + Crear Producto
-                </button>
-            </li>
-
-            <!-- Productos existentes -->
-            @foreach($productos->sortBy('tipo_equipo') as $producto)
-                <li>
-<button 
-    class="dropdown-item modern-dropdown-item d-flex align-items-center" 
-    onclick="agregarProductoDesdeDropdown(
-        {{ $producto->id }},
-        @json($producto->tipo_equipo),
-        @json($producto->modelo),
-        @json($producto->marca),
-        {{ $producto->precio }},
-        @json($producto->imagen)
-    )"
->
-
-                        <!-- Imagen -->
-                        <img src="/storage/{{ $producto->imagen }}" alt="{{ $producto->tipo_equipo }}" class="modern-product-img me-2" style="width: 40px; height: 40px; object-fit: cover; border-radius: 6px;">
-
-                        <!-- Información del producto -->
-                        <div class="flex-grow-1 modern-product-info">
-                            <strong>{{ strtoupper($producto->tipo_equipo) }}</strong> - {{ strtoupper($producto->modelo) }} {{ strtoupper($producto->marca) }}
-                            <br>
-                            <span class="text-muted modern-product-price">${{ number_format($producto->precio, 2) }}</span>
-                        </div>
-
-                        <!-- Stock -->
-                        <span class="badge bg-secondary modern-badge">{{ $producto->stock }} unidades</span>
-                    </button>
-                </li>
-            @endforeach
-        </ul>
-    </div>
-</div>
-
-
-
-</div>
-<div class="card modern-card mt-3">
-     <div class="card-header modern-header">Productos Seleccionados</div>
-         <div class="card-body">
-        <div class="table-responsive">
-    <input type="hidden" name="productos_json" id="productos_json">
-                
-                    <table id="tabla-productos" class="table modern-table">
-                        <thead>
-                            <tr>
-                                <th>Imagen</th>
-                                <th>Equipo</th>
-                                <th>Modelo</th>
-                                <th>Marca</th>
-                                <th>Cantidad</th>
-                                <th>Subtotal</th>
-                                <th>Sobreprecio</th>
-                                <th>Acción</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-  <div class="d-flex flex-column flex-md-row">
-     <div class="card modern-card mt-3 w-100 w-md-50">
-
-                               <div class="card-header modern-header">Resumen</div>
-                            <div class="card-body">
-                                <p>Subtotal: $<span id="subtotal" class="modern-value">0.00</span></p>
-                                <input type="hidden" name="subtotal" id="subtotal_input" value="0">
-
-                                <div class="form-group">
-                                    <label>Descuento</label>
-                                    <input type="number" name="descuento" id="descuento" value="0" class="form-control modern-input w-25 d-inline-block" onchange="actualizarTotal()">
-                                </div>
-                                <br>
-                                <div class="form-group">
-                                    <label>Envío</label>
-                                    <input type="number" name="envio" id="envio" value="0" class="form-control modern-input w-25 d-inline-block" onchange="actualizarTotal()">
-                                </div>
-                                <div class="form-check">
-                                    <input type="checkbox" class="form-check-input" id="aplica_iva" onchange="actualizarTotal()">
-                                    <label class="form-check-label">Aplicar IVA (16%)</label>
-                                </div>
-                                <input type="hidden" name="iva" id="iva_input" value="0">
-                                <p>IVA: $<span id="iva">0.00</span></p>
-                                <p><strong>Total: $<span id="total">0.00</span></strong></p>
-                                <input type="hidden" name="total" id="total_input" value="0">
-
-               <div class="form-group">
-    <label for="tipoPago">Selecciona Plan:</label>
-    <select id="tipoPago" name="plan" class="form-control modern-input w-50" required>
-        <option value="" selected disabled>Selecciona un plan</option>
-        <option value="contado">Pago de Contado</option>
-        <option value="personalizado">Plan Personalizado</option>
-        <option value="estatico">Plan Fijo</option>
-        <option value="dinamico">Plan Flexible</option>
-        <option value="credito">Plan a Crédito</option>
-    </select>
-</div>
-
-
-
-<div id="opcionesDinamicas" style="display: none; margin-top: 1rem;">
-    <label for="pagoInicial">Pago Inicial:</label>
-    <input type="number" id="pagoInicial" class="form-control modern-input w-50" min="0" step="0.01">
-</div>
-
-<div id="opcionesCredito" style="display: none; margin-top: 1rem;">
-    <label for="pagoCreditoInicial">Pago Inicial:</label>
-    <input type="number" id="pagoCreditoInicial" class="form-control modern-input w-50" min="0" step="0.01">
-    <label for="plazoCredito" style="margin-top: 0.5rem;">Plazo (meses):</label>
-    <input type="number" id="plazoCredito" class="form-control modern-input w-50" value="6" min="1" step="1">
-</div>
-
-<div id="opcionesPersonalizado" style="display: none; margin-top: 1rem;">
-    <label for="mesesPersonalizado">Selecciona el número de meses:</label>
-    <input type="number" id="mesesPersonalizado" class="form-control modern-input w-50" min="1" step="1" value="1">
-   
-    <div id="listaPagosPersonalizados" class="mt-3"></div>
-
-
-</div>
-<input type="hidden" id="pagosJsonInput" name="pagos_json" value="">
-
-
-                               <br>
-                               <div class="form-group mt-4">
-    <label for="carta_garantia_id">Carta de Garantía a incluir en el PDF:</label>
-    <select name="carta_garantia_id" id="carta_garantia_id" class="form-control modern-input w-50" required>
-        <option value="">-- Selecciona una carta --</option>
-        @foreach ($cartas as $carta)
-            <option value="{{ $carta->id }}">{{ $carta->nombre }}</option>
-        @endforeach
-    </select>
-</div>
-<br>
-
-                                <input type="hidden" name="productos" id="productos_input">
-                                <button type="submit" class="btn btn-success">Guardar</button>
-                                
-                            </div>
-                        </div>
-                  
-
-                    {{-- Detalles del financiamiento --}}
-                  
-                          <div class="card modern-card mt-3 w-100 w-md-50 ms-md-3">
-    <div class="card-header modern-header">Detalles del Financiamiento</div>
-    <div class="card-body" id="plan-pagos"></div>
-</div>
-                        </div>
-                    </div>
-                </div>
-
+            <!-- Productos y resumen -->
+            <div class="col-md-9">
+                @include('cotizaciones.partials.productos') 
             </div>
         </div>
     </form>
 </div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const tipoPago = document.getElementById('tipoPago');

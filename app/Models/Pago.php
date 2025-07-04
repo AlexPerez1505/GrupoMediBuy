@@ -41,6 +41,10 @@ public function detalleFinanciamiento()
 {
     return $this->belongsTo(PagoFinanciamiento::class, 'financiamiento_id');
 }
+public function documentos()
+{
+    return $this->hasMany(DocumentoPago::class);
+}
 
 
 }
