@@ -109,43 +109,43 @@
     transform: translateY(-1px);
 }
 
-    ul {
-        list-style: none;
-        padding: 0;
-    }
+.alertas-list {
+    list-style: none;
+    padding: 0;
+}
 
-    ul li {
-        background-color: #e3fafc;
-        padding: 1rem 1.25rem;
-        margin-bottom: 1rem;
-        border-left: 5px solid #63e6be;
-        border-radius: 0.6rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        transition: transform 0.2s ease;
-    }
+.alertas-list li {
+    background-color: #e3fafc;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+    border-left: 5px solid #63e6be;
+    border-radius: 0.6rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: transform 0.2s ease;
+}
 
-    ul li:hover {
-        transform: scale(1.01);
-        background-color: #f1f3f5;
-    }
+.alertas-list li:hover {
+    transform: scale(1.01);
+    background-color: #f1f3f5;
+}
 
-    ul li span {
-        font-weight: 600;
-        color: #343a40;
-    }
+.alertas-list li span {
+    font-weight: 600;
+    color: #343a40;
+}
 
-    ul li .acciones a {
-        margin-left: 10px;
-        color: #748ffc;
-        text-decoration: none;
-        transition: color 0.2s ease;
-    }
+.alertas-list li .acciones a {
+    margin-left: 10px;
+    color: #748ffc;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
 
-    ul li .acciones a:hover {
-        color: #5c7cfa;
-    }
+.alertas-list li .acciones a:hover {
+    color: #5c7cfa;
+}
 
     /* Botón flotante en móvil */
 .btn-float {
@@ -276,9 +276,6 @@
     border-left: 5px solid #66d9e8; /* Celeste */
 }
 
-
-/* Puedes seguir agregando más categorías si las necesitas */
-
 </style>
 <div class="container" style="margin-top:90px;">
     <p class="total-clientes">Total de clientes: <strong>{{ count($clientes) }}</strong></p>
@@ -292,35 +289,36 @@
 @if($alertasGenerales->isNotEmpty())
     <div style="background-color: #fff3cd; color: #856404; border-radius: 0.6rem; padding: 1rem; margin-bottom: 2rem; border: 1px solid #ffeeba;">
         <strong>🔔 Atenciones pendientes:</strong>
-        <ul style="margin: 0.5rem 0 0 1rem; padding-left: 0;">
-            @foreach($alertasGenerales as $alerta)
-                <li style="display:flex; justify-content: space-between; align-items: center;">
-                    <span>
-                        @if(isset($alerta['cliente']))
-                            {{ $alerta['cliente']->nombre }} {{ $alerta['cliente']->apellido }} –
-                        @else
-                            Cliente no disponible –
-                        @endif
+   <ul class="alertas-list" style="margin: 0.5rem 0 0 1rem; padding-left: 0;">
+    @foreach($alertasGenerales as $alerta)
+        <li>
+            <span>
+                @if(isset($alerta['cliente']))
+                    {{ $alerta['cliente']->nombre }} {{ $alerta['cliente']->apellido }} –
+                @else
+                    Cliente no disponible –
+                @endif
 
-                        @if($alerta['dias'] < 0)
-                            seguimiento vencido ({{ \Carbon\Carbon::parse($alerta['fecha'])->format('d/m/Y') }})
-                        @elseif($alerta['dias'] === 0)
-                            seguimiento para hoy ({{ \Carbon\Carbon::parse($alerta['fecha'])->format('d/m/Y') }})
-                        @else
-                            seguimiento en {{ $alerta['dias'] }} días ({{ \Carbon\Carbon::parse($alerta['fecha'])->format('d/m/Y') }})
-                        @endif
-                    </span>
+                @if($alerta['dias'] < 0)
+                    seguimiento vencido ({{ \Carbon\Carbon::parse($alerta['fecha'])->format('d/m/Y') }})
+                @elseif($alerta['dias'] === 0)
+                    seguimiento para hoy ({{ \Carbon\Carbon::parse($alerta['fecha'])->format('d/m/Y') }})
+                @else
+                    seguimiento en {{ $alerta['dias'] }} días ({{ \Carbon\Carbon::parse($alerta['fecha'])->format('d/m/Y') }})
+                @endif
+            </span>
 
-                    <form method="POST" action="{{ route('seguimientos.completar', $alerta['seguimiento_id']) }}">
-                        @csrf
-                        @method('PATCH')
-                        <button type="submit" style="background:#4dabf7; color:white; border:none; padding:0.3rem 0.7rem; border-radius:0.3rem; cursor:pointer;">
-                            Completado
-                        </button>
-                    </form>
-                </li>
-            @endforeach
-        </ul>
+            <form method="POST" action="{{ route('seguimientos.completar', $alerta['seguimiento_id']) }}">
+                @csrf
+                @method('PATCH')
+                <button type="submit" style="background:#4dabf7; color:white; border:none; padding:0.3rem 0.7rem; border-radius:0.3rem; cursor:pointer;">
+                    Completado
+                </button>
+            </form>
+        </li>
+    @endforeach
+</ul>
+
     </div>
 @else
     <div style="background-color: #d1e7dd; color: #0f5132; border-radius: 0.6rem; padding: 1rem; margin-bottom: 2rem; border: 1px solid #badbcc;">

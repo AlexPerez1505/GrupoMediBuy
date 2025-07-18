@@ -269,24 +269,21 @@
                 <input type="hidden" id="pagosJsonInput" name="pagos_json" value="">
 
                 <br>
-                <div class="form-group mt-4">
-                    <label for="carta_garantia_id">Carta de Garantía a incluir en el PDF:</label>
-                    <select name="carta_garantia_id" id="carta_garantia_id" class="form-control modern-input w-50" required>
-                        <option value="">-- Selecciona una carta --</option>
-                        @foreach ($cartas as $carta)
-                            <option value="{{ $carta->id }}">{{ $carta->nombre }}</option>
-                        @endforeach
-                    </select>
-                </div>
+<div class="form-group mt-4">
+    <label for="ficha_tecnica_id">Ficha Técnica a incluir en el PDF:</label>
+    <select name="ficha_tecnica_id" id="ficha_tecnica_id" class="form-control modern-input w-50">
+        <option value="">-- Selecciona una ficha técnica --</option>
+        @foreach ($fichas as $ficha)
+            <option value="{{ $ficha->id }}">{{ $ficha->nombre }}</option>
+        @endforeach
+    </select>
+</div>
+
                 <br>
              <div class="botones-compactos">
     <button type="submit" class="btn-guardar"> Guardar</button>
     <a href="{{ route('propuestas.index') }}" class="btn-regresar"> Regresar</a>
 </div>
-
-
-
-
             </div>
         </div>
 
@@ -296,11 +293,106 @@
         </div>
     </div>
 </div>
-
-
             </div>
         </div>
     </form>
+</div>
+
+<form id="form-cliente" method="POST" action="{{ route('clientes.store') }}">
+  <div class="modal fade" id="modal_formulario" tabindex="-1" role="dialog" aria-labelledby="FormularioLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-heade">
+          <h5 class="modal-title" id="createClientModalLabel">Registrar Cliente</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body">
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="nombre" class="form-label">Nombre</label>
+              <input type="text" class="form-control text-uppercase" id="nombre" name="nombre" placeholder="Ingresar nombre" required>
+            </div>
+            <div class="col-md-6">
+              <label for="apellido" class="form-label">Apellido</label>
+              <input type="text" class="form-control text-uppercase" id="apellido" name="apellido" placeholder="Ingresar apellido" required>
+            </div>
+          </div>
+
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="telefono" class="form-label">Teléfono</label>
+              <input type="tel" class="form-control text-uppercase" id="telefono" name="telefono" placeholder="Ingresar teléfono" required>
+              <span id="error-telefono" class="text-danger" style="display: none;">El teléfono ya está registrado.</span>
+            </div>
+            <div class="col-md-6">
+              <label for="email" class="form-label">Email</label>
+              <input type="email" class="form-control" id="email" name="email" placeholder="Ingresar email">
+              <span id="error-email" class="text-danger" style="display: none;">El correo ya está registrado.</span>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="comentarios" class="form-label">Dirección</label>
+            <textarea id="comentarios" name="comentarios" class="form-control text-uppercase" placeholder="Agrega información de tu cliente"></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Agregar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<script>
+  // Función para convertir texto en mayúsculas automáticamente
+  document.querySelectorAll('.text-uppercase').forEach(input => {
+      input.addEventListener('input', function () {
+          this.value = this.value.toUpperCase();
+      });
+  });
+
+  // Formateo del teléfono
+  document.getElementById("telefono").addEventListener("input", function (event) {
+      let valor = this.value.replace(/\D/g, ""); // Elimina caracteres no numéricos
+
+      if (valor.length <= 10) {
+          valor = valor.replace(/(\d{2})(\d{4})(\d{4})/, "$1 $2 $3");
+      } else if (valor.length > 10) {
+          valor = valor.replace(/(\d{2})(\d{2})(\d{4})(\d{4})/, "+$1 $2 $3 $4");
+      }
+
+      this.value = valor;
+  });
+</script>
+
+
+
+<!-- Modal -->
+<div class="modal fade" id="cliente_creado" tabindex="-1" role="dialog" aria-labelledby="ClienteCreadoLabel" 
+    aria-hidden="true" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header encabezado_modal text-center">
+                <h5 class="modal-title titulo_modal">¡Cliente guardado exitosamente!</h5>
+            </div>
+            <div class="modal-body">
+                <div class="text-center">
+                    <img src="{{ asset('images/confirmar.jpeg') }}" alt="Logo de encabezado" class="logo-modal">
+                </div>
+                <p class="text-center mensaje-modal">
+                    El cliente se ha registrado correctamente en el sistema.  
+                    Puedes proceder a cerrar este mensaje.  
+                    <b>Grupo MediBuy</b>.
+                </p>
+            </div>
+            <div class="modal-footer d-flex justify-content-center">
+                <button class="btn btn-listo" onclick="cerrarModal()">Listo</button>
+            </div>
+        </div>
+    </div>
 </div>
 @endsection
 
@@ -598,11 +690,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 </script>
-
-
-
-
-
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     const buscarProducto = document.getElementById("buscarProducto");
@@ -740,7 +827,9 @@ $(document).ready(function () {
     // Preparar JSON al enviar formulario
     $('#form-propuesta').submit(function (e) {
         console.log('Submit detectado.');
-        prepararProductosJSON();  // Aquí estaba mal escrito antes, ya corregido
+
+        actualizarTotal();      // Primero recalcula los subtotales y totales
+        prepararProductosJSON(); // Luego genera el JSON ya con datos correctos
 
         const productosJson = $('#productos_json').val();
         console.log('Valor de productos_json al enviar:', productosJson);
@@ -755,7 +844,6 @@ $(document).ready(function () {
         console.log('Productos JSON listo para enviar:', productosJson);
     });
 });
-
 function agregarProductoDesdeDropdown(id, nombre, modelo, marca, precio, imagen) {
     console.log('Agregando producto:', { id, nombre, modelo, marca, precio, imagen });
 
@@ -770,33 +858,45 @@ function agregarProductoDesdeDropdown(id, nombre, modelo, marca, precio, imagen)
         return;
     }
 
+    // Asegura que la ruta de la imagen esté bien
+    let imagenRuta = imagen.includes('/storage') ? imagen : '/storage/' + imagen;
+
     const fila = `
         <tr data-id="${id}" data-precio="${precio}">
-            <td><img src="/storage/${imagen}" width="50"></td>
+            <td>
+                <img src="${imagenRuta}" alt="${nombre}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 6px;">
+            </td>
             <td class="equipo">${nombre}</td>
             <td>${modelo}</td>
             <td>${marca}</td>
-            <td><input type="number" class="form-control cantidad" value="1" min="1" onchange="actualizarSubtotal(this)"></td>
+            <td>
+                <input type="number" class="form-control cantidad" value="1" min="1" onchange="actualizarSubtotal(this)">
+            </td>
             <td class="subtotal">${precio.toFixed(2)}</td>
-            <td><input type="number" class="form-control sobreprecio" value="0" min="0" onchange="actualizarSubtotal(this)"></td>
-            <td><button type="button" class="btn btn-sm btn-danger" onclick="eliminarFila(this)">Eliminar</button></td>
+            <td>
+                <input type="number" class="form-control sobreprecio" value="0" min="0" onchange="actualizarSubtotal(this)">
+            </td>
+            <td>
+                <button type="button" class="btn btn-sm btn-danger" onclick="eliminarFila(this)">Eliminar</button>
+            </td>
         </tr>
     `;
 
-$('#tabla-productos tbody').append(fila);
-console.log('Producto agregado a la tabla.');
-actualizarTotal();
-prepararProductosJSON(); // <-- AQUÍ
-$('#buscarProducto').val('');
-$('.dropdown-menu').removeClass('show');
+    $('#tabla-productos tbody').append(fila);
+    console.log('Producto agregado a la tabla.');
 
+    actualizarTotal();
+    prepararProductosJSON();
+
+    $('#buscarProducto').val('');
+    $('.dropdown-menu').removeClass('show');
 }
 
 function eliminarFila(btn) {
     console.log('Eliminando fila.');
     $(btn).closest('tr').remove();
     actualizarTotal();
-    prepararProductosJSON(); // <-- AQUÍ
+    prepararProductosJSON();
 }
 
 function actualizarSubtotal(input) {
@@ -810,8 +910,8 @@ function actualizarSubtotal(input) {
     fila.find('.subtotal').text(nuevoSubtotal.toFixed(2));
 
     actualizarTotal();
+    prepararProductosJSON();
 }
-
 function actualizarTotal() {
     console.log('Calculando totales...');
     let subtotal = 0;
@@ -829,12 +929,19 @@ function actualizarTotal() {
     const descuento = parseFloat($('#descuento').val()) || 0;
     const envio = parseFloat($('#envio').val()) || 0;
 
+    // Validar descuento para que no sea mayor que subtotal
+    const descuentoValidado = descuento > subtotal ? subtotal : descuento;
+
+    // Base para IVA incluye envío
+    let baseIVA = subtotal - descuentoValidado + envio;
+    if (baseIVA < 0) baseIVA = 0;
+
     let iva = 0;
     if ($('#aplica_iva').is(':checked')) {
-        iva = (subtotal - descuento) * 0.16;
+        iva = baseIVA * 0.16;
     }
 
-    const total = subtotal - descuento + envio + iva;
+    const total = subtotal - descuentoValidado + envio + iva;
 
     $('#subtotal').text(subtotal.toFixed(2));
     $('#subtotal_input').val(subtotal.toFixed(2));
@@ -857,7 +964,7 @@ function prepararProductosJSON() {
             cantidad: parseFloat(fila.find('.cantidad').val()) || 1,
             precio_unitario: parseFloat(fila.attr('data-precio')) || 0,
             sobreprecio: parseFloat(fila.find('.sobreprecio').val()) || 0,
-            subtotal: parseFloat(fila.find('.subtotal').text()) || 0,
+            subtotal: parseFloat(fila.find('.subtotal').text()) || 0, // Subtotal ya incluye sobreprecio
         };
         console.log('Producto encontrado:', producto);
         productos.push(producto);
@@ -867,6 +974,7 @@ function prepararProductosJSON() {
     console.log('JSON generado:', productos);
 }
 </script>
+
 
 
 <script>
@@ -897,7 +1005,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Función para cargar clientes desde backend
     function loadClients(search = "") {
-        fetch(`http://192.168.1.228:8000/encontrar-clientes?search=${encodeURIComponent(search)}`, {
+        fetch(`http://192.168.1.248:8000/encontrar-clientes?search=${encodeURIComponent(search)}`, {
             method: "GET",
             headers: {
                 "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content,

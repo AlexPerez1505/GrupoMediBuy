@@ -46,7 +46,7 @@ public function store(Request $request)
         'telefono' => 'nullable|string|max:20|unique:clientes,telefono',
         'email' => 'nullable|email|max:255|unique:clientes,email',
         'comentarios' => 'nullable|string',
-        'categoria_id' => 'required|exists:categorias,id',
+        'categoria_id' => 'nullable|exists:categorias,id',
     ], [
         'telefono.unique' => 'El teléfono ya está registrado.',
         'email.unique' => 'El correo ya está registrado.',

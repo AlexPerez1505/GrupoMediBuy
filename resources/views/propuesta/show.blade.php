@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Remisión</title>
+    <title>Cotización</title>
             
-
 <!-- Bootstrap 5 JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -242,6 +241,8 @@
                             <td>{{ moneda($total) }}</td>
                         </tr>
                         <tr>
+                             @if($propuesta->plan !== 'contado')
+
                             <td><strong>Pago inicial estimado:</strong></td>
                             <td>{{ moneda($montoInicial) }}</td>
                         </tr>
@@ -253,7 +254,7 @@
                             <td><strong>Plazo estimado:</strong></td>
                             <td>{{ $plazoMeses }} {{ Str::plural('mes', $plazoMeses) }}</td>
                         </tr>
-
+@endif
                         @if($propuesta->plan === 'credito' && $plazoMeses > 0)
                             <tr>
                                 <td><strong>Tasa de interés mensual estimada:</strong></td>
@@ -276,7 +277,7 @@
                         <thead class="border-bottom text-muted small text-uppercase">
                             <tr>
                                 <th>Descripción</th>
-                                <th>Fecha de Pago</th>
+                                <th>Fecha Estimada de Pago</th>
                                 <th>Monto</th>
                             </tr>
                         </thead>

@@ -72,9 +72,17 @@
                         <td>{{ $propuesta->created_at->format('d/m/Y H:i') }}</td>
                         <td>{{ ucfirst($propuesta->plan) }}</td>
                         <td>
-                            <a href="{{ route('propuestas.show', $propuesta->id) }}" class="icon-btn" title="Ver"><i class="fa-solid fa-eye"></i></a>
-                            <a href="{{ route('propuestas.pdf', $propuesta->id) }}" class="icon-btn" title="Descargar PDF"><i class="fa-solid fa-file-pdf"></i></a>
-                        </td>
+    <a href="{{ route('propuestas.show', $propuesta->id) }}" class="icon-btn" title="Ver">
+        <i class="fa-solid fa-eye"></i>
+    </a>
+    <a href="{{ route('propuestas.pdf', $propuesta->id) }}" class="icon-btn" title="Descargar PDF">
+        <i class="fa-solid fa-file-pdf"></i>
+    </a>
+    <a href="{{ route('propuestas.edit', $propuesta->id) }}" class="icon-btn" title="Editar">
+        <i class="fa-solid fa-pen-to-square"></i>
+    </a>
+</td>
+
                     </tr>
                 @empty
                     <tr><td colspan="7" class="text-center">No hay propuestas registradas.</td></tr>

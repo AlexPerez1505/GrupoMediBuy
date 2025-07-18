@@ -1,9 +1,11 @@
 @extends('layouts.app')
 
+
 @section('title', 'Cartas de Garantía')
 @section('titulo', 'Cartas de Garantía')
 
 @section('content')
+
     <!-- Font Awesome para íconos -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
 

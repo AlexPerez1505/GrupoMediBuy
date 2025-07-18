@@ -1,4 +1,5 @@
 @extends('layouts.app')
+@include('components.registro-uso')
 
 @section('title', 'Historial de Mantenimiento')
 @section('titulo', 'Historial de Mantenimiento')

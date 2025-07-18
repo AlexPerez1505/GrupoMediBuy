@@ -17,8 +17,7 @@ class Propuesta extends Model
         'iva',
         'total',
         'plan',
-        'ficha_tecnica_id',
-        'carta_garantia_id'
+        'ficha_tecnica_id'
     ];
 
     public function cliente()
@@ -36,17 +35,18 @@ class Propuesta extends Model
         return $this->hasMany(PropuestaProducto::class);
     }
 
-    public function cartaGarantia()
+    public function fichaTecnica()
     {
-        return $this->belongsTo(CartaGarantia::class);
+        return $this->belongsTo(FichaTecnica::class);
     }
-    public function pagos()
-{
-    return $this->hasMany(PagoFinanciamientoPropuesta::class);
-}
-public function pagosFinanciamiento()
-{
-    return $this->hasMany(\App\Models\PagoFinanciamientoPropuesta::class, 'propuesta_id');
-}
 
+    public function pagos()
+    {
+        return $this->hasMany(PagoFinanciamientoPropuesta::class);
+    }
+
+    public function pagosFinanciamiento()
+    {
+        return $this->hasMany(\App\Models\PagoFinanciamientoPropuesta::class, 'propuesta_id');
+    }
 }

@@ -223,7 +223,7 @@
 </td>
                 <!-- Columna derecha con info de contacto -->
                 <td valign="top" align="left">
-                    <div style="margin-bottom: 3px;"><strong style="color:#555;">Tel:</strong> 722 448 5191</div>
+                    <div style="margin-bottom: 3px;"><strong style="color:#555;">Tel:</strong>+52 722 448 5191</div>
                     <div style="margin-bottom: 3px;"><strong style="color:#555;">Email:</strong> ventas@grupomedibuy.com</div>
                     <div style="margin-bottom: 3px;"><strong style="color:#555;">Web:</strong> grupomedibuy.com</div>
                     <div><strong style="color:#555;">Ubicación:</strong> Estado de México C.P. 52060</div>
@@ -238,20 +238,21 @@
 
 <div style="page-break-before: always; margin-top: -0.5cm; font-family: Arial, sans-serif;">
     <h2 style="color: #1e73be; font-weight: bold; text-align: center; margin-bottom: 1.5rem;">
-        Forma de Pago - Propuesta #{{ $propuesta->id }}
+        Forma de Pago - Cotización No.2025{{ $propuesta->id }}
     </h2>
 
     @if($propuesta->plan === 'contado')
-        <div style="margin-bottom: 2rem;">
-            <div style="background-color: #eaf7ea; border-left: 4px solid #28a745; padding: 16px;">
-                <h3 style="color: #28a745; margin: 0 0 10px;">Pago en una sola exhibición</h3>
-                <p style="margin: 0; font-size: 13px; color: #333;">
-                    Se ha registrado el pago completo de esta propuesta. 
-                    Agradecemos su preferencia.
-                </p>
-            </div>
+    <div style="margin-bottom: 2rem;">
+        <div style="background-color: #eaf7ea; border-left: 4px solid #28a745; padding: 16px;">
+            <h3 style="color: #28a745; margin: 0 0 10px;">Pago en una sola exhibición</h3>
+            <p style="margin: 0; font-size: 13px; color: #333;">
+                Esta propuesta contempla el pago en una sola exhibición. 
+                Estamos a su disposición para resolver cualquier duda y acompañarle en el proceso de adquisición.
+            </p>
         </div>
-    @else
+    </div>
+@else
+
 
     @php
         function traducirMes($fecha) {
@@ -402,14 +403,14 @@
             <tr><td><strong>Beneficiario:</strong></td><td>Gabriela Díaz García</td></tr>
             <tr><td><strong>CLABE:</strong></td><td>014420606148217181</td></tr>
             <tr><td><strong>Tarjeta:</strong></td><td>5579 0701 2907 7528</td></tr>
-            <tr><td><strong>Concepto:</strong></td><td>Propuesta #{{ $propuesta->id }} - {{ mb_strtoupper($propuesta->cliente->nombre) }}</td></tr>
+            <tr><td><strong>Concepto:</strong></td><td>Cotización No.2025{{ $propuesta->id }} - {{ mb_strtoupper($propuesta->cliente->nombre) }}</td></tr>
         </table>
         <table style="width: 100%; font-size: 13px;">
             <tr><td><strong>Banco:</strong></td><td>Banamex</td></tr>
             <tr><td><strong>Beneficiario:</strong></td><td>Gabriela Díaz García</td></tr>
             <tr><td><strong>CLABE:</strong></td><td>002420904325841851</td></tr>
             <tr><td><strong>Tarjeta:</strong></td><td>5256 7861 2056 8690</td></tr>
-            <tr><td><strong>Concepto:</strong></td><td>Propuesta #{{ $propuesta->id }} - {{ mb_strtoupper($propuesta->cliente->nombre) }}</td></tr>
+            <tr><td><strong>Concepto:</strong></td><td>Cotización No.2025{{ $propuesta->id }} - {{ mb_strtoupper($propuesta->cliente->nombre) }}</td></tr>
         </table>
     @else
         <table style="width: 100%; font-size: 13px;">
@@ -418,7 +419,7 @@
             <tr><td><strong>Cuenta:</strong></td><td>2944266064</td></tr>
             <tr><td><strong>CLABE:</strong></td><td>012180029442660641</td></tr>
             <tr><td><strong>Tarjeta:</strong></td><td>4152 3135 5179 3107</td></tr>
-            <tr><td><strong>Concepto:</strong></td><td>Propuesta #{{ $propuesta->id }} - {{ mb_strtoupper($propuesta->cliente->nombre) }}</td></tr>
+            <tr><td><strong>Concepto:</strong></td><td>Cotización No.2025{{ $propuesta->id }} - {{ mb_strtoupper($propuesta->cliente->nombre) }}</td></tr>
         </table>
     @endif
 

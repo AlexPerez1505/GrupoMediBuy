@@ -1,9 +1,11 @@
 @extends('layouts.app')
 
+@include('components.registro-uso')
 @section('title', 'FichaTecnica')
 @section('titulo', 'Ficha Tecnica')
 
 @section('content')
+
 <link rel="stylesheet" href="{{ asset('css/fichas.css') }}?v={{ time() }}">
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <div class="center-container">

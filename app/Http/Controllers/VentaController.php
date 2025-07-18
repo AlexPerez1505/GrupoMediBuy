@@ -204,7 +204,6 @@ public function update(Request $request, $id)
         'total' => 'required|numeric',
         'plan' => 'nullable|string|max:255',
         'productos_json' => 'required',
-        // Nota: la validación de archivos la hacemos manual más abajo
     ]);
 
     $venta = Venta::findOrFail($id);
@@ -221,15 +220,16 @@ public function update(Request $request, $id)
         'plan' => $request->plan,
     ]);
 
-    // Productos
+    // Eliminar productos anteriores
     VentaProducto::where('venta_id', $venta->id)->delete();
+
     $productos = json_decode($request->productos_json, true);
 
     foreach ($productos as $p) {
         if (isset($p['producto_id']) && !empty($p['producto_id'])) {
             $producto = Producto::find($p['producto_id']);
             if (!$producto) {
-                return redirect()->back()->withErrors('Producto no encontrado para el ID: ' . $p['producto_id']);
+                return redirect()->back()->withErrors('Producto no encontrado: ' . $p['producto_id']);
             }
 
             VentaProducto::create([
@@ -237,18 +237,18 @@ public function update(Request $request, $id)
                 'producto_id' => $producto->id,
                 'cantidad' => $p['cantidad'],
                 'precio_unitario' => $p['precio_unitario'],
-                'subtotal' => $p['subtotal'],
                 'sobreprecio' => $p['sobreprecio'],
+                'subtotal' => $p['subtotal'],
             ]);
         } else {
-            return redirect()->back()->withErrors('Falta el producto_id para uno de los productos.');
+            return redirect()->back()->withErrors('Falta producto_id en uno de los productos.');
         }
     }
 
-    // Pagos y documentos
+    // Pagos
     if ($request->has('pagos_financiamiento')) {
         foreach ($request->pagos_financiamiento as $pagoId => $datos) {
-            // Pago nuevo
+            // Si es nuevo
             if (Str::startsWith($pagoId, 'nuevo_')) {
                 if (!empty($datos['eliminar'])) continue;
 
@@ -259,11 +259,9 @@ public function update(Request $request, $id)
                     'descripcion' => $datos['descripcion'] ?? 'Pago planeado',
                 ]);
 
-                // Si se subió documento para pago nuevo
                 if ($request->hasFile("pagos_financiamiento.$pagoId.documento")) {
                     $archivo = $request->file("pagos_financiamiento.$pagoId.documento");
 
-                    // Validar que sea pdf
                     if ($archivo->isValid() && $archivo->extension() === 'pdf') {
                         $ruta = $archivo->store('public/documentos_pagos');
 
@@ -276,17 +274,18 @@ public function update(Request $request, $id)
                 }
 
             } else {
-                // Pago existente
+                // Existente
                 $pago = PagoFinanciamiento::find($pagoId);
                 if (!$pago) continue;
 
                 if (!empty($datos['eliminar'])) {
-                    // Opcional: eliminar documento si existe?
-                    $documento = DocumentoPago::where('pago_financiamiento_id', $pago->id)->first();
+                    // Eliminar documento si existe
+                    $documento = DocumentoPago::where('pago_id', $pago->id)->first();
                     if ($documento) {
                         Storage::delete($documento->ruta_archivo);
                         $documento->delete();
                     }
+
                     $pago->delete();
                     continue;
                 }
@@ -297,12 +296,11 @@ public function update(Request $request, $id)
                     'descripcion' => $datos['descripcion'] ?? $pago->descripcion,
                 ]);
 
-                // Actualizar documento si se subió uno nuevo
+                // Reemplazar documento si hay uno nuevo
                 if ($request->hasFile("pagos_financiamiento.$pagoId.documento")) {
                     $archivo = $request->file("pagos_financiamiento.$pagoId.documento");
 
                     if ($archivo->isValid() && $archivo->extension() === 'pdf') {
-                        // Eliminar documento anterior si existe
                         $documento = DocumentoPago::where('pago_id', $pago->id)->first();
 
                         if ($documento) {
@@ -325,6 +323,7 @@ public function update(Request $request, $id)
 
     return redirect()->route('ventas.show', $venta->id)->with('success', 'Venta actualizada correctamente.');
 }
+
 
 
 

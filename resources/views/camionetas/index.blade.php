@@ -4,6 +4,8 @@
 @section('titulo', 'Automoviles')
 
 @section('content')
+
+    
 <link rel="stylesheet" href="{{ asset('css/camionetas.css') }}?v={{ time() }}">
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="{{ asset('js/delete-confirmation.js') }}"></script>

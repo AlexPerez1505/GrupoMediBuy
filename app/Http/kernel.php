@@ -35,9 +35,11 @@ class Kernel extends HttpKernel
             \Illuminate\Session\Middleware\StartSession::class,
             \Illuminate\View\Middleware\ShareErrorsFromSession::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            \App\Http\Middleware\RegistrarModuloUso::class,
         ],
 
         'api' => [
+            \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
             'throttle:60,1',
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
         ],
@@ -68,6 +70,9 @@ protected function schedule(Schedule $schedule)
 
     // Agrega este para enviar correos por pagos próximos
     $schedule->command('pagos:notificar-proximos')->dailyAt('08:00');
+
+    $schedule->command('modulos:limpiar')->hourly();
+
 }
 
     

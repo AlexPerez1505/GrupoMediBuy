@@ -1,39 +1,37 @@
 <?php
 
 namespace App\Providers;
-use App\Models\PagoFinanciamiento;
-use Illuminate\Support\ServiceProvider;
+
+use Illuminate\Support\Facades\Route;
+use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvider;
 
 class RouteServiceProvider extends ServiceProvider
 {
     /**
-     * El espacio de nombres para los controladores.
+     * Este espacio de nombres se aplica a sus rutas del controlador.
      *
-     * @var string
+     * @var string|null
      */
-    protected $namespace = 'App\Http\Controllers';
+    protected $namespace = 'App\\Http\\Controllers';
 
     /**
-     * Registrar cualquier servicio de la aplicación.
+     * Define las rutas para la aplicación.
      */
-    public function register()
+    public function boot(): void
     {
-        //
-    }
+        parent::boot();
 
-    /**
-     * Definir los enlaces del modelo de ruta, filtros de patrón y otra configuración de rutas.
-     */
-    public function boot()
-    {
-        // Agregar lógica aquí si es necesario, si no, déjalo vacío
-    }
+        $this->routes(function () {
+            // Rutas Web
+            Route::middleware('web')
+                ->namespace($this->namespace)
+                ->group(base_path('routes/web.php'));
 
-    /**
-     * Configurar las rutas de la aplicación.
-     */
-    public function map()
-    {
-        //
+            // Rutas API
+            Route::prefix('api')
+                ->middleware('api')
+                ->namespace($this->namespace)
+                ->group(base_path('routes/api.php'));
+        });
     }
 }

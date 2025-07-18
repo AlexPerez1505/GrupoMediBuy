@@ -1,3 +1,7 @@
+@php
+    registrarModuloUso('Inventario', '/inventario', 'fas fa-box');
+@endphp
+
 <!DOCTYPE html>
 <html lang="es">
 <head>

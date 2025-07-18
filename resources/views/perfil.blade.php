@@ -1,3 +1,8 @@
+@php
+    registrarModuloUso('Perfil', '/perfil', 'fas fa-user-circle');
+@endphp
+
+
 <!DOCTYPE html>
 <html lang="es">
 <head>

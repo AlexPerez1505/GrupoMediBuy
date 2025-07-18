@@ -2,6 +2,7 @@
 @section('title', 'Materiales')
 @section('titulo', 'Solicitar Material')
 @section('content')
+@include('components.registro-uso')
 
 <link rel="stylesheet" href="{{ asset('css/asistencias.css') }}?v={{ time() }}">
 <div class="formulario-contenedor">

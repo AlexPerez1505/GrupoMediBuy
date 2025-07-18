@@ -191,6 +191,60 @@
 
         
     }
+    @import url('https://fonts.googleapis.com/css?family=Roboto:700');
+
+#container {
+    color: #999;
+    text-transform: uppercase;
+    font-size: 28px;
+    font-weight: bold;
+    padding-top: 10px;
+    display: block;
+}
+
+#flip {
+    height: 50px;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#flip > div > div {
+    color: #fff;
+    padding: 4px 12px;
+    height: 45px;
+    margin-bottom: 45px;
+    display: inline-block;
+    font-size: 1.5rem;
+    border-radius: 5px;
+}
+
+#flip div:first-child {
+    animation: show 5s linear infinite;
+}
+
+#flip div div {
+    background: #42c58a;
+}
+
+#flip div:first-child div {
+    background: #4ec7f3;
+}
+
+#flip div:last-child div {
+    background: #DC143C;
+}
+
+@keyframes show {
+    0% { margin-top: -270px; }
+    5% { margin-top: -180px; }
+    33% { margin-top: -180px; }
+    38% { margin-top: -90px; }
+    66% { margin-top: -90px; }
+    71% { margin-top: 0px; }
+    99.99% { margin-top: 0px; }
+    100% { margin-top: -270px; }
+}
+
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen">
@@ -205,13 +259,19 @@
             </div>
         </div>
 
-        <div class="row justify-content-center">
-            <div class="col-12 text-center">
-                <h2 class="titulos">Iniciar Sesión</h2>
+       <div class="row justify-content-center">
+    <div class="col-12 text-center">
+        <div id="container">
+            Impulsamos 
+            <div id="flip">
+                <div><div>Salud</div></div>
+                <div><div>Innovación</div></div>
+                <div><div>Confianza</div></div>
             </div>
+            Contigo!
         </div>
-
-    
+    </div>
+</div>
         <div class="login-container">
     <div class="inner-container">    
   
@@ -281,9 +341,7 @@
                     </p>
                 </div>
             </div>
-            <a href="https://grupomedibuy.com/" target="_blank">
-                <img src="{{ asset('images/web.png') }}" alt="Logo de pie de página" class="footer-logo">
-            </a> 
+           
         </div>
     </div>
 </div>

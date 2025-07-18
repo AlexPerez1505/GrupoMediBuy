@@ -2,6 +2,9 @@
 @section('title', 'Préstamos')
 @section('titulo', 'Préstamos')
 @section('content')
+@php
+    registrarModuloUso('Prestamos', '/prestamos', 'fas fa-user-circle');
+@endphp
 <!-- Estilos personalizados -->
 <link rel="stylesheet" href="{{ asset('css/prestamos.css') }}?v={{ time() }}">
     <!-- DataTables JS -->

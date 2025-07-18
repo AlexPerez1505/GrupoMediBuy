@@ -119,6 +119,43 @@
         font-size: 0.9rem;
         padding: 0.6rem 1rem;
     }
+        .toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 40px;
+    height: 22px;
+}
+.toggle-switch input {
+    display: none;
+}
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #c8d6e5;
+    transition: 0.4s;
+    border-radius: 34px;
+}
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 3px;
+    bottom: 3px;
+    background-color: #576574;
+    transition: 0.4s;
+    border-radius: 50%;
+}
+.toggle-switch input:checked + .toggle-slider {
+    background-color: #74b9ff;
+}
+.toggle-switch input:checked + .toggle-slider:before {
+    transform: translateX(18px);
+}
 </style>
 
 <div class="container mt-4">
@@ -246,13 +283,14 @@
 <!-- Pagos Planeados -->
 <div class="form-section">
     <h4 class="mb-3">Pagos Planeados (Financiamiento)</h4>
-    <table id="tabla-pagos" class="table table-bordered">
+    <table id="tabla-pagos" class="table table-bordered align-middle text-center">
         <thead>
             <tr>
                 <th>Descripción</th>
                 <th>Fecha</th>
                 <th>Monto</th>
                 <th>Documento (PDF)</th>
+                <th>Bloqueado</th>
                 <th>¿Eliminar?</th>
             </tr>
         </thead>
@@ -266,13 +304,20 @@
                     <input type="date" name="pagos_financiamiento[{{ $pago->id }}][fecha_pago]" value="{{ \Carbon\Carbon::parse($pago->fecha_pago)->format('Y-m-d') }}" class="form-control" required>
                 </td>
                 <td>
-                    <input type="number" step="0.01" name="pagos_financiamiento[{{ $pago->id }}][monto]" value="{{ $pago->monto }}" class="form-control" required>
+                    <input type="number" step="0.01" name="pagos_financiamiento[{{ $pago->id }}][monto]" value="{{ $pago->monto }}" class="form-control monto-pago" required>
                 </td>
                 <td>
                     <input type="file" name="pagos_financiamiento[{{ $pago->id }}][documento]" accept="application/pdf" class="form-control">
                     @if($pago->documentos && $pago->documentos->count() > 0)
-                        <a href="{{ Storage::url($pago->documentos->first()->ruta_archivo) }}" target="_blank" class="btn btn-sm btn-info mt-1">Ver PDF</a>
+                        <a href="{{ Storage::url($pago->documentos->first()->ruta_archivo) }}" target="_blank" class="btn btn-sm btn-outline-info mt-1">Ver PDF</a>
                     @endif
+                </td>
+                <td>
+                    <!-- Switch solo frontend -->
+                    <label class="toggle-switch">
+                        <input type="checkbox" class="switch-bloqueo" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
                 </td>
                 <td>
                     <button type="button" class="btn btn-sm btn-danger eliminar-fila">Eliminar</button>
@@ -300,7 +345,6 @@
 </div>
 
 
-
 <script>
 document.getElementById('form-venta').addEventListener('submit', function(event) {
     const totalVenta = parseFloat(document.getElementById('total').value) || 0;
@@ -311,8 +355,8 @@ document.getElementById('form-venta').addEventListener('submit', function(event)
         if (input.name.includes('[monto]')) {
             const monto = parseFloat(input.value) || 0;
             const tr = input.closest('tr');
-            const eliminar = tr.querySelector('input[type="checkbox"]');
-            if (!eliminar || !eliminar.checked) {
+            const eliminar = tr.querySelector('input[name$="[eliminar]"]'); // SOLO este input
+            if (!eliminar || eliminar.value !== '1') {
                 sumaPagos += monto;
             }
         }
@@ -331,6 +375,7 @@ document.getElementById('form-venta').addEventListener('submit', function(event)
 </script>
 <script>
 $(document).ready(function () {
+    console.log('[READY] Documento cargado.');
     actualizarTotal();
 
     $('#producto').change(function () {
@@ -367,6 +412,7 @@ $(document).ready(function () {
     });
 
     $('#descuento, #envio').on('input', actualizarTotal);
+
     $('#toggleIva').on('change', function () {
         if (navigator.vibrate) navigator.vibrate(80);
         $('#iva').prop('readonly', true);
@@ -377,25 +423,40 @@ $(document).ready(function () {
         ajustarPagos($(this));
     });
 
-    // Eliminar fila al hacer clic en el botón "Eliminar"
+    // 🔁 MARCA y OCULTA la fila, pero no la elimina del DOM
     $(document).on('click', '.eliminar-fila', function () {
-        $(this).closest('tr').remove();
-        actualizarPagos();
+        const fila = $(this).closest('tr');
+        const inputEliminar = fila.find('input[name$="[eliminar]"]');
+        if (inputEliminar.length) {
+            inputEliminar.val('1');
+            fila.hide(); // Ocultar visualmente
+            console.log('[PAGO] Marcado para eliminar:', fila);
+            actualizarPagos();
+        } else {
+            fila.remove(); // Si no tiene input hidden, es nuevo (sin ID), se puede eliminar directo
+            console.log('[PAGO] Fila nueva eliminada.');
+            actualizarPagos();
+        }
+    });
+
+    $(document).on('change', '.switch-bloqueo', function () {
+        const fila = $(this).closest('tr');
+        const inputMonto = fila.find('input[name$="[monto]"]');
+        const bloqueado = this.checked;
+
+        console.log('[SWITCH] Cambiado. Bloqueado:', bloqueado);
+        inputMonto.prop('readonly', bloqueado);
+
+        ajustarPagos();
     });
 
     let contadorNuevoPago = 0;
     $('#agregarPago').on('click', function () {
         const nuevoId = 'nuevo_' + contadorNuevoPago++;
-
-        // Filtrar pagos que no están marcados para eliminar
         const filasPagos = $('#tabla-pagos tbody tr');
-
-        // Ignorar el primero (ej. "Pago inicial")
         const filasSinInicial = filasPagos.slice(1);
-
         const descripcion = `${numeroEnLetras(filasSinInicial.length + 1)} pago`;
 
-        // Obtener última fecha del resto (sin contar el primero)
         let ultimaFecha = null;
         filasSinInicial.each(function () {
             const inputFecha = $(this).find('input[name$="[fecha_pago]"]');
@@ -419,22 +480,32 @@ $(document).ready(function () {
                     ${descripcion}
                 </td>
                 <td><input type="date" name="pagos_financiamiento[${nuevoId}][fecha_pago]" class="form-control" value="${nuevaFecha}" required></td>
-                <td><input type="number" step="0.01" name="pagos_financiamiento[${nuevoId}][monto]" class="form-control" required></td>
-                <td>
-                    <input type="file" name="pagos_financiamiento[${nuevoId}][documento]" accept="application/pdf" class="form-control">
+                <td><input type="number" step="0.01" name="pagos_financiamiento[${nuevoId}][monto]" class="form-control monto-pago" required></td>
+                <td><input type="file" name="pagos_financiamiento[${nuevoId}][documento]" accept="application/pdf" class="form-control"></td>
+                <td class="text-center">
+                    <label class="toggle-switch">
+                        <input type="checkbox" class="switch-bloqueo" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
                 </td>
-                <td><button type="button" class="btn btn-sm btn-danger eliminar-fila">Eliminar</button></td>
+                <td>
+                    <input type="hidden" name="pagos_financiamiento[${nuevoId}][eliminar]" value="0">
+                    <button type="button" class="btn btn-sm btn-danger eliminar-fila">Eliminar</button>
+                </td>
             </tr>`;
-
         $('#tabla-pagos tbody').append(fila);
+        console.log('[PAGO] Agregado:', descripcion);
         actualizarPagos();
     });
 
     $('#form-venta').submit(function (e) {
         if (!validarTotalPagos()) {
+            console.warn('[ERROR] El total de pagos no coincide con el total.');
             e.preventDefault();
+            return;
         }
         prepararProductosJSON();
+        console.log('[FORM] Enviando formulario correctamente.');
     });
 });
 
@@ -464,71 +535,66 @@ function actualizarTotal() {
         $(this).find('.subtotal').text(filaSubtotal.toFixed(2));
     });
 
-    $('#subtotal').val(subtotal.toFixed(2));
     const descuento = parseFloat($('#descuento').val()) || 0;
     const envio = parseFloat($('#envio').val()) || 0;
     const base = subtotal - descuento + envio;
-    let iva = $('#toggleIva').is(':checked') ? base * 0.16 : 0;
-    $('#iva').val(iva.toFixed(2));
+    const iva = $('#toggleIva').is(':checked') ? base * 0.16 : 0;
     const total = base + iva;
+
+    $('#subtotal').val(subtotal.toFixed(2));
+    $('#iva').val(iva.toFixed(2));
     $('#total').val(total.toFixed(2));
+
+    console.log('[TOTAL] Subtotal:', subtotal, 'Descuento:', descuento, 'Envío:', envio, 'IVA:', iva, 'Total:', total);
     actualizarPagos();
 }
 
 function actualizarPagos() {
     const total = parseFloat($('#total').val()) || 0;
-    const filas = $('input[name^="pagos_financiamiento"][name$="[monto]"]').closest('tr');
-
-    const num = filas.length;
-    if (num === 0) return;
-
-    const monto = (total / num).toFixed(2);
-    filas.each(function () {
-        $(this).find('input[name$="[monto]"]').val(monto);
-    });
-
-    validarTotalPagos();
-}
-
-function ajustarPagos(inputModificado) {
-    const total = parseFloat($('#total').val()) || 0;
-    const filas = $('input[name^="pagos_financiamiento"][name$="[monto]"]').closest('tr');
+    const filas = $('#tabla-pagos tbody tr:visible');
 
     const pagos = [];
     let totalManual = 0;
 
-    filas.each(function (i, tr) {
-        const inputMonto = $(tr).find('input[name$="[monto]"]');
+    filas.each(function () {
+        const fila = $(this);
+        const inputMonto = fila.find('input[name$="[monto]"]');
+        const bloqueado = fila.find('.switch-bloqueo').is(':checked');
         const monto = parseFloat(inputMonto.val()) || 0;
-        pagos.push({ input: inputMonto, monto, modificado: false });
+
+        pagos.push({ input: inputMonto, monto, bloqueado });
+        if (bloqueado) totalManual += monto;
     });
 
-    const modIndex = filas.index(inputModificado.closest('tr'));
-    if (modIndex !== -1) {
-        pagos[modIndex].modificado = true;
-        totalManual += pagos[modIndex].monto;
-    }
+    const modificables = pagos.filter(p => !p.bloqueado);
+    const montoRestante = modificables.length > 0 ? (total - totalManual) / modificables.length : 0;
 
-    const restantes = pagos.filter((_, i) => i !== modIndex);
-    const montoRestante = (total - totalManual) / restantes.length;
-
-    restantes.forEach(pago => {
-        pago.input.val(montoRestante.toFixed(2));
+    modificables.forEach(p => {
+        p.input.val(montoRestante.toFixed(2));
     });
 
+    console.log('[PAGOS] Total manual:', totalManual, '| Monto restante:', montoRestante);
     validarTotalPagos();
+}
+
+function ajustarPagos() {
+    actualizarPagos();
 }
 
 function validarTotalPagos() {
     const total = parseFloat($('#total').val()) || 0;
     let suma = 0;
 
-    $('input[name^="pagos_financiamiento"][name$="[monto]"]').each(function () {
-        suma += parseFloat($(this).val()) || 0;
+    $('#tabla-pagos tbody tr:visible').each(function () {
+        const monto = parseFloat($(this).find('input[name$="[monto]"]').val()) || 0;
+        suma += monto;
     });
 
     const errorDiv = $('#error-total-pagos');
-    if (Math.abs(suma - total) > 0.01) {
+    const diferencia = Math.abs(suma - total);
+    console.log('[VALIDACIÓN] Total esperado:', total, '| Suma de pagos:', suma);
+
+    if (diferencia > 0.01) {
         errorDiv.removeClass('d-none');
         return false;
     } else {
@@ -551,13 +617,13 @@ function prepararProductosJSON() {
     $('#productos_json').val(JSON.stringify(productos));
 }
 
-// Ordinal en español
 function numeroEnLetras(num) {
     const lista = ['Primer', 'Segundo', 'Tercer', 'Cuarto', 'Quinto', 'Sexto', 'Séptimo', 'Octavo', 'Noveno', 'Décimo',
-                   'Undécimo', 'Duodécimo', 'Décimotercer', 'Décimocuarto', 'Décimoquinto', 'Décimosexto'];
+        'Undécimo', 'Duodécimo', 'Décimotercer', 'Décimocuarto', 'Décimoquinto', 'Décimosexto'];
     return lista[num - 1] || `${num}°`;
 }
 </script>
+
 
 
 
