@@ -132,11 +132,23 @@
                                 </td>
                                 <td>
                                     @if ($item->producto)
-                                        <span class="fw-semibold d-block">{{ mb_strtoupper($item->producto->tipo_equipo ?? '—', 'UTF-8') }}</span>
-                                        <small class="text-muted">
+                                        <span class="fw-semibold d-block">
+                                            {{ mb_strtoupper($item->producto->tipo_equipo ?? '—', 'UTF-8') }}
+                                        </span>
+                                        <small class="text-muted d-block">
                                             {{ mb_strtoupper($item->producto->modelo ?? '', 'UTF-8') }} |
                                             {{ mb_strtoupper($item->producto->marca ?? '', 'UTF-8') }}
                                         </small>
+
+                                        @if ($item->registro)
+                                            <small class="text-info-emphasis d-block mt-1">
+                                                <i class="bi bi-hash"></i> Serie: {{ $item->registro->numero_serie }}
+                                            </small>
+                                        @else
+                                            <small class="text-warning-emphasis d-block mt-1">
+                                                <i class="bi bi-exclamation-circle"></i> Sin número de serie
+                                            </small>
+                                        @endif
                                     @else
                                         <span class="text-danger fst-italic">Producto eliminado</span>
                                     @endif
@@ -169,6 +181,7 @@
     </div>
 </div>
 </div>
+
 <br>
 
  <div class="row g-4">

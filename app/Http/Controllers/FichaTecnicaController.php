@@ -10,7 +10,8 @@ class FichaTecnicaController extends Controller
 {
     public function index()
     {
-        $fichas = FichaTecnica::all();
+        // Ordenar alfabéticamente por nombre
+        $fichas = FichaTecnica::orderBy('nombre')->get();
         return view('fichas.index', compact('fichas'));
     }
 
@@ -21,30 +22,29 @@ class FichaTecnicaController extends Controller
 
     public function store(Request $request)
     {
-$request->validate([
-    'nombre' => 'required|string|max:255',
-    'archivo' => 'required|mimes:pdf', // Solo archivos PDF
-]);
+        $request->validate([
+            'nombre' => 'required|string|max:255',
+            'archivo' => 'required|mimes:pdf', // Solo archivos PDF
+        ]);
 
-    
         $archivoPath = $request->file('archivo')->store('fichas_tecnicas', 'public');
-    
+
         FichaTecnica::create([
             'nombre' => $request->nombre,
             'archivo' => $archivoPath,
         ]);
-    
+
         return response()->json([
             'success' => true,
             'message' => 'Ficha técnica subida correctamente.'
         ]);
     }
-    
+
     public function download(FichaTecnica $ficha)
     {
         $rutaArchivo = storage_path("app/public/" . $ficha->archivo);
         $nombreOriginal = $ficha->nombre . '.pdf'; // Agrega la extensión si es PDF
-    
+
         return response()->download($rutaArchivo, $nombreOriginal);
     }
 

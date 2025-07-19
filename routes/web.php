@@ -417,6 +417,8 @@ Route::post('/categorias', [CategoriaController::class, 'store'])->name('categor
 Route::delete('/categorias/{id}', [CategoriaController::class, 'destroy'])->name('categorias.destroy');
 Route::post('/clientes/check-unique', [ClienteController::class, 'checkUnique'])->name('clientes.check-unique');
 
+Route::get('/registros-disponibles', [RegistroController::class, 'registrosStock']);
+Route::get('/registro-info/{id}', [RegistroController::class, 'info']);
 
 
 

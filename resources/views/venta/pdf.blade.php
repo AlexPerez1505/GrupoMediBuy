@@ -74,22 +74,21 @@
             margin-top: -20px;
         }
 
-        .footer-container {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 95%;
-            padding: 15px;
-        }
+.footer-container {
+    position: fixed;
+    bottom: 10px;
+    left: 0;
+    width: 100%;
+    padding: 15px;
+    text-align: center;
+}
 
-        .footer {
-            text-align: center;
-            padding: 10px;
-        }
+.footer {
+    display: inline-block;
+    text-align: left;
+}
 
-        .footer img {
-            width: 90%;
-        }
+
     </style>
 </head>
 <body>
@@ -148,9 +147,14 @@
                 <img src="{{ public_path('storage/' . ($item->producto->imagen ?? 'default.jpg')) }}" width="50" alt="Imagen del producto">
             </td>
             <td>
-                {{ mb_strtoupper($item->producto->tipo_equipo ?? '—', 'UTF-8') }}
-                {{ mb_strtoupper($item->producto->modelo ?? '', 'UTF-8') }}<br>
-                {{ mb_strtoupper($item->producto->marca ?? '', 'UTF-8') }}
+                <strong>{{ mb_strtoupper($item->producto->tipo_equipo ?? '—', 'UTF-8') }}</strong><br>
+                {{ mb_strtoupper($item->producto->modelo ?? '', 'UTF-8') }} | 
+                {{ mb_strtoupper($item->producto->marca ?? '', 'UTF-8') }}<br>
+                @if($item->registro?->numero_serie)
+                    <span style="color: #1a73e8;">Serie: {{ $item->registro->numero_serie }}</span>
+                @else
+                    <span style="color: #999;">Sin número de serie</span>
+                @endif
             </td>
             <td>{{ $item->cantidad }}</td>
             <td>${{ number_format($item->subtotal, 2) }}</td>
@@ -158,6 +162,7 @@
         @endforeach
     </tbody>
 </table>
+
 <div class="total-box">
     @if($venta->subtotal > 0)
         <p><strong>Subtotal:</strong> ${{ number_format($venta->subtotal, 2) }}</p>
@@ -180,13 +185,48 @@
 @if($venta->nota)
     <p><strong>Nota:</strong> {{ $venta->nota }}</p>
 @endif
-<div style="text-align: center; margin-top: 10px;">
+<div style="text-align: center; margin-top: 5px; font-family: Arial, sans-serif;">
+    <p style="font-size: 12px; color: #333; margin-bottom: 12px;">
     <p><strong>Escanea este código QR para acceder a esta venta:</strong></p>
-    <img src="data:image/png;base64,{{ $qr }}" alt="QR Code">
+    <img src="data:image/png;base64,{{ $qr }}" alt="QR Code" style="width: 100px; height: 100px;">
 </div>
+
 <div class="footer-container">
     <div class="footer">
-        <img src="{{ public_path('images/pie.jpeg') }}" alt="Grupo MediBuy">
+        <table cellpadding="4" cellspacing="0" style="font-family: Arial, sans-serif; font-size: 11px; color: #333;">
+            <tr>
+                <!-- Columna izquierda con logotipo + datos -->
+<td valign="top" align="left">
+    <div style="margin-top: 20px;"> <!-- 👈 Ajusta el valor de margin-top según lo que necesites -->
+        <table cellpadding="0" cellspacing="0">
+            <tr>
+                <!-- Firma -->
+                <td style="padding-right: 8px;" valign="middle">
+                    <img src="{{ public_path('images/firma.png') }}" alt="Firma" width="130">
+                </td>
+                <!-- Nombre y cargo -->
+                <td valign="middle">
+                    <div style="font-weight: bold; font-size: 13px;">Anahí Tellez</div>
+                    <div style="color: #777;">Gerente General</div>
+                </td>
+            </tr>
+        </table>
+    </div>
+</td>
+                <!-- Separador -->
+                <td style="width: 20px;">
+                 <!-- Línea divisoria -->
+                <td width="2%" style="border-left: 1px solid #ccc;"></td>
+</td>
+                <!-- Columna derecha con info de contacto -->
+                <td valign="top" align="left">
+                    <div style="margin-bottom: 3px;"><strong style="color:#555;">Tel:</strong>+52 722 448 5191</div>
+                    <div style="margin-bottom: 3px;"><strong style="color:#555;">Email:</strong> ventas@grupomedibuy.com</div>
+                    <div style="margin-bottom: 3px;"><strong style="color:#555;">Web:</strong> grupomedibuy.com</div>
+                    <div><strong style="color:#555;">Ubicación:</strong> Estado de México C.P. 52060</div>
+                </td>
+            </tr>
+        </table>
     </div>
 </div>
 <div style="page-break-before: always; margin-top: -0.5cm; font-family: Arial, sans-serif;"> 
@@ -407,5 +447,53 @@
         Por favor, envíe el comprobante de pago al correo: <strong>compras@grupomedibuy.com</strong> o vía WhatsApp al <strong>+52 722 448 5191</strong>.
     </p>
 </div>
+@if($venta->plan !== 'contado')
+<div style="page-break-before: always; font-family: Arial, sans-serif; font-size: 13px; color: #333; line-height: 1.6;">
+    <h2 style="text-align: center; color: #1e73be; font-weight: bold; margin-bottom: 1.5rem;">Contrato de Compra-Venta</h2>
+
+    <p><strong>CONTRATO DE COMPRA-VENTA</strong> que celebran por una parte <strong>ANAHÍ TELLEZ ORTIZ</strong>, en su carácter de vendedora, y por la otra <strong>{{ mb_strtoupper($venta->cliente->nombre . ' ' . $venta->cliente->apellido, 'UTF-8') }}</strong>, en su carácter de comprador, al tenor de las siguientes cláusulas:</p>
+
+    <h4 style="color:#1e73be; margin-top: 1.5rem;">PRIMERA. OBJETO</h4>
+    <p>La vendedora se obliga a transferir al comprador la propiedad de los equipos detallados en la remisión número <strong>2025-{{ $venta->id }}</strong>, y este se obliga a pagar el precio convenido.</p>
+
+    <h4 style="color:#1e73be; margin-top: 1rem;">SEGUNDA. PRECIO Y FORMA DE PAGO</h4>
+    <p>El precio total de la compraventa es de <strong>${{ number_format($venta->total, 2) }} MXN</strong>. 
+    El comprador ha convenido en pagar dicha cantidad a crédito conforme al plan de pagos descrito en este documento.</p>
+
+    <h4 style="color:#1e73be; margin-top: 1rem;">TERCERA. ENTREGA</h4>
+    <p>La entrega de los equipos se hará en el domicilio del comprador o en el lugar designado, en perfectas condiciones de funcionamiento y acompañado de la garantía correspondiente.</p>
+
+    <h4 style="color:#1e73be; margin-top: 1rem;">CUARTA. GARANTÍA</h4>
+    <p>La vendedora otorga una garantía de 6 (seis) meses sobre el funcionamiento de los equipos, contados a partir de la fecha de entrega.</p>
+
+    <h4 style="color:#1e73be; margin-top: 1rem;">QUINTA. RESERVA DE DOMINIO</h4>
+    <p>Hasta que no se liquide el total del precio convenido, los equipos seguirán siendo propiedad de la vendedora.</p>
+
+    <h4 style="color:#1e73be; margin-top: 1rem;">SEXTA. JURISDICCIÓN</h4>
+    <p>Para la interpretación y cumplimiento del presente contrato, las partes se someten a las leyes y tribunales del Estado de México, renunciando a cualquier otro fuero que pudiera corresponderles.</p>
+
+    <div style="margin-top: 2rem;">
+        <table style="width: 100%;">
+            <tr>
+                <td style="width: 50%; text-align: center;">
+                    <p><strong>LA VENDEDORA</strong></p>
+                    <br><br>
+                    <img src="{{ public_path('images/firma.png') }}" alt="Firma" width="130"><br>
+                    <strong>Anahí Téllez Ortiz</strong><br>
+                    Gerente General
+                </td>
+                <td style="width: 50%; text-align: center;">
+                    <p><strong>EL COMPRADOR</strong></p>
+                    <br><br><br><br>
+                    <strong>{{ mb_strtoupper($venta->cliente->nombre . ' ' . $venta->cliente->apellido, 'UTF-8') }}</strong><br>
+                    Cliente
+                </td>
+            </tr>
+        </table>
+    </div>
+</div>
+@endif
+
+
 </body>
 </html>

@@ -307,5 +307,29 @@ public function obtenerProcesosPendientes($id)
 
     return response()->json($procesosPendientes);
 }
+public function registrosStock()
+{
+    return response()->json(
+        \App\Models\Registro::where('estado_proceso', 'stock')->get(['id', 'numero_serie'])
+    );
+}
+public function info($id)
+{
+    $registro = Registro::findOrFail($id);
+
+    return response()->json([
+        'numero_serie'     => $registro->numero_serie,
+        'estado_proceso'   => $registro->estado_proceso,
+        'tipo_equipo'      => $registro->tipo_equipo,
+        'subtipo_equipo'   => $registro->subtipo_equipo,
+        'modelo'           => $registro->modelo,
+        'marca'            => $registro->marca,
+        'evidencia1'       => $registro->evidencia1,
+    ]);
+}
+
+
+
+
   
 }

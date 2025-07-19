@@ -5,6 +5,59 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <div class="container"  style="margin-top: 80px;">
     <form id="form-venta" method="POST" action="{{ route('ventas.store') }}">
+        <style>
+            .swal2-popup.custom-swal {
+    border-radius: 16px;
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 15px;
+    color: #444;
+    background-color: #fdfcff;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    padding: 2rem;
+}
+
+.swal2-title.custom-title {
+    font-size: 22px;
+    font-weight: 600;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    justify-content: center;
+}
+
+.swal2-html-container.custom-html {
+    text-align: left;
+    line-height: 1.8;
+    color: #555;
+    padding: 0.5rem 1rem;
+}
+
+.swal2-confirm.custom-btn {
+    background-color: #a78bfa;
+    color: white !important;
+    font-weight: 600;
+    padding: 0.5rem 1.2rem;
+    border-radius: 12px;
+    font-size: 15px;
+    box-shadow: 0 4px 10px rgba(167, 139, 250, 0.3);
+    transition: all 0.2s ease-in-out;
+}
+
+.swal2-confirm.custom-btn:hover {
+    background-color: #8b5cf6;
+}
+
+.swal-img-evidencia {
+    width: 100%;
+    max-height: 260px;
+    object-fit: contain;
+    border-radius: 12px;
+    margin-top: 1rem;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+}
+
+        </style>
         @csrf
         <div class="row">
             <div class="col-md-3 mt-3">
@@ -159,29 +212,32 @@
 
 </div>
 <div class="card modern-card mt-3">
-     <div class="card-header modern-header">Productos Seleccionados</div>
-         <div class="card-body">
+    <div class="card-header modern-header">Productos Seleccionados</div>
+    <div class="card-body">
         <div class="table-responsive">
-    <input type="hidden" name="productos_json" id="productos_json">
-                
-                    <table id="tabla-productos" class="table modern-table">
-                        <thead>
-                            <tr>
-                                <th>Imagen</th>
-                                <th>Equipo</th>
-                                <th>Modelo</th>
-                                <th>Marca</th>
-                                <th>Cantidad</th>
-                                <th>Subtotal</th>
-                                <th>Sobreprecio</th>
-                                <th>Acción</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-            </div>
+            <input type="hidden" name="productos_json" id="productos_json">
+            <table id="tabla-productos" class="table modern-table">
+                <thead>
+    <tr>
+        <th>Imagen</th>
+        <th>Equipo</th>
+        <th>Modelo</th>
+        <th>Marca</th>
+        <th>Cantidad</th>
+        <th>Subtotal</th>
+        <th>Sobreprecio</th>
+        <th>Número de Serie</th> {{-- NUEVO --}}
+        <th>Acción</th>
+    </tr>
+</thead>
+
+                <tbody></tbody>
+            </table>
         </div>
+    </div>
+</div>
+
+
   <div class="d-flex flex-column flex-md-row">
      <div class="card modern-card mt-3 w-100 w-md-50">
 
@@ -279,6 +335,7 @@
     </form>
 </div>
 <script>
+
 document.addEventListener('DOMContentLoaded', function () {
     const tipoPago = document.getElementById('tipoPago');
     const opcionesDinamicas = document.getElementById('opcionesDinamicas');
@@ -571,11 +628,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 </script>
-
-
-
-
-
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     const buscarProducto = document.getElementById("buscarProducto");
@@ -708,81 +760,146 @@ function agregarPaquete(paqueteId, productos) {
 </script>
 <script>
 $(document).ready(function () {
-
-    // Preparar JSON al enviar formulario
-    $('#form-venta').submit(function () {
+    // Al enviar, prevenimos, validamos y preparamos JSON
+    $('#form-venta').on('submit', function (e) {
+        e.preventDefault();
         prepararProductosJSON();
+
+        const productos = JSON.parse($('#productos_json').val());
+        console.log('🧪 Enviando productos_json:', productos);
+
+        // Validación: cada unidad debe tener un registro_id
+        const algunoSinSerie = productos.some(p =>
+            !Array.isArray(p.registro_id) ||
+            p.registro_id.length !== p.cantidad ||
+            p.registro_id.includes(null)
+        );
+        if (algunoSinSerie) {
+            alert('Selecciona un número de serie para cada unidad.');
+            return;
+        }
+
+        // Enviamos después de un breve retraso
+        setTimeout(() => e.target.submit(), 100);
     });
 });
 
+// Carga registros en stock al enfocar cualquier select.numero-serie
+$(document).on('focus', '.numero-serie', function () {
+    const sel = $(this);
+    if (sel.children().length > 1) return;
+    $.get('/registros-disponibles', registros => {
+        registros.forEach(r => {
+            sel.append(`<option value="${r.id}">${r.numero_serie}</option>`);
+        });
+    });
+});
+
+// Evitar duplicados dentro de la misma fila
+$(document).on('change', '.numero-serie', function () {
+    const val = $(this).val(), row = $(this).closest('tr');
+    let dup = false;
+    row.find('.numero-serie').not(this).each(function () {
+        if ($(this).val() === val && val !== '') dup = true;
+    });
+    if (dup) {
+        alert('Número de serie duplicado en esta fila.');
+        $(this).val('');
+    }
+});
+
+// SweetAlert para detalles
+$(document).on('click', '.ver-registro', function () {
+    const sel = $(this).siblings('.numero-serie');
+    const id = sel.val();
+    if (!id) {
+        Swal.fire('Atención', 'Primero elige un número de serie.', 'warning');
+        return;
+    }
+    $.get(`/registro-info/${id}`, data => {
+        Swal.fire({
+            title: '🔍 Detalles del Registro',
+            html: `
+              <p><strong>Equipo:</strong> ${data.tipo_equipo || '—'}</p>
+              <p><strong>Subtipo:</strong> ${data.subtipo_equipo || '—'}</p>
+              <p><strong>Modelo:</strong> ${data.modelo || '—'}</p>
+              <p><strong>Marca:</strong> ${data.marca || '—'}</p>
+              <p><strong>Serie:</strong> ${data.numero_serie}</p>
+              <p><strong>Estado:</strong> ${data.estado_proceso}</p>
+              ${data.evidencia1
+                ? `<img src="/storage/${data.evidencia1}" style="width:100%;max-height:200px;object-fit:contain;border-radius:8px;margin-top:8px;">`
+                : `<em style="color:#999;">Sin evidencia</em>`}
+            `,
+            confirmButtonText: 'Cerrar',
+            customClass: {
+                popup: 'rounded-4 shadow',
+                confirmButton: 'btn btn-primary'
+            },
+            buttonsStyling: false,
+            width: 500
+        });
+    }).fail(() => {
+        Swal.fire('Error', 'No se pudo cargar la información.', 'error');
+    });
+});
+
+// Agregar producto a la tabla
 function agregarProductoDesdeDropdown(id, nombre, modelo, marca, precio, imagen) {
     if (!id || !nombre) return;
-
-    if ($(`#tabla-productos tbody tr[data-id="${id}"]`).length > 0) {
+    if ($(`#tabla-productos tbody tr[data-id="${id}"]`).length) {
         alert('Este producto ya ha sido agregado.');
         return;
     }
-
     const fila = `
-        <tr data-id="${id}" data-precio="${precio}">
-            <td><img src="/storage/${imagen}" width="50"></td>
-            <td class="equipo">${nombre}</td>
-            <td>${modelo}</td>
-            <td>${marca}</td>
-            <td><input type="number" class="form-control cantidad" value="1" min="1" onchange="actualizarSubtotal(this)"></td>
-            <td class="subtotal">${precio.toFixed(2)}</td>
-            <td><input type="number" class="form-control sobreprecio" value="0" min="0" onchange="actualizarSubtotal(this)"></td>
-            <td><button type="button" class="btn btn-sm btn-danger" onclick="eliminarFila(this)">Eliminar</button></td>
-        </tr>
-    `;
-
+      <tr data-id="${id}" data-precio="${precio}">
+        <td><img src="/storage/${imagen}" width="50"></td>
+        <td class="equipo">${nombre}</td>
+        <td>${modelo}</td>
+        <td>${marca}</td>
+        <td><input type="number" class="form-control cantidad" value="1" min="1" onchange="actualizarSubtotal(this)"></td>
+        <td class="subtotal">${precio.toFixed(2)}</td>
+        <td><input type="number" class="form-control sobreprecio" value="0" min="0" onchange="actualizarSubtotal(this)"></td>
+        <td><div class="serie-container"></div></td>
+        <td><button type="button" class="btn btn-sm btn-danger eliminar-fila">Eliminar</button></td>
+      </tr>`;
     $('#tabla-productos tbody').append(fila);
-    actualizarTotal();
-
-    $('#buscarProducto').val('');
-    $('.dropdown-menu').removeClass('show');
-}
-
-function eliminarFila(btn) {
-    $(btn).closest('tr').remove();
+    const nueva = $('#tabla-productos tbody tr').last();
+    generarSelects(nueva, 1);
     actualizarTotal();
 }
 
-function actualizarSubtotal(input) {
-    const fila = $(input).closest('tr');
-    const cantidad = parseFloat(fila.find('.cantidad').val()) || 1;
-    const sobreprecio = parseFloat(fila.find('.sobreprecio').val()) || 0;
-    const precioBase = parseFloat(fila.attr('data-precio')) || 0;
+// Eliminar fila
+$(document).on('click', '.eliminar-fila', function () {
+    $(this).closest('tr').remove();
+    actualizarTotal();
+});
 
-    const nuevoSubtotal = cantidad * (precioBase + sobreprecio);
-    fila.find('.subtotal').text(nuevoSubtotal.toFixed(2));
+// Actualizar subtotal + selects cuando cambia cantidad o sobreprecio
+$(document).on('input change', '.cantidad, .sobreprecio', function () {
+    actualizarSubtotal(this);
+});
 
+function actualizarSubtotal(el) {
+    const tr = $(el).closest('tr');
+    const qty = parseInt(tr.find('.cantidad').val()) || 1;
+    const base = parseFloat(tr.data('precio'));
+    const extra = parseFloat(tr.find('.sobreprecio').val()) || 0;
+    const sub = (base + extra) * qty;
+    tr.find('.subtotal').text(sub.toFixed(2));
+    generarSelects(tr, qty);
     actualizarTotal();
 }
 
+// Recalcula totales
 function actualizarTotal() {
     let subtotal = 0;
-
     $('#tabla-productos tbody tr').each(function () {
-        const cantidad = parseFloat($(this).find('.cantidad').val()) || 1;
-        const sobreprecio = parseFloat($(this).find('.sobreprecio').val()) || 0;
-        const precioBase = parseFloat($(this).attr('data-precio')) || 0;
-
-        const subtotalProducto = cantidad * (precioBase + sobreprecio);
-        $(this).find('.subtotal').text(subtotalProducto.toFixed(2));
-        subtotal += subtotalProducto;
+        subtotal += parseFloat($(this).find('.subtotal').text()) || 0;
     });
-
-    const descuento = parseFloat($('#descuento').val()) || 0;
+    const desc = parseFloat($('#descuento').val()) || 0;
     const envio = parseFloat($('#envio').val()) || 0;
-
-    let iva = 0;
-    if ($('#aplica_iva').is(':checked')) {
-        iva = (subtotal - descuento) * 0.16;
-    }
-
-    const total = subtotal - descuento + envio + iva;
-
+    const iva = $('#aplica_iva').is(':checked') ? (subtotal - desc) * 0.16 : 0;
+    const total = subtotal - desc + envio + iva;
     $('#subtotal').text(subtotal.toFixed(2));
     $('#subtotal_input').val(subtotal.toFixed(2));
     $('#iva').text(iva.toFixed(2));
@@ -791,23 +908,48 @@ function actualizarTotal() {
     $('#total_input').val(total.toFixed(2));
 }
 
+// Genera tantos <select> + botón "ver" como unidades
+function generarSelects(tr, n) {
+    const cont = tr.find('.serie-container').empty();
+    for (let i = 0; i < n; i++) {
+        cont.append(`
+          <div class="d-flex align-items-center gap-1 mb-1">
+            <select class="form-control numero-serie">
+              <option value="">Selecciona...</option>
+            </select>
+            <button type="button" class="btn btn-outline-info btn-sm ver-registro">
+              <i class="bi bi-eye"></i>
+            </button>
+          </div>`);
+    }
+}
+
+// Prepara JSON final
 function prepararProductosJSON() {
-    const productos = [];
-
-    $('#tabla-productos tbody tr').each(function () {
-        const fila = $(this);
-        productos.push({
-            producto_id: fila.data('id'),
-            cantidad: parseFloat(fila.find('.cantidad').val()) || 1,
-            precio_unitario: parseFloat(fila.attr('data-precio')) || 0,
-            sobreprecio: parseFloat(fila.find('.sobreprecio').val()) || 0,
-            subtotal: parseFloat(fila.find('.subtotal').text()) || 0,
-        });
+    const arr = [];
+    $('#tabla-productos tbody tr').each(function (i) {
+        const tr = $(this);
+        const pid = tr.data('id');
+        const qty = parseInt(tr.find('.cantidad').val()) || 1;
+        const pu = parseFloat(tr.data('precio'));
+        const sp = parseFloat(tr.find('.sobreprecio').val()) || 0;
+        const st = parseFloat(tr.find('.subtotal').text()) || 0;
+        // Recolectar todos los registros
+        const regs = tr.find('.numero-serie').map(function () {
+            return $(this).val() || null;
+        }).get();
+        arr.push({ producto_id: pid, cantidad: qty, precio_unitario: pu, sobreprecio: sp, subtotal: st, registro_id: regs });
+        console.log(`🧾 Producto ${i+1}:`, arr[i]);
     });
-
-    $('#productos_json').val(JSON.stringify(productos));
+    $('#productos_json').val(JSON.stringify(arr));
+    console.log('🧪 JSON generado:', arr);
 }
 </script>
+
+
+
+<!-- Incluye esto en tu layout Blade o justo antes de cerrar </body> -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {

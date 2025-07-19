@@ -156,6 +156,77 @@
 .toggle-switch input:checked + .toggle-slider:before {
     transform: translateX(18px);
 }
+
+.dropdown-container {
+    position: relative;
+    width: 100%;
+}
+
+.dropdown-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 14px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.dropdown-list {
+    position: absolute;
+    z-index: 1000;
+    width: 100%;
+    max-height: 300px;
+    overflow-y: auto;
+    background: white;
+    border: 1px solid #ddd;
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    margin-top: -1px;
+    display: none;
+    padding: 0;
+    list-style: none;
+}
+
+.dropdown-item {
+    padding: 10px 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.dropdown-item:hover {
+    background-color: #f2f2f2;
+}
+
+.img-preview {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background-color: #fafafa;
+}
+
+.item-info {
+    flex: 1;
+    font-size: 13px;
+    color: #333;
+    line-height: 1.2;
+}
+
+.stock-badge {
+    font-size: 11px;
+    color: #2e7d32;
+    background-color: #e8f5e9;
+    padding: 4px 8px;
+    border-radius: 12px;
+    white-space: nowrap;
+}
+
+
 </style>
 
 <div class="container mt-4">
@@ -166,26 +237,37 @@
         @csrf
         @method('PUT')
 
-        <!-- Productos -->
-        <div class="form-section">
-            <h3 class="mb-3">Productos</h3>
+     <div class="form-section">
+    <h3 class="mb-3">Productos</h3>
 
-            <div class="mb-3">
-                <label for="producto">Seleccionar Producto</label>
-                <select id="producto" class="form-control">
-                    <option value="">Selecciona un producto...</option>
-                    @foreach($productos as $producto)
-                        <option value="{{ $producto->id }}"
-                            data-nombre="{{ $producto->tipo_equipo }}"
-                            data-modelo="{{ $producto->modelo }}"
-                            data-marca="{{ $producto->marca }}"
-                            data-precio="{{ $producto->precio }}"
-                            data-imagen="{{ asset('storage/'.$producto->imagen) }}">
-                            {{ $producto->tipo_equipo }} - ${{ $producto->precio }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
+    <div class="dropdown-container">
+        <input type="text" id="buscador-producto" class="dropdown-input" placeholder="Buscar producto..." autocomplete="off">
+        <ul id="lista-productos" class="dropdown-list">
+            @foreach($productos as $producto)
+                <li class="dropdown-item"
+                    data-id="{{ $producto->id }}"
+                    data-nombre="{{ $producto->tipo_equipo }}"
+                    data-modelo="{{ $producto->modelo }}"
+                    data-marca="{{ $producto->marca }}"
+                    data-precio="{{ $producto->precio }}"
+                    data-imagen="{{ asset('storage/'.$producto->imagen) }}">
+                    
+                    <img src="{{ asset('storage/'.$producto->imagen) }}" alt="img" class="img-preview">
+                    
+                    <div class="item-info">
+                        <strong>{{ strtoupper($producto->tipo_equipo) }}</strong><br>
+                        {{ $producto->modelo }} {{ $producto->marca }}<br>
+                        <small>${{ number_format($producto->precio, 2) }}</small>
+                    </div>
+
+                    <span class="stock-badge">1 unidades</span>
+                </li>
+            @endforeach
+        </ul>
+    </div>
+
+<br>
+
 
             <div class="table-responsive">
                 <table id="tabla-productos" class="table table-bordered">
@@ -622,6 +704,59 @@ function numeroEnLetras(num) {
         'Undécimo', 'Duodécimo', 'Décimotercer', 'Décimocuarto', 'Décimoquinto', 'Décimosexto'];
     return lista[num - 1] || `${num}°`;
 }
+</script>
+<script>
+$(document).ready(function () {
+    $('#buscador-producto').on('focus', function () {
+        $('#lista-productos').slideDown(100);
+    });
+
+    $(document).on('click', function (e) {
+        if (!$(e.target).closest('.dropdown-container').length) {
+            $('#lista-productos').slideUp(100);
+        }
+    });
+
+    $('#buscador-producto').on('input', function () {
+        const filtro = $(this).val().toLowerCase();
+        $('#lista-productos .dropdown-item').each(function () {
+            const texto = $(this).text().toLowerCase();
+            $(this).toggle(texto.includes(filtro));
+        });
+    });
+
+    $('.dropdown-item').on('click', function () {
+        const id = $(this).data('id');
+        const nombre = $(this).data('nombre');
+        const modelo = $(this).data('modelo');
+        const marca = $(this).data('marca');
+        const precio = parseFloat($(this).data('precio'));
+        const imagen = $(this).data('imagen');
+
+        $('#buscador-producto').val(`${nombre} - $${precio.toFixed(2)}`);
+        $('#lista-productos').slideUp(100);
+
+        if ($(`#tabla-productos tbody tr[data-id="${id}"]`).length > 0) {
+            alert('Este producto ya ha sido agregado.');
+            return;
+        }
+
+        const fila = `
+            <tr data-id="${id}" data-precio="${precio}">
+                <td><img src="${imagen}" width="50"></td>
+                <td class="equipo">${nombre}</td>
+                <td>${modelo}</td>
+                <td>${marca}</td>
+                <td><input type="number" class="form-control cantidad" name="productos[${id}][cantidad]" value="1" min="1" onchange="actualizarSubtotal(this)"></td>
+                <td class="subtotal">${precio.toFixed(2)}</td>
+                <td><input type="number" class="form-control sobreprecio" name="productos[${id}][sobreprecio]" value="0" min="0" onchange="actualizarSubtotal(this)"></td>
+                <td><button type="button" class="btn btn-sm btn-danger" onclick="eliminarFila(this)">Eliminar</button></td>
+                <input type="hidden" class="precio_unitario" name="productos[${id}][precio_unitario]" value="${precio}">
+            </tr>`;
+        $('#tabla-productos tbody').append(fila);
+        actualizarTotal();
+    });
+});
 </script>
 
 

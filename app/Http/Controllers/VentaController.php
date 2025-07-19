@@ -22,7 +22,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;  // <-- Aquí IMPORTA Str correctamente
 use App\Models\DocumentoPago;
-
+use App\Models\Registro;
 
 class VentaController extends Controller
 {
@@ -40,82 +40,141 @@ public function buscarClientes(Request $request)
     return response()->json($clientes);
 }
 
+public function create()
+{
+    $productos = Producto::all();
+    $paquetes = Paquete::all(); // Paquetes existentes
+    $cartas = CartaGarantia::all(); // Cartas de garantía
 
+    // Traer registros disponibles para selección de número de serie
+    $registros = Registro::where('estado_actual', 'stock')->get();
 
-    public function create()
-    {
-        // Ya no necesitas cargar todos los clientes aquí, si usas búsqueda AJAX
-        $productos = Producto::all();
-         $paquetes = Paquete::all(); // Agrega esta línea para obtener los paquetes
-         $cartas = CartaGarantia::all();
-        return view('venta.create', compact('productos', 'paquetes', 'cartas'));
-    }
-
+    return view('venta.create', compact('productos', 'paquetes', 'cartas', 'registros'));
+}
 public function store(Request $request)
 {
     $request->validate([
-        'cliente_id' => 'required|exists:clientes,id',
-        'subtotal' => 'required|numeric',
-        'total' => 'required|numeric',
-        'productos_json' => 'required|json',
-        'pagos_json' => 'nullable|json',
-        'carta_garantia_id' => 'nullable|exists:carta_garantias,id',
+        'cliente_id'          => 'required|exists:clientes,id',
+        'subtotal'            => 'required|numeric',
+        'total'               => 'required|numeric',
+        'productos_json'      => 'required|json',
+        'pagos_json'          => 'nullable|json',
+        'carta_garantia_id'   => 'nullable|exists:carta_garantias,id',
     ]);
 
+    \Log::info('Iniciando creación de venta...');
+    \Log::info('Request completo:', $request->all());
+
+    // 1️⃣ Crear la venta
     $venta = Venta::create([
-        'cliente_id' => $request->cliente_id,
-        'lugar' => $request->lugar,
-        'nota' => $request->nota,
-        'user_id' => auth()->id(),
-        'subtotal' => $request->subtotal,
-        'descuento' => $request->descuento,
-        'envio' => $request->envio,
-        'iva' => $request->iva,
-        'total' => $request->total,
-        'plan' => $request->plan,
-        'detalle_financiamiento' => null, // ya no se usa
-        'carta_garantia_id' => $request->carta_garantia_id,
+        'cliente_id'            => $request->cliente_id,
+        'lugar'                 => $request->lugar,
+        'nota'                  => $request->nota,
+        'user_id'               => auth()->id(),
+        'subtotal'              => $request->subtotal,
+        'descuento'             => $request->descuento,
+        'envio'                 => $request->envio,
+        'iva'                   => $request->iva,
+        'total'                 => $request->total,
+        'plan'                  => $request->plan,
+        'detalle_financiamiento'=> null,
+        'carta_garantia_id'     => $request->carta_garantia_id,
     ]);
+    \Log::info('Venta creada:', ['venta_id' => $venta->id]);
 
-$productos = json_decode($request->productos_json, true);
+    // 2️⃣ Procesar productos
+    $productos = json_decode($request->productos_json, true);
+    \Log::info('Productos recibidos:', $productos);
 
-foreach ($productos as $p) {
-    $producto = Producto::find($p['producto_id']);
+    foreach ($productos as $p) {
+        \Log::info('Procesando producto:', $p);
 
-    // Validación simple, si el producto no existe lo ignoras
-    if (!$producto) {
-        continue;
+        $producto = \App\Models\Producto::find($p['producto_id']);
+        if (! $producto) {
+            \Log::warning('Producto no encontrado:', ['id' => $p['producto_id']]);
+            continue;
+        }
+
+        // Si registro_id es array (uno por cada unidad)
+        $series = $p['registro_id'] ?? null;
+        if (is_array($series) && count($series) > 0) {
+            // Creamos una fila por cada número de serie
+            foreach ($series as $serieId) {
+                \App\Models\VentaProducto::create([
+                    'venta_id'        => $venta->id,
+                    'producto_id'     => $producto->id,
+                    'cantidad'        => 1,
+                    'precio_unitario' => $p['precio_unitario'],
+                    'subtotal'        => $p['subtotal'] / count($series), // prorrateamos si lo deseas
+                    'sobreprecio'     => $p['sobreprecio'] / count($series),
+                    'registro_id'     => $serieId,
+                ]);
+                \Log::info("VentaProducto creado para serie {$serieId}.");
+
+                // Actualizar registro y crear ProcesoEquipo
+                $registro = \App\Models\Registro::find($serieId);
+                if ($registro) {
+                    $registro->estado_proceso = 'vendido';
+                    $registro->save();
+                    \Log::info("Registro {$serieId} marcado como vendido.");
+
+                    try {
+                        \App\Models\ProcesoEquipo::create([
+                            'registro_id'          => $serieId,
+                            'tipo_proceso'         => 'vendido',
+                            'descripcion_proceso'  => "Equipo vendido (venta #{$venta->id})",
+                            'ficha_tecnica_id'     => null,
+                            'defectos'             => null,
+                            'evidencia1'           => null,
+                            'evidencia2'           => null,
+                            'evidencia3'           => null,
+                            'video'                => null,
+                            'documento_pdf'        => null,
+                        ]);
+                        \Log::info("ProcesoEquipo 'vendido' creado para registro {$serieId}.");
+                    } catch (\Exception $e) {
+                        \Log::error("Error al crear ProcesoEquipo para registro {$serieId}: {$e->getMessage()}");
+                    }
+                } else {
+                    \Log::warning("Registro no encontrado al actualizar estado (id: {$serieId}).");
+                }
+            }
+
+        } else {
+            // Caso sin números de serie (venta estándar)
+            \App\Models\VentaProducto::create([
+                'venta_id'        => $venta->id,
+                'producto_id'     => $producto->id,
+                'cantidad'        => $p['cantidad'],
+                'precio_unitario' => $p['precio_unitario'],
+                'subtotal'        => $p['subtotal'],
+                'sobreprecio'     => $p['sobreprecio'],
+                'registro_id'     => null,
+            ]);
+            \Log::info("VentaProducto creado sin registro_id (producto {$producto->id}).");
+        }
     }
 
-    VentaProducto::create([
-        'venta_id' => $venta->id,
-        'producto_id' => $producto->id,
-        'cantidad' => $p['cantidad'],
-        'precio_unitario' => $p['precio_unitario'],
-        'subtotal' => $p['subtotal'],
-        'sobreprecio' => $p['sobreprecio'],
-    ]);
-}
+    // 3️⃣ Procesar pagos de financiamiento
+    if ($request->filled('pagos_json')) {
+        $pagos = json_decode($request->input('pagos_json'), true);
+        \Log::info('Pagos recibidos:', $pagos);
 
-if ($request->filled('pagos_json')) {
-    $pagos = json_decode($request->input('pagos_json'), true);
-
-    if (is_array($pagos)) {
         foreach ($pagos as $pago) {
-            PagoFinanciamiento::create([
-                'venta_id' => $venta->id,
+            \App\Models\PagoFinanciamiento::create([
+                'venta_id'    => $venta->id,
                 'descripcion' => $pago['descripcion'] ?? '',
-                'fecha_pago' => \Carbon\Carbon::parse($pago['mes']),
-                'monto' => $pago['cuota'] ?? 0,
+                'fecha_pago'  => \Carbon\Carbon::parse($pago['mes']),
+                'monto'       => $pago['cuota'] ?? 0,
             ]);
         }
     }
+
+    return redirect()
+        ->route('ventas.show', $venta->id)
+        ->with('success', 'Venta guardada exitosamente.');
 }
 
-\Log::info('Pagos recibidos:', ['pagos_json' => $request->pagos_json]);
-
-    return redirect()->route('ventas.show', $venta->id)->with('success', 'Venta guardada exitosamente.');
-}
 
 public function index()
 {
@@ -547,12 +606,4 @@ public function deudores()
     $clientes = \App\Models\Cliente::orderBy('nombre')->get();
     return view('venta.deudores', compact('ventas', 'clientes'));
 }
-
-
-
-
-
-
-
-
 }

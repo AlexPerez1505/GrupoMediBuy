@@ -49,5 +49,15 @@ class Registro extends Model
 {
     return $this->belongsTo(FichaTecnica::class, 'ficha_tecnica_id');
 }
+// app/Models/Registro.php
+
+// app/Models/Registro.php
+
+public function producto()
+{
+    return $this->belongsTo(Producto::class);
+}
+
+
 
 }
