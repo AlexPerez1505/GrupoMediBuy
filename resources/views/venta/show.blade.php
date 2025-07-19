@@ -85,24 +85,28 @@
         </div>
     </div>
 
-    <div class="row g-4">
-        {{-- Información general --}}
-        <div class="col-md-6 d-flex">
-            <div class="card shadow-sm w-100 border-0 rounded-4">
-        <div class="card-header bg-white border-bottom-0 py-3">
-                <h6 class="mb-0 text-primary-emphasis fw-semibold">Datos de la Venta</div>
-                <div class="card-body">
-                    <p><strong>Cliente:</strong> {{ mb_strtoupper($venta->cliente->nombre . ' ' . $venta->cliente->apellido, 'UTF-8') }}</p>
-                    <p><strong>Teléfono:</strong> {{ mb_strtoupper($venta->cliente->telefono, 'UTF-8') }}</p>
-                    <p><strong>Dirección:</strong> {{ mb_strtoupper($venta->cliente->comentarios, 'UTF-8') }}</p>
-                    <p><strong>Asesor de venta:</strong> {{ mb_strtoupper($venta->usuario->name, 'UTF-8') }}</p>
-                    <p><strong>Teléfono:</strong> {{ $venta->usuario->phone }}</p>
-                    <p><strong>Fecha:</strong> {{ $venta->created_at->format('d/m/Y H:i') }}</p>
-                    <p><strong>Plan:</strong> {{ mb_strtoupper($venta->plan, 'UTF-8') }}</p>
-                    <p><strong>Nota:</strong> {{ $venta->nota ? mb_strtoupper($venta->nota, 'UTF-8') : 'N/A' }}</p>
-                </div>
+   <div class="row g-4">
+    {{-- Información general --}}
+    <div class="col-md-6 d-flex">
+        <div class="card shadow-sm w-100 border-0 rounded-4">
+            <div class="card-header bg-white border-bottom-0 py-3">
+                <h6 class="mb-0 text-primary-emphasis fw-semibold">Datos de la Venta</h6>
+            </div>
+            <div class="card-body">
+                <p><strong>Cliente:</strong> {{ mb_strtoupper($venta->cliente->nombre . ' ' . $venta->cliente->apellido, 'UTF-8') }}</p>
+                <p><strong>Teléfono:</strong> {{ mb_strtoupper($venta->cliente->telefono, 'UTF-8') }}</p>
+                <p><strong>Dirección:</strong> {{ mb_strtoupper($venta->cliente->comentarios, 'UTF-8') }}</p>
+                <p><strong>Asesor de venta:</strong> {{ mb_strtoupper($venta->usuario->name, 'UTF-8') }}</p>
+                <p><strong>Teléfono:</strong> {{ $venta->usuario->phone }}</p>
+                <p><strong>Fecha:</strong> {{ $venta->created_at->format('d/m/Y H:i') }}</p>
+                <p><strong>Plan:</strong> {{ mb_strtoupper($venta->plan, 'UTF-8') }}</p>
+                <p><strong>Meses de Garantía:</strong> {{ $venta->meses_garantia ? $venta->meses_garantia . ' meses' : 'N/A' }}</p>
+                <p><strong>Nota:</strong> {{ $venta->nota ? mb_strtoupper($venta->nota, 'UTF-8') : 'N/A' }}</p>
             </div>
         </div>
+    </div>
+
+
 
 {{-- Productos --}}
 <div class="col-md-6 d-flex">

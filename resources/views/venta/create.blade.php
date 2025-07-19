@@ -238,87 +238,95 @@
 </div>
 
 
-  <div class="d-flex flex-column flex-md-row">
-     <div class="card modern-card mt-3 w-100 w-md-50">
+<div class="d-flex flex-column flex-md-row">
+  <div class="card modern-card mt-3 w-100 w-md-50">
 
-                               <div class="card-header modern-header">Resumen</div>
-                            <div class="card-body">
-                                <p>Subtotal: $<span id="subtotal" class="modern-value">0.00</span></p>
-                                <input type="hidden" name="subtotal" id="subtotal_input" value="0">
+    <div class="card-header modern-header">Resumen</div>
+    <div class="card-body">
+      <p>Subtotal: $<span id="subtotal" class="modern-value">0.00</span></p>
+      <input type="hidden" name="subtotal" id="subtotal_input" value="0">
 
-                                <div class="form-group">
-                                    <label>Descuento</label>
-                                    <input type="number" name="descuento" id="descuento" value="0" class="form-control modern-input w-25 d-inline-block" onchange="actualizarTotal()">
-                                </div>
-                                <br>
-                                <div class="form-group">
-                                    <label>Envío</label>
-                                    <input type="number" name="envio" id="envio" value="0" class="form-control modern-input w-25 d-inline-block" onchange="actualizarTotal()">
-                                </div>
-                                <div class="form-check">
-                                    <input type="checkbox" class="form-check-input" id="aplica_iva" onchange="actualizarTotal()">
-                                    <label class="form-check-label">Aplicar IVA (16%)</label>
-                                </div>
-                                <input type="hidden" name="iva" id="iva_input" value="0">
-                                <p>IVA: $<span id="iva">0.00</span></p>
-                                <p><strong>Total: $<span id="total">0.00</span></strong></p>
-                                <input type="hidden" name="total" id="total_input" value="0">
+      <div class="form-group">
+        <label>Descuento</label>
+        <input type="number" name="descuento" id="descuento" value="0" class="form-control modern-input w-25 d-inline-block" onchange="actualizarTotal()">
+      </div>
+      <br>
+      <div class="form-group">
+        <label>Envío</label>
+        <input type="number" name="envio" id="envio" value="0" class="form-control modern-input w-25 d-inline-block" onchange="actualizarTotal()">
+      </div>
+      <div class="form-check">
+        <input type="checkbox" class="form-check-input" id="aplica_iva" onchange="actualizarTotal()">
+        <label class="form-check-label">Aplicar IVA (16%)</label>
+      </div>
+      <input type="hidden" name="iva" id="iva_input" value="0">
+      <p>IVA: $<span id="iva">0.00</span></p>
+      <p><strong>Total: $<span id="total">0.00</span></strong></p>
+      <input type="hidden" name="total" id="total_input" value="0">
 
-               <div class="form-group">
-    <label for="tipoPago">Selecciona Plan:</label>
-    <select id="tipoPago" name="plan" class="form-control modern-input w-50" required>
-        <option value="" selected disabled>Selecciona un plan</option>
-        <option value="contado">Pago de Contado</option>
-        <option value="personalizado">Plan Personalizado</option>
-        <option value="estatico">Plan Fijo</option>
-        <option value="dinamico">Plan Flexible</option>
-        <option value="credito">Plan a Crédito</option>
-    </select>
-</div>
+      <div class="form-group">
+        <label for="tipoPago">Selecciona Plan:</label>
+        <select id="tipoPago" name="plan" class="form-control modern-input w-50" required>
+          <option value="" selected disabled>Selecciona un plan</option>
+          <option value="contado">Pago de Contado</option>
+          <option value="personalizado">Plan Personalizado</option>
+          <option value="estatico">Plan Fijo</option>
+          <option value="dinamico">Plan Flexible</option>
+          <option value="credito">Plan a Crédito</option>
+        </select>
+      </div>
 
+      <div id="opcionesDinamicas" style="display: none; margin-top: 1rem;">
+        <label for="pagoInicial">Pago Inicial:</label>
+        <input type="number" id="pagoInicial" class="form-control modern-input w-50" min="0" step="0.01">
+      </div>
 
+      <div id="opcionesCredito" style="display: none; margin-top: 1rem;">
+        <label for="pagoCreditoInicial">Pago Inicial:</label>
+        <input type="number" id="pagoCreditoInicial" class="form-control modern-input w-50" min="0" step="0.01">
+        <label for="plazoCredito" style="margin-top: 0.5rem;">Plazo (meses):</label>
+        <input type="number" id="plazoCredito" class="form-control modern-input w-50" value="6" min="1" step="1">
+      </div>
 
-<div id="opcionesDinamicas" style="display: none; margin-top: 1rem;">
-    <label for="pagoInicial">Pago Inicial:</label>
-    <input type="number" id="pagoInicial" class="form-control modern-input w-50" min="0" step="0.01">
-</div>
+      <div id="opcionesPersonalizado" style="display: none; margin-top: 1rem;">
+        <label for="mesesPersonalizado">Selecciona el número de meses:</label>
+        <input type="number" id="mesesPersonalizado" class="form-control modern-input w-50" min="1" step="1" value="1">
 
-<div id="opcionesCredito" style="display: none; margin-top: 1rem;">
-    <label for="pagoCreditoInicial">Pago Inicial:</label>
-    <input type="number" id="pagoCreditoInicial" class="form-control modern-input w-50" min="0" step="0.01">
-    <label for="plazoCredito" style="margin-top: 0.5rem;">Plazo (meses):</label>
-    <input type="number" id="plazoCredito" class="form-control modern-input w-50" value="6" min="1" step="1">
-</div>
-
-<div id="opcionesPersonalizado" style="display: none; margin-top: 1rem;">
-    <label for="mesesPersonalizado">Selecciona el número de meses:</label>
-    <input type="number" id="mesesPersonalizado" class="form-control modern-input w-50" min="1" step="1" value="1">
-   
-    <div id="listaPagosPersonalizados" class="mt-3"></div>
-
-
-</div>
+        <div id="listaPagosPersonalizados" class="mt-3"></div>
+      </div>
 <input type="hidden" id="pagosJsonInput" name="pagos_json" value="">
+      <!-- Nuevo campo para Meses de Garantía -->
+      <div class="form-group mt-4">
+        <label for="garantia_meses">Meses de Garantía:</label>
+        <select name="meses_garantia" id="meses_garantia" class="form-control modern-input w-50" required>
+          <option value="" selected disabled>Selecciona meses de garantía</option>
+          <option value="6">6 meses</option>
+          <option value="9">9 meses</option>
+          <option value="12">12 meses</option>
+          <option value="15">15 meses</option>
+          <option value="18">18 meses</option>
+        </select>
+      </div>
 
-
-                               <br>
-                               <div class="form-group mt-4">
-    <label for="carta_garantia_id">Carta de Garantía a incluir en el PDF:</label>
-    <select name="carta_garantia_id" id="carta_garantia_id" class="form-control modern-input w-50" required>
-        <option value="">-- Selecciona una carta --</option>
-        @foreach ($cartas as $carta)
+      <br>
+      <div class="form-group mt-4">
+        <label for="carta_garantia_id">Carta de Garantía a incluir en el PDF:</label>
+        <select name="carta_garantia_id" id="carta_garantia_id" class="form-control modern-input w-50">
+          <option value="">-- Selecciona una carta --</option>
+          @foreach ($cartas as $carta)
             <option value="{{ $carta->id }}">{{ $carta->nombre }}</option>
-        @endforeach
-    </select>
-</div>
-<br>
+          @endforeach
+        </select>
+      </div>
+      <br>
 
-                                <input type="hidden" name="productos" id="productos_input">
-                                <button type="submit" class="btn btn-success">Guardar</button>
-                                
-                            </div>
-                        </div>
-                  
+      <input type="hidden" name="productos" id="productos_input">
+      <button type="submit" class="btn btn-success">Guardar</button>
+
+    </div>
+  </div>
+
+
 
                     {{-- Detalles del financiamiento --}}
                   

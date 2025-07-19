@@ -379,17 +379,20 @@
     @endif {{-- Cierre de @else --}}
 </div> {{-- Cierre del div principal --}}
 
-
 <div style="margin-bottom: 2rem;">
     <h3 style="color: #1e73be; font-weight: bold; border-bottom: 2px solid #1e73be; padding-bottom: 4px;">
         Términos y Condiciones
     </h3>
 
+    @php
+        $mesesGarantia = $venta->meses_garantia ?? 6; // Por si no está definido, por defecto 6 meses
+    @endphp
+
     @if($plan === 'contado')
         <ul style="font-size: 13px; line-height: 1.6;">
             <li>Este pago es único y debe realizarse al momento de la entrega o en la fecha acordada.</li>
             <li>El equipo será propiedad del cliente una vez confirmado el pago total.</li>
-            <li>La garantía del equipo es de 6 meses a partir de la fecha de entrega.</li>
+            <li>La garantía del equipo es de {{ $mesesGarantia }} meses a partir de la fecha de entrega.</li>
             <li>Los productos están sujetos a disponibilidad. Precios sujetos a cambio sin previo aviso.</li>
         </ul>
     @else
@@ -397,12 +400,13 @@
             <li>Todos los pagos deberán realizarse puntualmente según el calendario acordado.</li>
             <li>En caso de retraso en el pago, se aplicará un cargo moratorio del 5% mensual sobre el monto vencido.</li>
             <li>El equipo permanecerá como propiedad de <strong>Grupo MediBuy</strong> hasta la liquidación total del pago.</li>
-            <li>La garantía del equipo es de 6 meses a partir de la fecha de entrega.</li>
+            <li>La garantía del equipo es de {{ $mesesGarantia }} meses a partir de la fecha de entrega.</li>
             <li>Los precios pueden cambiar sin previo aviso. Los productos están sujetos a disponibilidad.</li>
             <li>Cualquier ajuste a las condiciones de pago deberá ser autorizado por escrito por la empresa.</li>
         </ul>
     @endif
 </div>
+
 
 
 <div style="margin-bottom: 2rem;">
@@ -463,8 +467,14 @@
     <h4 style="color:#1e73be; margin-top: 1rem;">TERCERA. ENTREGA</h4>
     <p>La entrega de los equipos se hará en el domicilio del comprador o en el lugar designado, en perfectas condiciones de funcionamiento y acompañado de la garantía correspondiente.</p>
 
+    @php
+        $mesesGarantia = $venta->meses_garantia ?? 6; // 6 meses por defecto si no existe
+    @endphp
+
     <h4 style="color:#1e73be; margin-top: 1rem;">CUARTA. GARANTÍA</h4>
-    <p>La vendedora otorga una garantía de 6 (seis) meses sobre el funcionamiento de los equipos, contados a partir de la fecha de entrega.</p>
+    <p>
+        La vendedora otorga una garantía de {{ $mesesGarantia }} meses sobre el funcionamiento de los equipos, contados a partir de la fecha de entrega.
+    </p>
 
     <h4 style="color:#1e73be; margin-top: 1rem;">QUINTA. RESERVA DE DOMINIO</h4>
     <p>Hasta que no se liquide el total del precio convenido, los equipos seguirán siendo propiedad de la vendedora.</p>
@@ -479,7 +489,7 @@
                     <p><strong>LA VENDEDORA</strong></p>
                     <br><br>
                     <img src="{{ public_path('images/firma.png') }}" alt="Firma" width="130"><br>
-                    <strong>Anahí Téllez Ortiz</strong><br>
+                    <strong>ANAHÍ TÉLLEZ ORTIZ</strong><br>
                     Gerente General
                 </td>
                 <td style="width: 50%; text-align: center;">

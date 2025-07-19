@@ -11,11 +11,21 @@ use App\Notifications\ProximoPagoNotification;
 
 class Venta extends Model
 {
-protected $fillable = [
-    'cliente_id', 'lugar', 'nota', 'user_id',
-    'subtotal', 'descuento', 'envio', 'iva', 'total', 'plan', 'detalle_financiamiento',
-    'carta_garantia_id'  // <-- Aquí lo agregas
-];
+    protected $fillable = [
+        'cliente_id',
+        'lugar',
+        'nota',
+        'user_id',
+        'subtotal',
+        'descuento',
+        'envio',
+        'iva',
+        'total',
+        'plan',
+        'detalle_financiamiento',
+        'carta_garantia_id',
+        'meses_garantia',    // ← Lo agregamos aquí
+    ];
 
 public function notificarSiPagoProximo()
 {

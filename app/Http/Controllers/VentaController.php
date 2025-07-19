@@ -60,6 +60,7 @@ public function store(Request $request)
         'productos_json'      => 'required|json',
         'pagos_json'          => 'nullable|json',
         'carta_garantia_id'   => 'nullable|exists:carta_garantias,id',
+        'meses_garantia'     => 'required|integer|in:6,9,12,15,18',
     ]);
 
     \Log::info('Iniciando creación de venta...');
@@ -79,6 +80,7 @@ public function store(Request $request)
         'plan'                  => $request->plan,
         'detalle_financiamiento'=> null,
         'carta_garantia_id'     => $request->carta_garantia_id,
+         'meses_garantia'     => $request->meses_garantia, 
     ]);
     \Log::info('Venta creada:', ['venta_id' => $venta->id]);
 
