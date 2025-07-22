@@ -1,0 +1,110 @@
+
+
+    .botones-compactos {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+
+    .btn-guardar,
+    .btn-regresar {
+        padding: 0.4rem 1rem;
+        font-size: 0.95rem;
+        font-weight: 600;
+        border-radius: 0.5rem;
+        text-decoration: none;
+        transition: background-color 0.2s ease-in-out;
+    }
+
+    .btn-guardar {
+        background-color: #dcfce7;
+        color: #15803d;
+        border-color: #86efac;
+    }
+
+    .btn-guardar:hover {
+        background-color: #4ade80;
+        color: white;
+    }
+
+    .btn-regresar {
+        background-color: #fee2e2;
+        color: #b91c1c;
+        border-color: #fca5a5;
+    }
+
+    .btn-regresar:hover {
+        background-color: #f87171;
+        color: white;
+    }
+
+  /* Contenedor para la preview de imagen */
+  .image-container {
+    width: 150px;      /* ancho fijo para que no sea muy grande */
+    height: 150px;     /* alto fijo */
+    border: 2px dashed #ccc;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    cursor: pointer;
+    background-color: #f9f9f9;
+    transition: border-color 0.3s ease;
+  }
+
+  .image-container:hover {
+    border-color: #4a90e2;
+  }
+
+  /* Imagen preview dentro del contenedor */
+  #preview-icon {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain; /* mantiene proporción y no distorsiona */
+    border-radius: 6px;
+    transition: transform 0.3s ease;
+  }
+
+  /* Texto que desaparece cuando hay imagen */
+  #preview-text {
+    color: #999;
+    font-size: 0.9rem;
+    text-align: center;
+  }
+  
+  /* Estilos minimalistas y profesionales para inputs y botones */
+  #formProducto input[type="text"],
+  #formProducto input[type="number"],
+  #formProducto input[type="file"],
+  #formProducto .form-control {
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
+  }
+
+  #formProducto input[type="text"]:focus,
+  #formProducto input[type="number"]:focus,
+  #formProducto input[type="file"]:focus,
+  #formProducto .form-control:focus {
+    border-color: #4a90e2;
+    outline: none;
+    box-shadow: 0 0 5px rgba(74, 144, 226, 0.5);
+  }
+
+  #formProducto button.btn-primary {
+    background-color: #4a90e2;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 20px;
+    font-weight: 600;
+    color: white;
+    transition: background-color 0.3s ease;
+  }
+
+  #formProducto button.btn-primary:hover {
+    background-color: #357ABD;
+  }

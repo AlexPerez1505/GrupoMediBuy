@@ -3,61 +3,9 @@
 @section('titulo', 'Remisión')
 @section('content')
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<link rel="stylesheet" href="{{ asset('css/ventascreate.css') }}?v={{ time() }}">
 <div class="container"  style="margin-top: 80px;">
     <form id="form-venta" method="POST" action="{{ route('ventas.store') }}">
-        <style>
-            .swal2-popup.custom-swal {
-    border-radius: 16px;
-    font-family: 'Segoe UI', sans-serif;
-    font-size: 15px;
-    color: #444;
-    background-color: #fdfcff;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-    padding: 2rem;
-}
-
-.swal2-title.custom-title {
-    font-size: 22px;
-    font-weight: 600;
-    color: #333;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    justify-content: center;
-}
-
-.swal2-html-container.custom-html {
-    text-align: left;
-    line-height: 1.8;
-    color: #555;
-    padding: 0.5rem 1rem;
-}
-
-.swal2-confirm.custom-btn {
-    background-color: #a78bfa;
-    color: white !important;
-    font-weight: 600;
-    padding: 0.5rem 1.2rem;
-    border-radius: 12px;
-    font-size: 15px;
-    box-shadow: 0 4px 10px rgba(167, 139, 250, 0.3);
-    transition: all 0.2s ease-in-out;
-}
-
-.swal2-confirm.custom-btn:hover {
-    background-color: #8b5cf6;
-}
-
-.swal-img-evidencia {
-    width: 100%;
-    max-height: 260px;
-    object-fit: contain;
-    border-radius: 12px;
-    margin-top: 1rem;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
-}
-
-        </style>
         @csrf
         <div class="row">
             <div class="col-md-3 mt-3">
@@ -146,10 +94,6 @@
                     </div>
                 </div>
             </div>
-
-
-
-            
  <div class="col-md-9">
      <div class="card modern-card mt-3">
          <div class="card-header modern-header">Productos</div>
@@ -307,27 +251,30 @@
           <option value="18">18 meses</option>
         </select>
       </div>
+<style>
+  /* Forzar mayúsculas en select y opciones */
+  #carta_garantia_id,
+  #carta_garantia_id option {
+    text-transform: uppercase;
+  }
+</style>
 
-      <br>
-      <div class="form-group mt-4">
-        <label for="carta_garantia_id">Carta de Garantía a incluir en el PDF:</label>
-        <select name="carta_garantia_id" id="carta_garantia_id" class="form-control modern-input w-50">
-          <option value="">-- Selecciona una carta --</option>
-          @foreach ($cartas as $carta)
-            <option value="{{ $carta->id }}">{{ $carta->nombre }}</option>
-          @endforeach
-        </select>
-      </div>
-      <br>
-
+<br>
+<div class="form-group mt-4">
+  <label for="carta_garantia_id">Carta de Garantía a incluir en el PDF:</label>
+  <select name="carta_garantia_id" id="carta_garantia_id" class="form-control modern-input w-50">
+    <option value="">-- Selecciona una carta --</option>
+    @foreach ($cartas->sortBy('nombre') as $carta)
+      <option value="{{ $carta->id }}">{{ strtoupper($carta->nombre) }}</option>
+    @endforeach
+  </select>
+</div>
+<br>
       <input type="hidden" name="productos" id="productos_input">
       <button type="submit" class="btn btn-success">Guardar</button>
 
     </div>
   </div>
-
-
-
                     {{-- Detalles del financiamiento --}}
                   
                           <div class="card modern-card mt-3 w-100 w-md-50 ms-md-3">
@@ -342,6 +289,252 @@
         </div>
     </form>
 </div>
+<form id="form-cliente" method="POST" action="{{ route('clientes.store') }}">
+      @csrf
+  <div class="modal fade" id="modal_formulario" tabindex="-1" role="dialog" aria-labelledby="FormularioLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-heade">
+          <h5 class="modal-title" id="createClientModalLabel">Registrar Cliente</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body">
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="nombre" class="form-label">Nombre</label>
+              <input type="text" class="form-control text-uppercase" id="nombre" name="nombre" placeholder="Ingresar nombre" required>
+            </div>
+            <div class="col-md-6">
+              <label for="apellido" class="form-label">Apellido</label>
+              <input type="text" class="form-control text-uppercase" id="apellido" name="apellido" placeholder="Ingresar apellido" required>
+            </div>
+          </div>
+
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="telefono" class="form-label">Teléfono</label>
+              <input type="tel" class="form-control text-uppercase" id="telefono" name="telefono" placeholder="Ingresar teléfono" required>
+              <span id="error-telefono" class="text-danger" style="display: none;">El teléfono ya está registrado.</span>
+            </div>
+            <div class="col-md-6">
+              <label for="email" class="form-label">Email</label>
+              <input type="email" class="form-control" id="email" name="email" placeholder="Ingresar email">
+              <span id="error-email" class="text-danger" style="display: none;">El correo ya está registrado.</span>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="comentarios" class="form-label">Dirección</label>
+            <textarea id="comentarios" name="comentarios" class="form-control text-uppercase" placeholder="Agrega información de tu cliente"></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Agregar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<script>
+  // Función para convertir texto en mayúsculas automáticamente
+  document.querySelectorAll('.text-uppercase').forEach(input => {
+      input.addEventListener('input', function () {
+          this.value = this.value.toUpperCase();
+      });
+  });
+
+  // Formateo del teléfono
+  document.getElementById("telefono").addEventListener("input", function (event) {
+      let valor = this.value.replace(/\D/g, ""); // Elimina caracteres no numéricos
+
+      if (valor.length <= 10) {
+          valor = valor.replace(/(\d{2})(\d{4})(\d{4})/, "$1 $2 $3");
+      } else if (valor.length > 10) {
+          valor = valor.replace(/(\d{2})(\d{2})(\d{4})(\d{4})/, "+$1 $2 $3 $4");
+      }
+
+      this.value = valor;
+  });
+</script>
+
+
+<!-- Modal -->
+<div class="modal fade" id="cliente_creado" tabindex="-1" role="dialog" aria-labelledby="ClienteCreadoLabel" 
+    aria-hidden="true" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header encabezado_modal text-center">
+                <h5 class="modal-title titulo_modal">¡Cliente guardado exitosamente!</h5>
+            </div>
+            <div class="modal-body">
+                <div class="text-center">
+                    <img src="{{ asset('images/confirmar.jpeg') }}" alt="Logo de encabezado" class="logo-modal">
+                </div>
+                <p class="text-center mensaje-modal">
+                    El cliente se ha registrado correctamente en el sistema.  
+                    Puedes proceder a cerrar este mensaje.  
+                    <b>Grupo MediBuy</b>.
+                </p>
+            </div>
+            <div class="modal-footer d-flex justify-content-center">
+                <button class="btn btn-listo" onclick="cerrarModal()">Listo</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+function cerrarModal() {
+    var modal = document.getElementById("cliente_creado");
+    var modalInstance = bootstrap.Modal.getInstance(modal);
+
+    if (modalInstance) {
+        modalInstance.hide();
+    } else {
+        new bootstrap.Modal(modal).hide();
+    }
+}
+</script>
+
+
+<!-- Modal -->
+<form id="formProducto" method="POST" action="{{ route('productos.store') }}" enctype="multipart/form-data">
+    @csrf
+    <div class="modal fade" id="modal1" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-heade">
+                    <h5 class="modal-title" id="exampleModalLabel">Registrar Equipo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Tipo de equipo -->
+                    <div class="mb-3">
+                        <label class="form-label">Nombre</label>
+                        <input type="text" name="tipo_equipo" class="form-control" placeholder="Ej: Monitor" required>
+                    </div>
+
+                    <!-- Modelo y Marca -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Modelo</label>
+                            <input type="text" name="modelo" class="form-control" placeholder="Ej: Vision Pro" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Marca</label>
+                            <input type="text" name="marca" class="form-control" placeholder="Ej: Stryker" required>
+                        </div>
+                    </div>
+
+                    <!-- Existencias y Precio -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Existencias</label>
+                            <input type="number" name="stock" class="form-control" value="1" required min="1">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Precio</label>
+                            <input type="number" name="precio" class="form-control" value="0.00" required min="0">
+                        </div>
+                    </div>
+
+                    <!-- Imagen -->
+                    <div class="mb-3 text-center">
+                        <label class="form-label d-block">Imagen</label>
+                        <div class="image-container">
+                            <label for="image-upload" class="image-preview">
+                                <img id="preview-icon" src="https://cdn-icons-png.flaticon.com/512/1829/1829586.png" 
+                                     alt="Añadir imagen">
+                                <span id="preview-text">Añadir imagen</span>
+                            </label>
+                            <input type="file" id="image-upload" name="imagen" accept="image/*" hidden>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Agregar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<script>
+document.getElementById("formProducto").addEventListener("submit", function (event) {
+    event.preventDefault(); // Evita recarga
+
+    let formData = new FormData(this);
+
+    fetch("{{ route('productos.store') }}", {
+        method: "POST",
+        body: formData,
+        headers: {
+            "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute("content"),
+            "Accept": "application/json" // para que Laravel retorne JSON
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.message) {
+            Swal.fire({
+                toast: true,
+                icon: 'success',
+                title: data.message,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+                didOpen: (toast) => {
+                    toast.addEventListener('mouseenter', Swal.stopTimer)
+                    toast.addEventListener('mouseleave', Swal.resumeTimer)
+                }
+            });
+            // Opcional: limpiar formulario y cerrar modal
+            this.reset();
+            const modal = bootstrap.Modal.getInstance(document.getElementById('modal1'));
+            if (modal) modal.hide();
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'No se pudo crear el producto.',
+            });
+        }
+    })
+    .catch(error => {
+        console.error("Error:", error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error inesperado',
+            text: 'Ocurrió un error al enviar el formulario.',
+        });
+    });
+});
+</script>
+
+<script>
+     document.getElementById('image-upload').addEventListener('change', function(event) {
+    const file = event.target.files[0];
+    if (file && file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const previewIcon = document.getElementById('preview-icon');
+            const previewText = document.getElementById('preview-text');
+
+            previewIcon.src = e.target.result;
+            previewIcon.style.width = '100%';
+            previewIcon.style.height = '100%';
+            previewText.style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+</script>
 <script>
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -760,10 +953,11 @@ function agregarPaquete(paqueteId, productos) {
             producto.modelo,
             producto.marca,
             parseFloat(producto.precio),
-            '/storage/' + producto.imagen // Ruta correcta para mostrar la imagen
+            producto.imagen // Solo la ruta relativa o nombre, sin '/storage/'
         );
     });
-  }
+}
+
 });
 </script>
 <script>
@@ -792,65 +986,6 @@ $(document).ready(function () {
     });
 });
 
-// Carga registros en stock al enfocar cualquier select.numero-serie
-$(document).on('focus', '.numero-serie', function () {
-    const sel = $(this);
-    if (sel.children().length > 1) return;
-    $.get('/registros-disponibles', registros => {
-        registros.forEach(r => {
-            sel.append(`<option value="${r.id}">${r.numero_serie}</option>`);
-        });
-    });
-});
-
-// Evitar duplicados dentro de la misma fila
-$(document).on('change', '.numero-serie', function () {
-    const val = $(this).val(), row = $(this).closest('tr');
-    let dup = false;
-    row.find('.numero-serie').not(this).each(function () {
-        if ($(this).val() === val && val !== '') dup = true;
-    });
-    if (dup) {
-        alert('Número de serie duplicado en esta fila.');
-        $(this).val('');
-    }
-});
-
-// SweetAlert para detalles
-$(document).on('click', '.ver-registro', function () {
-    const sel = $(this).siblings('.numero-serie');
-    const id = sel.val();
-    if (!id) {
-        Swal.fire('Atención', 'Primero elige un número de serie.', 'warning');
-        return;
-    }
-    $.get(`/registro-info/${id}`, data => {
-        Swal.fire({
-            title: '🔍 Detalles del Registro',
-            html: `
-              <p><strong>Equipo:</strong> ${data.tipo_equipo || '—'}</p>
-              <p><strong>Subtipo:</strong> ${data.subtipo_equipo || '—'}</p>
-              <p><strong>Modelo:</strong> ${data.modelo || '—'}</p>
-              <p><strong>Marca:</strong> ${data.marca || '—'}</p>
-              <p><strong>Serie:</strong> ${data.numero_serie}</p>
-              <p><strong>Estado:</strong> ${data.estado_proceso}</p>
-              ${data.evidencia1
-                ? `<img src="/storage/${data.evidencia1}" style="width:100%;max-height:200px;object-fit:contain;border-radius:8px;margin-top:8px;">`
-                : `<em style="color:#999;">Sin evidencia</em>`}
-            `,
-            confirmButtonText: 'Cerrar',
-            customClass: {
-                popup: 'rounded-4 shadow',
-                confirmButton: 'btn btn-primary'
-            },
-            buttonsStyling: false,
-            width: 500
-        });
-    }).fail(() => {
-        Swal.fire('Error', 'No se pudo cargar la información.', 'error');
-    });
-});
-
 // Agregar producto a la tabla
 function agregarProductoDesdeDropdown(id, nombre, modelo, marca, precio, imagen) {
     if (!id || !nombre) return;
@@ -860,7 +995,7 @@ function agregarProductoDesdeDropdown(id, nombre, modelo, marca, precio, imagen)
     }
     const fila = `
       <tr data-id="${id}" data-precio="${precio}">
-        <td><img src="/storage/${imagen}" width="50"></td>
+        <td><img src="/storage/${imagen}" width="50" alt="Imagen producto"></td>
         <td class="equipo">${nombre}</td>
         <td>${modelo}</td>
         <td>${marca}</td>
@@ -916,23 +1051,109 @@ function actualizarTotal() {
     $('#total_input').val(total.toFixed(2));
 }
 
-// Genera tantos <select> + botón "ver" como unidades
+// Genera inputs con buscador dinámico para número de serie
 function generarSelects(tr, n) {
     const cont = tr.find('.serie-container').empty();
     for (let i = 0; i < n; i++) {
         cont.append(`
-          <div class="d-flex align-items-center gap-1 mb-1">
-            <select class="form-control numero-serie">
-              <option value="">Selecciona...</option>
-            </select>
-            <button type="button" class="btn btn-outline-info btn-sm ver-registro">
+          <div class="dropdown-search d-flex align-items-center gap-1 mb-1" style="position: relative; width: 220px;">
+            <input type="text" class="form-control search-input" placeholder="Buscar número de serie..." autocomplete="off" />
+            <input type="hidden" class="registro-id-hidden" />
+            <div class="dropdown-list" style="position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ccc; max-height: 150px; overflow-y: auto; display: none; z-index: 1000; border-radius: 4px;"></div>
+            <button type="button" class="btn btn-outline-info btn-sm ver-registro" title="Ver detalles" style="height: 38px; margin-left: 5px;">
               <i class="bi bi-eye"></i>
             </button>
-          </div>`);
+          </div>
+        `);
     }
 }
 
-// Prepara JSON final
+// Evento para buscar en tiempo real en el dropdown
+$(document).on('input', '.search-input', function () {
+    const input = $(this);
+    const query = input.val().toLowerCase();
+    const dropdown = input.siblings('.dropdown-list');
+    const hiddenInput = input.siblings('.registro-id-hidden');
+
+    if (query.length < 1) {
+        dropdown.hide();
+        hiddenInput.val('');
+        return;
+    }
+
+    $.get('/registros-disponibles', function (data) {
+        const filtered = data.filter(item => item.numero_serie.toLowerCase().includes(query));
+        dropdown.empty();
+        if (filtered.length === 0) {
+            dropdown.html('<div style="padding: 5px;">No hay resultados</div>').show();
+        } else {
+            filtered.forEach(item => {
+                dropdown.append(`<div data-id="${item.id}" style="padding: 5px; cursor: pointer;">${item.numero_serie}</div>`);
+            });
+            dropdown.show();
+        }
+    });
+});
+
+// Evento para seleccionar opción del dropdown
+$(document).on('click', '.dropdown-list div', function () {
+    const div = $(this);
+    const id = div.data('id');
+    const val = div.text();
+    const container = div.closest('.dropdown-search');
+    container.find('.search-input').val(val);
+    container.find('.registro-id-hidden').val(id);
+    container.find('.dropdown-list').hide();
+});
+
+// Cierra dropdown si clic fuera
+$(document).on('click', function (e) {
+    if (!$(e.target).closest('.dropdown-search').length) {
+        $('.dropdown-list').hide();
+    }
+});
+
+// Mostrar detalles con SweetAlert
+$(document).on('click', '.ver-registro', function () {
+    const container = $(this).closest('.dropdown-search');
+    const registroId = container.find('.registro-id-hidden').val();
+
+    if (!registroId) {
+        Swal.fire('Atención', 'Primero elige un número de serie.', 'warning');
+        return;
+    }
+
+    $.get(`/registro-info/${registroId}`, function (data) {
+        const evidenciaUrl = data.evidencia1 ? data.evidencia1.replace(/^,/, '') : null;
+
+        Swal.fire({
+            title: 'Detalles del Registro',
+            html: `
+              <p><strong>Equipo:</strong> ${data.tipo_equipo || '—'}</p>
+              <p><strong>Subtipo:</strong> ${data.subtipo_equipo || '—'}</p>
+              <p><strong>Modelo:</strong> ${data.modelo || '—'}</p>
+              <p><strong>Marca:</strong> ${data.marca || '—'}</p>
+              <p><strong>Serie:</strong> ${data.numero_serie}</p>
+              <p><strong>Estado:</strong> ${data.estado_proceso}</p>
+              ${evidenciaUrl
+                ? `<img src="${evidenciaUrl}" style="width:100%; max-height:200px; object-fit:contain; border-radius:15px; margin-top:8px;">`
+                : `<em style="color:#999;">Sin evidencia</em>`}
+            `,
+            confirmButtonText: 'Cerrar',
+            customClass: {
+                popup: 'rounded-4 shadow',
+                confirmButton: 'btn btn-primary'
+            },
+            buttonsStyling: false,
+            width: 500
+        });
+    }).fail(() => {
+        Swal.fire('Error', 'No se pudo cargar la información.', 'error');
+    });
+});
+
+
+// Prepara JSON final para enviar al backend
 function prepararProductosJSON() {
     const arr = [];
     $('#tabla-productos tbody tr').each(function (i) {
@@ -942,18 +1163,19 @@ function prepararProductosJSON() {
         const pu = parseFloat(tr.data('precio'));
         const sp = parseFloat(tr.find('.sobreprecio').val()) || 0;
         const st = parseFloat(tr.find('.subtotal').text()) || 0;
-        // Recolectar todos los registros
-        const regs = tr.find('.numero-serie').map(function () {
+
+        // Recopilar los IDs seleccionados de número de serie
+        const regs = tr.find('.registro-id-hidden').map(function () {
             return $(this).val() || null;
         }).get();
+
         arr.push({ producto_id: pid, cantidad: qty, precio_unitario: pu, sobreprecio: sp, subtotal: st, registro_id: regs });
-        console.log(`🧾 Producto ${i+1}:`, arr[i]);
+        console.log(`🧾 Producto ${i + 1}:`, arr[i]);
     });
     $('#productos_json').val(JSON.stringify(arr));
     console.log('🧪 JSON generado:', arr);
 }
 </script>
-
 
 
 <!-- Incluye esto en tu layout Blade o justo antes de cerrar </body> -->

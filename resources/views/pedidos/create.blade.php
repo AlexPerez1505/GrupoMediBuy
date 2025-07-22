@@ -1,101 +1,11 @@
 @extends('layouts.app')
-
+@section('title', 'Compras')
+@section('titulo', 'Compras')
 @section('content')
-<style>
-    .card-section {
-        background-color: #fff;
-        border-radius: 1rem;
-        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
-        padding: 2rem;
-        margin-bottom: 2rem;
-    }
-
-    .form-label {
-        font-weight: 500;
-        color: #333;
-    }
-
-    .form-control {
-        border-radius: 0.5rem;
-    }
-
-    h2, h4 {
-        font-weight: 600;
-        color: #1f2937;
-    }
-
-    .btn-primary {
-        border-radius: 0.5rem;
-    }
-
-    .btn-secondary {
-        border-radius: 0.5rem;
-        background-color: #e5e7eb;
-        color: #374151;
-        border: none;
-    }
-
-    .btn-danger {
-        border-radius: 0.5rem;
-    }
-  .btn-pastel {
-        background-color: #f3e8ff;
-        color: #6b21a8;
-        font-weight: 600;
-        border: none;
-        border-radius: 0.5rem;
-        padding: 0.5rem 1rem;
-        transition: background-color 0.2s ease-in-out;
-    }
-
-    .btn-pastel:hover {
-        background-color: #e9d5ff;
-        color: #581c87;
-    }
-
-    .btn-danger {
-        background-color: #fee2e2;
-        color: #b91c1c;
-        font-weight: 600;
-        border: none;
-        border-radius: 0.5rem;
-        padding: 0.4rem 0.9rem;
-    }
-
-    .btn-danger:hover {
-        background-color: #fecaca;
-        color: #991b1b;
-    }
-
-    .equipo, .componente {
-        background: #f9fafb;
-        border-radius: 0.75rem;
-        padding: 1rem;
-        margin-bottom: 1rem;
-        border-left: 4px solid #c4b5fd;
-    }
-    .equipo-card, .componente-card {
-        background-color: #f9fafb;
-        border: 1px solid #e5e7eb;
-        padding: 1rem;
-        border-radius: 0.75rem;
-        margin-bottom: 1rem;
-    }
-
-    .alert-success {
-        border-radius: 0.5rem;
-    }
-    body{
-       background: #f4f7fb; 
-    }
-    .container{
-        margin-top:90px !important;
-    }
-</style>
+<link rel="stylesheet" href="{{ asset('css/compras.css') }}?v={{ time() }}">
 
 <div class="container mt-5">
     <h2 class="mb-4">📦 Crear Nuevo Pedido</h2>
-
     @if(session('success'))
         <div class="alert alert-success">{{ session('success') }}</div>
     @endif
@@ -112,12 +22,11 @@
                         <input type="date" name="fecha_programada" id="fecha_programada" class="form-control" required>
                     </div>
 
-                   <div class="mb-3">
-    <label for="creado_por" class="form-label">👤 Creado por (Jefe)</label>
-    <input type="text" name="creado_por" id="creado_por" class="form-control" 
-           value="{{ Auth::user()->name }}" readonly>
-</div>
-
+                    <div class="mb-3">
+                        <label for="creado_por" class="form-label">👤 Creado por (Jefe)</label>
+                        <input type="text" name="creado_por" id="creado_por" class="form-control"
+                               value="{{ Auth::user()->name }}" readonly>
+                    </div>
 
                     <div class="mb-3">
                         <label for="observaciones" class="form-label">📝 Observaciones</label>
@@ -129,6 +38,44 @@
             <!-- DERECHA -->
             <div class="col-md-6">
                 <div class="card-section">
+                    <!-- 🔍 Selector de Paquete -->
+                    <div class="mb-3">
+                        <label for="paquete_select" class="form-label">📦 Seleccionar Paquete</label>
+                        <select id="paquete_select" class="form-control">
+                            <option value="">-- Selecciona un paquete --</option>
+                            <option value="Cámara 1188HD">Paquete: Cámara 1188HD</option>
+                            <option value="Cámara 1288HD">Paquete: Cámara 1288HD</option>
+                            <option value="Cámara 1488HD">Paquete: Cámara 1488HD</option>
+                            <option value="Cámara Precisión AC">Paquete: Cámara Precisión AC</option>
+                            <option value="Cámara 1588AIM">Paquete: Cámara 1588AIM</option>
+                            <option value="Cámara 1688 4K">Paquete: Cámara 1688 4K</option>
+                            <option value="Fuente de luz L9000">Paquete: Fuente de luz L9000</option>
+                            <option value="Fuente de luz L10">Paquete: Fuente de luz L10</option>
+                            <option value="Fuente de luz L11">Paquete: Fuente de luz L11</option>
+                            <option value="Insuflador 40 lts">Paquete: Insuflador 40 lts</option>
+                            <option value="Insuflador 45 lts Pneumosure">Paquete: Insuflador 45 lts Pneumosure</option>
+                            <option value="Grabador SDC3">Paquete: Grabador SDC3</option>
+                            <option value="Monitor Grado Médico Wase">Paquete: Monitor Grado Médico Wase</option>
+                            <option value="Monitor Grado Médico Vision Pro Led">Paquete: Monitor Grado Médico Vision Pro Led</option>
+                            <option value="Lente 10mm">Paquete: Lente 10mm</option>
+                            <option value="Lente 5mm">Paquete: Lente 5mm</option>
+                            <option value="Lente 4mm">Paquete: Lente 4mm</option>
+                            <option value="Clarity">Paquete: Clarity</option>
+                            <option value="Transmisores">Paquete: Transmisores</option>
+                            <option value="Crossfire2">Paquete: Crossfire2</option>
+                            <option value="Core">Paquete: Core</option>
+                            <option value="Systema 4">Paquete: Systema 4</option>
+                            <option value="Systema 7">Paquete: Systema 7</option>
+                            <option value="Systema 7 Charola">Paquete: Systema 7 Charola</option>
+                            <option value="Systema 8 Charola">Paquete: Systema 8 Charola</option>
+                            <option value="Ligasura S8">Paquete: Ligasura S8</option>
+                            <option value="Force Triad">Paquete: Force Triad</option>
+                            <option value="Gen11">Paquete: Gen11</option>
+                            <option value="Electrocauterios">Paquete: Electrocauterios (FX, Force 2, Force EZ, ICC200)</option>
+                            
+                        </select>
+                    </div>
+
                     <h4>🖥 Equipos que llegarán</h4>
                     <div id="equipos-container"></div>
                     <button type="button" class="btn btn-pastel mt-2" id="btn-add-equipo">+ Agregar Equipo</button>
@@ -148,97 +95,134 @@
         </div>
     </form>
 </div>
-<script>
-    const equiposContainer = document.getElementById('equipos-container');
-    const componentesContainer = document.getElementById('componentes-container');
-    const btnAddEquipo = document.getElementById('btn-add-equipo');
-    const btnAddComponente = document.getElementById('btn-add-componente');
 
+<script>
+    // Mapa de paquetes → componentes
+    const paqueteComponentes = {
+      "Cámara 1188HD": ["Cable de alimentación","Cable de video"],
+      "Cámara 1288HD": ["Cable de alimentación","Cable de video"],
+      "Cámara 1488HD": ["Cable de alimentación","Cable de video"],
+      "Cámara Precisión AC": ["Cable de alimentación","Cable de video"],
+      "Cámara 1588AIM": ["Cable de alimentación","Cable de video"],
+      "Cámara 1688 4K": ["Cable de alimentación","Cable de video"],
+      "Fuente de luz L9000": ["Cable de alimentación","Fibra de luz blanca"],
+      "Fuente de luz L10": ["Cable de alimentación","Fibra de luz verde","Interfaz (USB-USB)"],
+      "Fuente de luz L11": ["Cable de alimentación","Fibra de luz verde","Interfaz (USB-CCU azul)"],
+      "Insuflador 40 lts": ["Manguera","Yugo","Adaptador trasero de CO2"],
+      "Insuflador 45 lts Pneumosure": ["Manguera","Yugo","Adaptador trasero de CO2"],
+      "Grabador SDC3": ["Cable de alimentación","Cable de video","Remotos"],
+      "Monitor Grado Médico Wase": ["Cable de alimentación","Eliminador"],
+      "Monitor Grado Médico Vision Pro Led": ["Cable de alimentación","Eliminador"],
+      "Lente 10mm": ["Barril adaptador para diferentes tipos de fibras"],
+      "Lente 5mm": ["Barril adaptador para diferentes tipos de fibras"],
+      "Lente 4mm": ["Barril adaptador para diferentes tipos de fibras"],
+      "Clarity": ["Cable de alimentación","Cable de video"],
+      "Transmisores": ["Cable de alimentación","Cable de video"],
+      "Crossfire2": ["Cable de alimentación","Fórmula 180"],
+      "Core": ["Cable de alimentación fórmula Core","Charola de sierras y taladros (opcional)"],
+      "Systema 4": ["Destornillador","Sierra sagital 5","pinza pasador","pinza de alambre","taladro pequeño","taladro 1/4","taladro 5/32","llave corta y larga"],
+      "Systema 7": ["Sierra recíproca","Sierra sagital","Pieza de mano rotatoria de doble gatillo","Llave larga","Porta broca de bloque sin llave","Taladro pequeño","Hudson modificado","Pasador de gatillo doble","Pasador grande ajustable con gatillo doble"],
+      "Systema 7 Charola": ["Sierra recíproca","Sierra sagital","Taladro rotatorio de doble gatillo","Mandril con llave 1/4 y 5/32","Taladro pequeño","Hudson modificado","Hudson","Escorado largo","Pinza de alambre","Pinza de pasador","Trinkle","2 llaves"],
+      "Systema 8 Charola": ["Sierra recíproca","Sierra sagital","Taladro rotatorio de doble gatillo","Mandril con llave 1/4 y 5/32","Taladro pequeño","Hudson modificada","Hudson","Escorado largo","Pinza de alambre","Pinza de pasador","Trinkle","2 llaves"],
+      "Ligasura S8": ["Cable de alimentación","Adaptador para pinzas"],
+      "Force Triad": ["Cable de alimentación","Pedal monopolar","Lápiz","Placa"],
+      "Gen11": ["Cable de alimentación","Adaptador Harmónico","Pieza de mano gris"],
+      "Electrocauterios": [] 
+    };
+
+    const paqueteSelect      = document.getElementById('paquete_select');
+    const equiposContainer   = document.getElementById('equipos-container');
+    const componentesContainer = document.getElementById('componentes-container');
+    const btnAddEquipo       = document.getElementById('btn-add-equipo');
+    const btnAddComponente   = document.getElementById('btn-add-componente');
+
+    // Handlers originales
     btnAddEquipo.addEventListener('click', agregarEquipo);
     btnAddComponente.addEventListener('click', agregarComponente);
 
+    // Cuando cambia el paquete
+    paqueteSelect.addEventListener('change', () => {
+        const pkg = paqueteSelect.value;
+        if (!pkg) return;
+
+        // limpiar
+        equiposContainer.innerHTML    = '';
+        componentesContainer.innerHTML = '';
+
+        // inyectar equipo del paquete
+        agregarEquipoConDatos(0, pkg, 1);
+
+        // inyectar componentes
+        (paqueteComponentes[pkg]||[]).forEach((c, i) => {
+            agregarComponenteConDatos(i, c, 0, 1);
+        });
+
+        actualizarSelectsEquipos();
+    });
+
+    // Funciones helper
     function agregarEquipo() {
-        const idx = equiposContainer.children.length;
-        const div = document.createElement('div');
-        div.classList.add('equipo-card');
-        // Añadimos un data-id para identificar cada equipo (puede ser el índice)
-        div.dataset.id = idx; 
-        div.innerHTML = `
-            <label>Nombre del Equipo:</label>
-            <input type="text" name="equipos[${idx}][nombre]" class="form-control equipo-nombre" required placeholder="Ejemplo: Torre laparoscopía...">
-
-            <label class="mt-2">Cantidad:</label>
-            <input type="number" name="equipos[${idx}][cantidad]" class="form-control" min="1" value="1" required>
-
-            <button type="button" class="btn btn-danger btn-sm mt-3 btn-remove">Eliminar</button>
-        `;
-        equiposContainer.appendChild(div);
-
-        div.querySelector('.btn-remove').addEventListener('click', () => {
-            div.remove();
-            actualizarSelectsEquipos();
-        });
-
-        div.querySelector('input.equipo-nombre').addEventListener('input', actualizarSelectsEquipos);
-
-        actualizarSelectsEquipos();
+      const idx = equiposContainer.children.length;
+      agregarEquipoConDatos(idx,'',1);
     }
-
     function agregarComponente() {
-        const idx = componentesContainer.children.length;
-        const div = document.createElement('div');
-        div.classList.add('componente-card');
-        div.innerHTML = `
-            <label>Nombre del Componente:</label>
-            <input type="text" name="componentes[${idx}][nombre]" class="form-control" required placeholder="Ejemplo: Cable, Batería, Broca...">
-
-            <label class="mt-2">Equipo Relacionado:</label>
-            <select name="componentes[${idx}][equipo_id]" class="form-control componente-equipo">
-                <option value="">-- Selecciona un equipo --</option>
-            </select>
-
-            <label class="mt-2">Cantidad Esperada:</label>
-            <input type="number" name="componentes[${idx}][cantidad_esperada]" class="form-control" min="0" value="1" required>
-
-            <button type="button" class="btn btn-danger btn-sm mt-3 btn-remove">Eliminar</button>
-        `;
-        componentesContainer.appendChild(div);
-
-        div.querySelector('.btn-remove').addEventListener('click', () => div.remove());
-
-        actualizarSelectsEquipos();
+      const idx = componentesContainer.children.length;
+      agregarComponenteConDatos(idx,'','',1);
     }
-
-    function actualizarSelectsEquipos() {
-        // Obtenemos equipos con id (dataset.id) y nombre
-        const equipos = Array.from(equiposContainer.querySelectorAll('.equipo-card'))
-            .map(div => {
-                const nombreInput = div.querySelector('input.equipo-nombre');
-                return {
-                    id: div.dataset.id,
-                    nombre: nombreInput ? nombreInput.value.trim() : ''
-                };
-            })
-            .filter(equipo => equipo.nombre.length > 0);
-
-        // Actualizamos selects de componentes con id y nombre
-        const selects = document.querySelectorAll('.componente-equipo');
-        selects.forEach(select => {
-            const selected = select.value;
-            select.innerHTML = `<option value="">-- Selecciona un equipo --</option>`;
-            equipos.forEach(eq => {
-                const option = document.createElement('option');
-                option.value = eq.id;  // ID para enviar al backend
-                option.textContent = eq.nombre;
-                if (eq.id === selected) option.selected = true;
-                select.appendChild(option);
-            });
+    function agregarEquipoConDatos(idx,nombre,cantidad){
+      const div = document.createElement('div');
+      div.classList.add('equipo-card'); div.dataset.id=idx;
+      div.innerHTML = `
+        <label>Nombre del Equipo:</label>
+        <input type="text" name="equipos[${idx}][nombre]" class="form-control equipo-nombre" required value="${nombre}">
+        <label class="mt-2">Cantidad:</label>
+        <input type="number" name="equipos[${idx}][cantidad]" class="form-control" min="1" value="${cantidad}" required>
+        <button type="button" class="btn btn-danger btn-sm mt-3 btn-remove">Eliminar</button>
+      `;
+      equiposContainer.appendChild(div);
+      div.querySelector('.btn-remove').addEventListener('click',()=>{
+        div.remove(); actualizarSelectsEquipos();
+      });
+      div.querySelector('.equipo-nombre').addEventListener('input', actualizarSelectsEquipos);
+    }
+    function agregarComponenteConDatos(idx,nombre,equipoId,cant){
+      const div = document.createElement('div');
+      div.classList.add('componente-card');
+      div.innerHTML=`
+        <label>Nombre del Componente:</label>
+        <input type="text" name="componentes[${idx}][nombre]" class="form-control" required value="${nombre}">
+        <label class="mt-2">Equipo Relacionado:</label>
+        <select name="componentes[${idx}][equipo_id]" class="form-control componente-equipo">
+          <option value="">-- Selecciona un equipo --</option>
+        </select>
+        <label class="mt-2">Cantidad Esperada:</label>
+        <input type="number" name="componentes[${idx}][cantidad_esperada]" class="form-control" min="0" value="${cant}" required>
+        <button type="button" class="btn btn-danger btn-sm mt-3 btn-remove">Eliminar</button>
+      `;
+      componentesContainer.appendChild(div);
+      div.querySelector('.btn-remove').addEventListener('click',()=>div.remove());
+    }
+    function actualizarSelectsEquipos(){
+      const equipos = Array.from(equiposContainer.querySelectorAll('.equipo-card'))
+        .map(div=>({
+          id: div.dataset.id,
+          nombre: div.querySelector('.equipo-nombre').value.trim()
+        }))
+        .filter(e=>e.nombre);
+      document.querySelectorAll('.componente-equipo').forEach(select=>{
+        const cur=select.value;
+        select.innerHTML=`<option value="">-- Selecciona un equipo --</option>`;
+        equipos.forEach(e=>{
+          const o = document.createElement('option');
+          o.value=e.id; o.textContent=e.nombre;
+          if(e.id===cur) o.selected=true;
+          select.appendChild(o);
         });
+      });
     }
 
     // Inicial
-    agregarEquipo();
+    agregarEquipo(); 
     agregarComponente();
 </script>
-
 @endsection

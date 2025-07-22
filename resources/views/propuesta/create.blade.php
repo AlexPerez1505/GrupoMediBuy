@@ -3,49 +3,10 @@
 @section('titulo', 'Cotización')
 @section('content')
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<link rel="stylesheet" href="{{ asset('css/propuestacreate.css') }}?v={{ time() }}">
 <div class="container" style="margin-top: 80px;">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-<style>
-    .botones-compactos {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        margin-top: 1rem;
-    }
-
-    .btn-guardar,
-    .btn-regresar {
-        padding: 0.4rem 1rem;
-        font-size: 0.95rem;
-        font-weight: 600;
-        border-radius: 0.5rem;
-        text-decoration: none;
-        transition: background-color 0.2s ease-in-out;
-    }
-
-    .btn-guardar {
-        background-color: #dcfce7;
-        color: #15803d;
-        border-color: #86efac;
-    }
-
-    .btn-guardar:hover {
-        background-color: #4ade80;
-        color: white;
-    }
-
-    .btn-regresar {
-        background-color: #fee2e2;
-        color: #b91c1c;
-        border-color: #fca5a5;
-    }
-
-    .btn-regresar:hover {
-        background-color: #f87171;
-        color: white;
-    }
-</style>
     <form id="form-propuesta" method="POST" action="{{ route('propuestas.store') }}">
     @csrf
     <div class="row">
@@ -268,18 +229,26 @@
 
                 <input type="hidden" id="pagosJsonInput" name="pagos_json" value="">
 
-                <br>
+<style>
+  /* Forzar mayúsculas en select y opciones */
+  #ficha_tecnica_id,
+  #ficha_tecnica_id option {
+    text-transform: uppercase;
+  }
+</style>
+
+<br>
 <div class="form-group mt-4">
     <label for="ficha_tecnica_id">Ficha Técnica a incluir en el PDF:</label>
     <select name="ficha_tecnica_id" id="ficha_tecnica_id" class="form-control modern-input w-50">
         <option value="">-- Selecciona una ficha técnica --</option>
-        @foreach ($fichas as $ficha)
-            <option value="{{ $ficha->id }}">{{ $ficha->nombre }}</option>
+        @foreach ($fichas->sortBy('nombre') as $ficha)
+            <option value="{{ $ficha->id }}">{{ strtoupper($ficha->nombre) }}</option>
         @endforeach
     </select>
 </div>
+<br>
 
-                <br>
              <div class="botones-compactos">
     <button type="submit" class="btn-guardar"> Guardar</button>
     <a href="{{ route('propuestas.index') }}" class="btn-regresar"> Regresar</a>
@@ -396,6 +365,158 @@
 </div>
 @endsection
 
+<!-- Modal -->
+<form id="formProducto" method="POST" action="{{ route('productos.store') }}" enctype="multipart/form-data">
+    @csrf
+    <div class="modal fade" id="modal1" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-heade">
+                    <h5 class="modal-title" id="exampleModalLabel">Registrar Equipo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Tipo de equipo -->
+                    <div class="mb-3">
+                        <label class="form-label">Nombre</label>
+                        <input type="text" name="tipo_equipo" class="form-control" placeholder="Ej: Monitor" required>
+                    </div>
+
+                    <!-- Modelo y Marca -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Modelo</label>
+                            <input type="text" name="modelo" class="form-control" placeholder="Ej: Vision Pro" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Marca</label>
+                            <input type="text" name="marca" class="form-control" placeholder="Ej: Stryker" required>
+                        </div>
+                    </div>
+
+                    <!-- Existencias y Precio -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Existencias</label>
+                            <input type="number" name="stock" class="form-control" value="1" required min="1">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Precio</label>
+                            <input type="number" name="precio" class="form-control" value="0.00" required min="0">
+                        </div>
+                    </div>
+
+                    <!-- Imagen -->
+                    <div class="mb-3 text-center">
+                        <label class="form-label d-block">Imagen</label>
+                        <div class="image-container">
+                            <label for="image-upload" class="image-preview">
+                                <img id="preview-icon" src="https://cdn-icons-png.flaticon.com/512/1829/1829586.png" 
+                                     alt="Añadir imagen">
+                                <span id="preview-text">Añadir imagen</span>
+                            </label>
+                            <input type="file" id="image-upload" name="imagen" accept="image/*" hidden>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Agregar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<!-- Asegúrate de incluir SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+
+<script>
+document.getElementById("formProducto").addEventListener("submit", function (event) {
+    event.preventDefault(); // Evita recarga
+
+    let formData = new FormData(this);
+
+    fetch("{{ route('productos.store') }}", {
+        method: "POST",
+        body: formData,
+        headers: {
+            "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute("content"),
+            "Accept": "application/json" // para que Laravel retorne JSON
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.message) {
+            Swal.fire({
+                toast: true,
+                icon: 'success',
+                title: data.message,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+                didOpen: (toast) => {
+                    toast.addEventListener('mouseenter', Swal.stopTimer)
+                    toast.addEventListener('mouseleave', Swal.resumeTimer)
+                }
+            });
+            // Opcional: limpiar formulario y cerrar modal
+            this.reset();
+            const modal = bootstrap.Modal.getInstance(document.getElementById('modal1'));
+            if (modal) modal.hide();
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'No se pudo crear el producto.',
+            });
+        }
+    })
+    .catch(error => {
+        console.error("Error:", error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error inesperado',
+            text: 'Ocurrió un error al enviar el formulario.',
+        });
+    });
+});
+</script>
+
+<script>
+     document.getElementById('image-upload').addEventListener('change', function(event) {
+    const file = event.target.files[0];
+    if (file && file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const previewIcon = document.getElementById('preview-icon');
+            const previewText = document.getElementById('preview-text');
+
+            previewIcon.src = e.target.result;
+            previewIcon.style.width = '100%';
+            previewIcon.style.height = '100%';
+            previewText.style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+</script>
+<script>
+function cerrarModal() {
+    var modal = document.getElementById("cliente_creado");
+    var modalInstance = bootstrap.Modal.getInstance(modal);
+
+    if (modalInstance) {
+        modalInstance.hide();
+    } else {
+        new bootstrap.Modal(modal).hide();
+    }
+}
+</script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {

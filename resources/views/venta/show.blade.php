@@ -358,7 +358,7 @@
         <th>Monto</th>
         <th>Recibo</th>
         @if($mostrarColumnaDocumento)
-            <th>Documento PDF</th>
+            <th>Factura</th>
         @endif
         <th>Estado</th>
     </tr>
