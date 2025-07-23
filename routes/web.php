@@ -31,6 +31,7 @@ use Illuminate\Support\Facades\Mail;
 use App\Http\Controllers\RemisionController;
 use App\Models\Cliente;
 
+use App\Http\Controllers\OrdenController;
 use App\Http\Controllers\VentaController;
 use App\Http\Controllers\CartaGarantiaController;
 use App\Http\Controllers\ReciboController;
@@ -39,6 +40,7 @@ use App\Http\Controllers\CuentaController;
 use App\Http\Controllers\PropuestaController;
 use App\Http\Controllers\RecepcionController;
 use App\Http\Controllers\PedidoController;
+use App\Http\Controllers\AparatoController;
 
 
 // Rutas de autenticación (sin middleware 'auth')
@@ -421,6 +423,10 @@ Route::get('/registros-disponibles', [RegistroController::class, 'registrosStock
 Route::get('/registro-info/{id}', [RegistroController::class, 'info']);
 
 
+Route::get('orden/create', [OrdenController::class, 'create'])->name('orden.create');
+Route::post('orden',       [OrdenController::class, 'store'])->name('orden.store');
+Route::get('orden/{orden}/pdf', [OrdenController::class, 'pdf'])->name('orden.pdf');
+Route::resource('aparatos', AparatoController::class);
 
 
 
