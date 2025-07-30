@@ -19,7 +19,6 @@ class OrdenController extends Controller
             'aparatos' => Aparato::orderBy('tipo')->get(),   // <-- tu modelo Aparato
         ]);
     }
-
 public function store(Request $r)
 {
     \Log::info('🛠️ [DEBUG] store() recibido:', $r->all());
@@ -49,9 +48,6 @@ public function store(Request $r)
     // Redirigir a ruta PDF (ajusta si la ruta necesita parámetros)
     return redirect()->route('orden.pdf', $orden);
 }
-
-
-
 public function pdf(Orden $orden)
 {
     $orden->load('cliente', 'aparato');

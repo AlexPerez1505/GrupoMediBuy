@@ -28,7 +28,7 @@
     font-size: 9px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    color: #0056b3;
+    color: #333;
     background: #ecf0f1;
     border-bottom: 1px solid #ddd;
   }
@@ -77,9 +77,9 @@
     margin-bottom: 14px;
   }
   .section-title {
-    background: #2c3e50;
+    background: #0056b3;
     color: #fff;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
     padding: 8px 10px;
     text-transform: uppercase;
@@ -188,10 +188,12 @@
     <table>
       <tr>
         <td class="logo-cell">
-     <img src="{{ public_path('images/logomedy.png') }}" alt="Logo">
+          @if(file_exists(public_path('images/logomedy.png')))
+            <img src="{{ public_path('images/logomedy.png') }}" alt="Logo">
+          @endif
         </td>
         <td class="title-cell">ORDEN DE SERVICIO</td>
-        <td class="no-cell">NO. 123</td>
+        <td class="no-cell">NO. {{ $orden->id ?? 'N/A' }}</td>
       </tr>
     </table>
   </div>
@@ -204,26 +206,49 @@
         <th colspan="2">DATOS DE LA ORDEN</th>
       </tr>
       <tr>
-        <th>Cliente</th>
-        <td>JUAN PÉREZ GÓMEZ</td>
+      <tr>
+  <th>Cliente</th>
+  <td>
+    @php
+      // Construimos el nombre completo y quitamos espacios sobrantes
+      $fullName = trim(
+        optional($orden->cliente)->nombre . ' ' .
+        optional($orden->cliente)->apellido
+      );
+    @endphp
+
+    {{-- Si no hay datos, mostramos “N/A” --}}
+    {{ $fullName ?: 'N/A' }}
+  </td>
+
+
         <th>Fecha Entrada</th>
-        <td>15/08/2025</td>
+        <td>
+          {{ optional(\Carbon\Carbon::parse($orden->fecha_entrada))->format('d/m/Y') 
+             ?? 'N/A' }}
+        </td>
       </tr>
       <tr>
-        <th>Representante</th>
-        <td>Ing. Laura Martínez</td>
+        <th>Responsable</th>
+        <td>ING. JOEL DÍAZ</td>
         <th>Fecha Mantto.</th>
-        <td>15/08/2025</td>
+        <td>
+          {{ optional(\Carbon\Carbon::parse($orden->fecha_mantenimiento))->format('d/m/Y') 
+             ?? 'N/A' }}
+        </td>
       </tr>
       <tr>
         <th>Teléfono</th>
-        <td>55 1234 5678</td>
+        <td>{{ $orden->cliente->telefono ?? 'N/A' }}</td>
         <th>Próximo Mantto.</th>
-        <td>15/12/2025</td>
+        <td>
+          {{ optional(\Carbon\Carbon::parse($orden->proximo_mantenimiento))->format('d/m/Y') 
+             ?? 'N/A' }}
+        </td>
       </tr>
       <tr>
         <th>Dirección</th>
-        <td colspan="3">Calle Falsa 123, Ciudad</td>
+        <td colspan="3">{{ $orden->cliente->comentarios ?? 'N/A' }}</td>
       </tr>
     </table>
   </div>
@@ -236,19 +261,30 @@
       </tr>
       <tr>
         <th style="width:20%;">Nombre del equipo:</th>
-        <td style="width:30%;">ENDOSCOPIO</td>
+        <td style="width:30%;">{{ $orden->aparato->nombre ?? 'N/A' }}</td>
         <th style="width:20%;">Marca / Modelo:</th>
-        <td style="width:30%;">Olympus / E12345</td>
+        <td style="width:30%;">
+          {{ $orden->aparato->marca  ?? 'N/A' }}
+          /
+          {{ $orden->aparato->modelo ?? 'N/A' }}
+        </td>
       </tr>
       <tr>
         <th>Serie:</th>
-        <td colspan="3">AB98765</td>
+        <td colspan="3">{{ $orden->aparato->serie ?? 'N/A' }}</td>
       </tr>
     </table>
   </div>
 
   <!-- INSPECCIÓN PREVENTIVA -->
-  <div class="section-title">INSPECCIÓN PREVENTIVA DE MANTENIMIENTO</div>
+  {{-- Aquí dejas tu HTML tal cual, pero si quieres inyectar dinámicamente resultados desde
+      tu checklist, podrías decodificarlo así:
+      @php
+        $insp = json_decode($orden->checklist, true) ?? [];
+      @endphp
+      y luego hacer @foreach sobre cada sección. --}}
+
+  <div class="section-title"> <strong>INSPECCIÓN PREVENTIVA DE MANTENIMIENTO</strong></div>
   <table class="insp-layout">
     <tr>
       <!-- Columna IZQUIERDA -->
@@ -258,34 +294,49 @@
             <tr><th>Conexiones y Estructura</th><th>Resultado</th></tr>
           </thead>
           <tbody>
-            <tr><td>Conector de luz</td><td>Bueno y Funcional</td></tr>
-            <tr><td>Conector universal</td><td>Funcional</td></tr>
-            <tr><td>Cubierta distal</td><td>Reemplazada</td></tr>
-            <tr><td>Tubo de succión</td><td>Limpio y Funcional</td></tr>
-            <tr><td>Puerto de biopsia</td><td>Limpio y Funcional</td></tr>
+            @foreach($insp['conexiones'] ?? [] as $item)
+              <tr>
+                <td>{{ $item['nombre'] ?? '' }}</td>
+                <td>{{ $item['resultado'] ?? '' }}</td>
+              </tr>
+            @endforeach
+            @if(empty($insp['conexiones']))
+              <tr><td colspan="2">— No hay datos —</td></tr>
+            @endif
           </tbody>
         </table>
+
         <table class="insp-table">
           <thead>
             <tr><th>Botones y Controles</th><th>Resultado</th></tr>
           </thead>
           <tbody>
-            <tr><td>Botón de succión</td><td>Funcional</td></tr>
-            <tr><td>Botón de aire/agua</td><td>Funcional</td></tr>
-            <tr><td>Botón de irrigación</td><td>Funcional</td></tr>
-            <tr><td>Perrilla de control</td><td>Bueno y Fluido</td></tr>
-            <tr><td>Traba de flexión</td><td>Bueno y Funcional</td></tr>
+            @foreach($insp['botones'] ?? [] as $item)
+              <tr>
+                <td>{{ $item['nombre'] ?? '' }}</td>
+                <td>{{ $item['resultado'] ?? '' }}</td>
+              </tr>
+            @endforeach
+            @if(empty($insp['botones']))
+              <tr><td colspan="2">— No hay datos —</td></tr>
+            @endif
           </tbody>
         </table>
+
         <table class="insp-table">
           <thead>
             <tr><th>Componentes Internos</th><th>Mantto. Realizado</th></tr>
           </thead>
           <tbody>
-            <tr><td>Canal de trabajo</td><td>Limpio y Funcional</td></tr>
-            <tr><td>Sistema interno sellado</td><td>Verificado sin fugas</td></tr>
-            <tr><td>Estructura interna</td><td>Revisada y sin anomalías</td></tr>
-            <tr><td>Sistema de estanqueidad</td><td>Prueba de fuga OK</td></tr>
+            @foreach($insp['componentes'] ?? [] as $item)
+              <tr>
+                <td>{{ $item['nombre'] ?? '' }}</td>
+                <td>{{ $item['resultado'] ?? '' }}</td>
+              </tr>
+            @endforeach
+            @if(empty($insp['componentes']))
+              <tr><td colspan="2">— No hay datos —</td></tr>
+            @endif
           </tbody>
         </table>
       </td>
@@ -295,7 +346,9 @@
         <table class="foto-table">
           <tr>
             <td class="foto-cell">
-              <img src="{{ public_path('images/mantenimiento.png') }}" alt="Equipo">
+              @if(file_exists(public_path('images/mantenimiento.png')))
+                <img src="{{ public_path('images/mantenimiento.png') }}" alt="Equipo">
+              @endif
             </td>
           </tr>
           <tr>
@@ -310,29 +363,44 @@
   <div class="section">
     <table class="senial-table">
       <tr><th>Señal de Imagen</th><th>Resultado</th></tr>
-      <tr><td>Color</td><td>Bueno</td></tr>
-      <tr><td>Interferencia</td><td>Ninguna</td></tr>
-      <tr><td>Puntos Muertos</td><td>Ninguno</td></tr>
+      @foreach($insp['senial'] ?? [] as $item)
+        <tr>
+          <td>{{ $item['nombre'] ?? '' }}</td>
+          <td>{{ $item['resultado'] ?? '' }}</td>
+        </tr>
+      @endforeach
+      @if(empty($insp['senial']))
+        <tr><td colspan="2">— No hay datos —</td></tr>
+      @endif
     </table>
   </div>
 
   <!-- FIRMAS -->
+  <table class="signatures">
+    <tr>
+      <td>
+        <div class="line"></div>
+        <div><strong>ING. JOEL DÍAZ GARCIA</strong></div>
+        <div>RESPONSABLE DEL MANTENIMIENTO</div>
+      </td>
+        <td>
+          <div class="line"></div>
+          <div>
+            <strong>
+              @php
+                // Construimos el nombre completo del cliente
+                $clienteFull = trim(
+                  optional($orden->cliente)->nombre . ' ' .
+                  optional($orden->cliente)->apellido
+                );
+              @endphp
 
-<table class="signatures">
-  <tr>
-    <td>
-      <div class="line"></div>
-      <div>RESPONSABLE DEL MANTENIMIENTO</div>
-      <div>Ing. Pedro Gómez</div>
-    </td>
-    <td>
-      <div class="line"></div>
-      <div>RECEPCIÓN DE EQUIPO</div>
-      <div>Dra. María López</div>
-    </td>
-  </tr>
-</table>
-
-
+              {{ $clienteFull ?: 'N/A' }}
+            </strong>
+          </div>
+          <div>RECEPCIÓN DE EQUIPO</div>
+        </td>
+    </tr>
+  </table>
 </body>
 </html>

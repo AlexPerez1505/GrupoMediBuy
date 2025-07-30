@@ -23,6 +23,8 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;  // <-- Aquí IMPORTA Str correctamente
 use App\Models\DocumentoPago;
 use App\Models\Registro;
+use Illuminate\Support\Facades\DB;
+
 
 class VentaController extends Controller
 {
@@ -608,4 +610,45 @@ public function deudores()
     $clientes = \App\Models\Cliente::orderBy('nombre')->get();
     return view('venta.deudores', compact('ventas', 'clientes'));
 }
+public function pendientes()
+{
+    $ventas = DB::table('ventas')
+        ->leftJoin('checklists', function ($join) {
+            $join->on('ventas.id', '=', 'checklists.venta_id')
+                ->where('checklists.finalizado', 1);
+        })
+        ->join('clientes', 'ventas.cliente_id', '=', 'clientes.id') // ← AÑADIDO
+        ->select(
+            'ventas.id',
+            'clientes.nombre as cliente', // ← corregido: obtenemos el nombre del cliente
+            'ventas.created_at as fecha'
+        )
+        ->whereNull('checklists.id')
+        ->groupBy('ventas.id', 'clientes.nombre', 'ventas.created_at') // ← todos los campos del select
+        ->orderBy('ventas.created_at', 'desc')
+        ->get();
+
+    return view('venta.pendientes', compact('ventas'));
 }
+
+public function productos($ventaId)
+{
+    $productos = DB::table('venta_productos')
+        ->join('productos', 'venta_productos.producto_id', '=', 'productos.id')
+        ->where('venta_productos.venta_id', $ventaId)
+        ->select(
+            'venta_productos.*',
+            DB::raw("CONCAT(productos.tipo_equipo, ' ', productos.marca, ' ', productos.modelo) AS nombre_producto")
+        )
+        ->get();
+
+    $venta = DB::table('ventas')->where('id', $ventaId)->first();
+
+    return view('venta.productos', compact('venta', 'productos'));
+}
+
+}
+
+
+
+

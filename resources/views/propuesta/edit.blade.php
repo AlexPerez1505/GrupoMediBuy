@@ -156,6 +156,74 @@
 .toggle-switch input:checked + .toggle-slider:before {
     transform: translateX(18px);
 }
+.dropdown-container {
+    position: relative;
+    width: 100%;
+}
+
+.dropdown-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 14px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.dropdown-list {
+    position: absolute;
+    z-index: 1000;
+    width: 100%;
+    max-height: 300px;
+    overflow-y: auto;
+    background: white;
+    border: 1px solid #ddd;
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    margin-top: -1px;
+    display: none;
+    padding: 0;
+    list-style: none;
+}
+
+.dropdown-item {
+    padding: 10px 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.dropdown-item:hover {
+    background-color: #f2f2f2;
+}
+
+.img-preview {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background-color: #fafafa;
+}
+
+.item-info {
+    flex: 1;
+    font-size: 13px;
+    color: #333;
+    line-height: 1.2;
+}
+
+.stock-badge {
+    font-size: 11px;
+    color: #2e7d32;
+    background-color: #e8f5e9;
+    padding: 4px 8px;
+    border-radius: 12px;
+    white-space: nowrap;
+}
 
 </style>
 <div class="container mt-4">
@@ -166,25 +234,40 @@
         @method('PUT')
 
         <!-- Productos -->
-        <div class="form-section">
-            <h3 class="mb-3">Productos</h3>
+<!-- 1) Incluye Fuse.js antes de tu script -->
+<script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2/dist/fuse.min.js"></script>
 
-            <div class="mb-3">
-                <label for="producto">Seleccionar Producto</label>
-                <select id="producto" class="form-control">
-                    <option value="">Selecciona un producto...</option>
-                    @foreach($productos as $producto)
-                        <option value="{{ $producto->id }}"
-                            data-nombre="{{ $producto->tipo_equipo }}"
-                            data-modelo="{{ $producto->modelo }}"
-                            data-marca="{{ $producto->marca }}"
-                            data-precio="{{ $producto->precio }}"
-                            data-imagen="{{ asset('storage/'.$producto->imagen) }}">
-                            {{ $producto->tipo_equipo }} - ${{ $producto->precio }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
+<div class="dropdown-container">
+  <input type="text"
+         id="buscador-producto"
+         class="form-control dropdown-input"
+         placeholder="Buscar producto..."
+         autocomplete="off">
+  <ul id="lista-productos" class="dropdown-list" style="display:none">
+    @foreach($productos as $producto)
+      <li class="dropdown-item"
+          data-id="{{ $producto->id }}"
+          data-nombre="{{ $producto->tipo_equipo }}"
+          data-modelo="{{ $producto->modelo }}"
+          data-marca="{{ $producto->marca }}"
+          data-precio="{{ $producto->precio }}"
+          data-imagen="{{ asset('storage/'.$producto->imagen) }}">
+        
+        <img src="{{ asset('storage/'.$producto->imagen) }}"
+             alt="img" class="img-preview">
+        
+        <div class="item-info">
+          <strong>{{ strtoupper($producto->tipo_equipo) }}</strong><br>
+          {{ $producto->modelo }} {{ $producto->marca }}<br>
+          <small>${{ number_format($producto->precio,2) }}</small>
+        </div>
+      </li>
+    @endforeach
+  </ul>
+
+
+<br>
+
 
             <div class="table-responsive">
                 <table id="tabla-productos" class="table table-bordered">
@@ -689,5 +772,163 @@ function numeroEnLetras(num) {
     return lista[num - 1] || `${num}°`;
 }
 </script>
+<script>
+$(function() {
+  const $input   = $('#buscador-producto');
+  const $lista   = $('#lista-productos');
+  let products   = [];
+  let fuse; 
+  let selectedIndex = -1; // para navegación con teclado
+
+  // 2) Cargar array JS desde las <li>
+  $lista.find('.dropdown-item').each(function(){
+    const $it = $(this);
+    products.push({
+      id:      $it.data('id'),
+      nombre:  $it.data('nombre'),
+      modelo:  $it.data('modelo'),
+      marca:   $it.data('marca'),
+      precio:  parseFloat($it.data('precio')),
+      imagen:  $it.data('imagen'),
+      html:    this.outerHTML // plantilla para clonarlo
+    });
+  });
+
+  // 3) Crear instancia Fuse
+  fuse = new Fuse(products, {
+    keys: ['nombre','modelo','marca'],
+    threshold: 0.4,          // qué tan “fuzzy”
+    includeScore: true
+  });
+
+  // 4) Función para mostrar sugerencias
+  function renderSuggestions(list) {
+    $lista.empty();
+    list.slice(0,10).forEach(entry => {
+      // entry podría ser { item, score } o directamente item
+      const item = entry.item || entry;
+      $lista.append(item.html);
+    });
+    $lista.slideDown(100);
+    selectedIndex = -1;
+    highlightItem(selectedIndex);
+  }
+
+  // 5) Debounce helper
+  function debounce(fn, ms) {
+    let t;
+    return function(...args) {
+      clearTimeout(t);
+      t = setTimeout(() => fn.apply(this,args), ms);
+    };
+  }
+
+  // 6) Highlight en teclado
+  function highlightItem(idx) {
+    $lista
+      .find('.dropdown-item')
+      .removeClass('highlighted')
+      .eq(idx)
+      .addClass('highlighted');
+  }
+
+  // Al enfocar: primeras 10 recomendaciones (p.ej. más vendidas)
+  $input.on('focus', () => renderSuggestions(products));
+
+  // Al perder foco fuera del dropdown
+  $(document).on('click', e => {
+    if (!$(e.target).closest('.dropdown-container').length) {
+      $lista.slideUp(100);
+    }
+  });
+
+  // Al escribir: fuzzy-search
+  $input.on('input', debounce(function() {
+    const q = $(this).val().trim();
+    if (!q) {
+      renderSuggestions(products);
+    } else {
+      const results = fuse.search(q);
+      renderSuggestions(results);
+    }
+  }, 200));
+
+  // Navegación con flechas y Enter
+  $input.on('keydown', function(e) {
+    const $items = $lista.find('.dropdown-item');
+    if (!$items.length) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      selectedIndex = (selectedIndex + 1) % $items.length;
+      highlightItem(selectedIndex);
+    }
+    else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      selectedIndex = (selectedIndex - 1 + $items.length) % $items.length;
+      highlightItem(selectedIndex);
+    }
+    else if (e.key === 'Enter' && selectedIndex > -1) {
+      e.preventDefault();
+      $items.eq(selectedIndex).trigger('click');
+    }
+  });
+
+  // Click / selección de un item
+  $(document).on('click', '.dropdown-item', function(){
+    const $it     = $(this);
+    const id      = $it.data('id');
+    const nombre  = $it.data('nombre');
+    const modelo  = $it.data('modelo');
+    const marca   = $it.data('marca');
+    const precio  = parseFloat($it.data('precio'));
+    const imagen  = $it.data('imagen');
+
+    // Rellenar input y cerrar
+    $input.val(`${nombre} — ${modelo} ${marca} ($${precio.toFixed(2)})`);
+    $lista.slideUp(100);
+
+    // Evitar duplicados
+    if ($(`#tabla-productos tbody tr[data-id="${id}"]`).length) {
+      return alert('Este producto ya ha sido agregado.');
+    }
+
+    // Agregar a la tabla (ajusta selector si tu tabla es distinta)
+    const fila = `
+      <tr data-id="${id}" data-precio="${precio}">
+        <td><img src="${imagen}" width="50"></td>
+        <td class="equipo">${nombre}</td>
+        <td>${modelo}</td>
+        <td>${marca}</td>
+        <td>
+          <input type="number" class="form-control cantidad"
+                 name="productos[${id}][cantidad]" value="1" min="1"
+                 onchange="actualizarSubtotal(this)">
+        </td>
+        <td class="subtotal">${precio.toFixed(2)}</td>
+        <td>
+          <input type="number" class="form-control sobreprecio"
+                 name="productos[${id}][sobreprecio]" value="0" min="0"
+                 onchange="actualizarSubtotal(this)">
+        </td>
+        <td>
+          <button type="button"
+                  class="btn btn-sm btn-danger"
+                  onclick="eliminarFila(this)">
+            Eliminar
+          </button>
+        </td>
+        <input type="hidden" class="precio_unitario"
+               name="productos[${id}][precio_unitario]"
+               value="${precio}">
+      </tr>`;
+    $('#tabla-productos tbody').append(fila);
+    actualizarTotal();
+  });
+
+});
+</script>
+
+
 
 @endsection 

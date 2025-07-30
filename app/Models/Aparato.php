@@ -15,4 +15,9 @@ class Aparato extends Model
         'imagen',
         'tipo', // ✅ AÑADIDO
     ];
+        public function checklistItems()
+    {
+        return $this->hasMany(ChecklistItem::class);
+    }
+
 }

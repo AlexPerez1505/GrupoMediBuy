@@ -41,6 +41,12 @@ use App\Http\Controllers\PropuestaController;
 use App\Http\Controllers\RecepcionController;
 use App\Http\Controllers\PedidoController;
 use App\Http\Controllers\AparatoController;
+use App\Http\Controllers\ItemController;
+use App\Http\Controllers\ItemParteController;
+use App\Http\Controllers\ChecklistController;
+use App\Http\Controllers\ChecklistFirmaController;
+use App\Http\Controllers\IncidenteController;
+use App\Http\Controllers\EvidenciaController;
 
 
 // Rutas de autenticación (sin middleware 'auth')
@@ -265,7 +271,7 @@ Route::get('/cuentas-por-cobrar', [RemisionController::class, 'cuentasPorCobrar'
 
 // --- PAGOS FINANCIAMIENTO ---
 Route::put('/pagos_financiamiento/{id}/marcar-pagado', [VentaController::class, 'marcarPagado'])->name('pagos.marcarPagado');
-
+Route::get('/ventas/pendientes', [VentaController::class, 'pendientes'])->name('ventas.pendientes');
 // --- VENTAS ---
 Route::middleware('auth')->group(function () {
     Route::get('/ventas/crear', [VentaController::class, 'create'])->name('ventas.create');
@@ -428,14 +434,53 @@ Route::post('orden',       [OrdenController::class, 'store'])->name('orden.store
 Route::get('orden/{orden}/pdf', [OrdenController::class, 'pdf'])->name('orden.pdf');
 Route::resource('aparatos', AparatoController::class);
 
+Route::get('aparatos/{aparato}/checklist-items', [AparatoController::class, 'checklistItems']);
+
+
+// Resourceful routes
+Route::resource('items', ItemController::class);
+Route::resource('item-partes', ItemParteController::class);
+Route::resource('checklists', ChecklistController::class);
+Route::resource('checklist-firmas', ChecklistFirmaController::class);
+Route::resource('incidentes', IncidenteController::class);
+Route::resource('evidencias', EvidenciaController::class);
+
+Route::get('checklists/{checklist}/proceso', [App\Http\Controllers\ChecklistController::class, 'proceso'])
+    ->name('checklists.proceso');
+Route::post('checklists/{checklist}/proceso/guardar-paso', [App\Http\Controllers\ChecklistController::class, 'guardarPaso'])
+    ->name('checklists.proceso.guardarPaso');
 
 
 
 
+Route::get('/ventas/{venta}/productos', [VentaController::class, 'productos'])->name('ventas.productos');
+
+
+// Mostrar el formulario del checklist para una venta completa
+Route::get('/checklists/{ventaId}/wizard', [ChecklistController::class, 'wizard'])->name('checklists.wizard');
+Route::post('/checklists/{ventaId}/guardar', [ChecklistController::class, 'guardarPaso'])->name('checklists.guardarPaso');
+Route::get('/checklists/{ventaId}/resumen', [ChecklistController::class, 'resumen'])->name('checklists.resumen');
+
+
+Route::prefix('checklists/{venta}')->middleware('auth')->group(function() {
+    Route::get('wizard',        [ChecklistController::class, 'wizard'])->name('checklists.wizard');
+    Route::get('ingenieria',    [ChecklistController::class, 'ingenieria'])->name('checklists.ingenieria');
+    Route::post('ingenieria',   [ChecklistController::class, 'guardarIngenieria'])->name('checklists.guardarIngenieria');
+    Route::get('embalaje',      [ChecklistController::class, 'embalaje'])->name('checklists.embalaje');
+    Route::post('embalaje',     [ChecklistController::class, 'guardarEmbalaje'])->name('checklists.guardarEmbalaje');
+    Route::get('entrega',       [ChecklistController::class, 'entrega'])->name('checklists.entrega');
+    Route::post('entrega',      [ChecklistController::class, 'guardarEntrega'])->name('checklists.guardarEntrega');
+});
 
 
 
+// GET: Mostrar el formulario de recepción hospitalaria
+Route::get('/recepcion-hospital/{checklist}', [App\Http\Controllers\ChecklistController::class, 'recepcionHospital'])->name('recepcion-hospital');
 
+// POST: Guardar la recepción hospitalaria
+Route::post('/recepcion-hospital/{checklist}', [App\Http\Controllers\ChecklistController::class, 'guardarRecepcionHospital'])->name('recepcion-hospital.guardar');
+
+Route::get('/checklists/{checklist}/descargar-pdf', [App\Http\Controllers\ChecklistController::class, 'descargarPdf'])->name('checklists.descargar-pdf');
 
 
 

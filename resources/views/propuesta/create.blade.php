@@ -235,18 +235,50 @@
   #ficha_tecnica_id option {
     text-transform: uppercase;
   }
+
+ #dropdown_fichas {
+        background-color: #fdfcff;
+        border: 1px solid #ddd;
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+        z-index: 999;
+    }
+
+    .list-option {
+        cursor: pointer;
+        padding: 10px 14px;
+        font-size: 15px;
+        color: #555;
+        transition: background-color 0.2s ease;
+    }
+
+    .list-option:hover {
+        background-color: #f3e5f5;
+    }
+
+    .list-option strong {
+        font-weight: bold;
+        color: #6a1b9a;
+    }
+
 </style>
 
 <br>
-<div class="form-group mt-4">
-    <label for="ficha_tecnica_id">Ficha Técnica a incluir en el PDF:</label>
-    <select name="ficha_tecnica_id" id="ficha_tecnica_id" class="form-control modern-input w-50">
-        <option value="">-- Selecciona una ficha técnica --</option>
+<div class="form-group position-relative mt-4" style="max-width: 900px; width: 100%;">
+    <label for="ficha_tecnica_search">Ficha Técnica a incluir en el PDF:</label>
+    
+    <input type="text" id="ficha_tecnica_search" class="form-control" placeholder="Escribe para buscar..." autocomplete="off">
+    
+    <!-- Input oculto que se envía con el ID real -->
+    <input type="hidden" name="ficha_tecnica_id" id="ficha_tecnica_id">
+
+    <ul id="dropdown_fichas" class="list-group position-absolute mt-1 w-100 shadow-sm" style="z-index: 1000; display: none; max-height: 250px; overflow-y: auto;">
         @foreach ($fichas->sortBy('nombre') as $ficha)
-            <option value="{{ $ficha->id }}">{{ strtoupper($ficha->nombre) }}</option>
+            <li class="list-group-item list-option" data-id="{{ $ficha->id }}">{{ strtoupper($ficha->nombre) }}</li>
         @endforeach
-    </select>
+    </ul>
 </div>
+
 <br>
 
              <div class="botones-compactos">
@@ -505,6 +537,56 @@ document.getElementById("formProducto").addEventListener("submit", function (eve
 });
 
 </script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const input = document.getElementById('ficha_tecnica_search');
+        const hiddenInput = document.getElementById('ficha_tecnica_id');
+        const dropdown = document.getElementById('dropdown_fichas');
+        const originalOptions = [...dropdown.querySelectorAll('.list-option')];
+
+        // Normaliza texto para que ignore acentos y mayúsculas
+        const normalize = str => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+        input.addEventListener('input', function () {
+            const value = normalize(input.value);
+            dropdown.innerHTML = '';
+            let matches = 0;
+
+            originalOptions.forEach(option => {
+                const textOriginal = option.textContent;
+                const textNormalized = normalize(textOriginal);
+
+                if (textNormalized.includes(value)) {
+                    matches++;
+                    const highlighted = textOriginal.replace(new RegExp(value, 'i'), match => {
+                        return `<strong style="color:#4a148c">${match}</strong>`;
+                    });
+
+                    const li = document.createElement('li');
+                    li.classList.add('list-group-item', 'list-option');
+                    li.setAttribute('data-id', option.getAttribute('data-id'));
+                    li.innerHTML = highlighted;
+                    li.addEventListener('click', () => {
+                        input.value = textOriginal;
+                        hiddenInput.value = option.getAttribute('data-id');
+                        dropdown.style.display = 'none';
+                    });
+                    dropdown.appendChild(li);
+                }
+            });
+
+            dropdown.style.display = matches ? 'block' : 'none';
+        });
+
+        document.addEventListener('click', function (e) {
+            if (!dropdown.contains(e.target) && e.target !== input) {
+                dropdown.style.display = 'none';
+            }
+        });
+    });
+</script>
+
+
 <script>
 function cerrarModal() {
     var modal = document.getElementById("cliente_creado");
@@ -1126,7 +1208,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Función para cargar clientes desde backend
     function loadClients(search = "") {
-        fetch(`http://192.168.1.248:8000/encontrar-clientes?search=${encodeURIComponent(search)}`, {
+          fetch(`https://medibuy.grupomedibuy.com/encontrar-clientes?search=${encodeURIComponent(search)}`, {
             method: "GET",
             headers: {
                 "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content,
