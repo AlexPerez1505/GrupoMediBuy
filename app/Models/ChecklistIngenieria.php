@@ -9,21 +9,33 @@ class ChecklistIngenieria extends Model
 {
     use HasFactory;
 
+    // Mantengo tu nombre de tabla en singular
     protected $table = 'checklist_ingenieria';
 
     protected $fillable = [
         'checklist_id',
         'user_id',
-        'componentes', // json
-        'incidente',
+
+        // esquema unificado
+        'verificados',        // array de series
+        'no_verificados',     // array de series
+        'componentes',        // { serie: { "Comp": bool } }
+        'observaciones',      // texto
+        'incidente',          // compat: algunas vistas lo usan como nombre del campo
+
+        // firmas
         'firma_responsable',
         'firma_supervisor',
-        'evidencias', // json
+
+        // evidencias
+        'evidencias',         // array de rutas
     ];
 
     protected $casts = [
-        'componentes' => 'array',
-        'evidencias' => 'array',
+        'verificados'    => 'array',
+        'no_verificados' => 'array',
+        'componentes'    => 'array',
+        'evidencias'     => 'array',
     ];
 
     public function checklist()

@@ -14,16 +14,26 @@ class ChecklistEmbalaje extends Model
     protected $fillable = [
         'checklist_id',
         'user_id',
-        'componentes', // json
+
+        // esquema unificado
+        'verificados',
+        'no_verificados',
+        'componentes',
         'observaciones',
+
+        // firmas
         'firma_responsable',
         'firma_supervisor',
-        'evidencias', // json
+
+        // evidencias
+        'evidencias',
     ];
 
     protected $casts = [
-        'componentes' => 'array',
-        'evidencias' => 'array',
+        'verificados'    => 'array',
+        'no_verificados' => 'array',
+        'componentes'    => 'array',
+        'evidencias'     => 'array',
     ];
 
     public function checklist()

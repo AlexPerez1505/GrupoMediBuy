@@ -83,7 +83,6 @@ Route::middleware(['auth'])->group(function () {
 
 
 
-    Route::post('/productos', [ProductoController::class, 'store'])->name('productos.store');
     Route::get('/cotizaciones', [ProductoController::class, 'index'])->name('cotizaciones.index');
 
     Route::get('/productos/buscar', [ProductoController::class, 'buscar']);
@@ -145,6 +144,16 @@ Route::middleware(['auth'])->group(function () {
 
     
 });
+Route::get('/inventario/buscar', [RegistroController::class, 'vistaBuscar'])->name('inventario.buscar');
+Route::get('/inventario/buscar/resultado', [RegistroController::class, 'buscarSubmit'])->name('inventario.buscar.submit');
+// Ruta para mostrar el detalle de un equipo/registro por su ID
+Route::get('/inventario/{id}', [App\Http\Controllers\RegistroController::class, 'mostrarProductoDetalle'])->name('inventario.detalle');
+Route::get('/inventario', [RegistroController::class, 'mostrarProductos'])->name('inventario');
+Route::get('/inventario/main', [RegistroController::class, 'mostrarProductos'])->name('inventario.main');
+Route::get('/registros/{id}/imprimir-barcode', [\App\Http\Controllers\RegistroController::class, 'imprimirBarcode'])
+    ->name('registros.imprimirBarcode');
+
+
 Route::get('/procesos/{id}', [ProcesoEquipoController::class, 'mostrarProceso'])->name('procesos.mostrar');
 Route::post('/procesos/{id}/guardar', [ProcesoEquipoController::class, 'guardarProceso'])->name('procesos.guardar');
 
@@ -183,7 +192,8 @@ Route::put('/camionetas/{id}', [CamionetaController::class, 'update'])->name('ca
 
 Route::resource('fichas', FichaTecnicaController::class);
 Route::get('fichas/{ficha}/download', [FichaTecnicaController::class, 'download'])->name('fichas.download');
-Route::get('procesos/{id}/stock', [ProcesoEquipoController::class, 'stock'])->name('stock');
+Route::get('/procesos/{id}/stock', [ProcesoEquipoController::class, 'stock'])->name('proceso.stock');
+
 
 Route::get('/solicitudes', [SolicitudMaterialController::class, 'index'])->name('solicitudes.index');
 Route::get('/solicitudes/crear', [SolicitudMaterialController::class, 'create'])->name('solicitudes.create');
@@ -429,6 +439,9 @@ Route::get('/registros-disponibles', [RegistroController::class, 'registrosStock
 Route::get('/registro-info/{id}', [RegistroController::class, 'info']);
 
 
+
+
+
 Route::get('orden/create', [OrdenController::class, 'create'])->name('orden.create');
 Route::post('orden',       [OrdenController::class, 'store'])->name('orden.store');
 Route::get('orden/{orden}/pdf', [OrdenController::class, 'pdf'])->name('orden.pdf');
@@ -482,8 +495,18 @@ Route::post('/recepcion-hospital/{checklist}', [App\Http\Controllers\ChecklistCo
 
 Route::get('/checklists/{checklist}/descargar-pdf', [App\Http\Controllers\ChecklistController::class, 'descargarPdf'])->name('checklists.descargar-pdf');
 
+Route::get('registros/{id}/imprimir-barcode', [App\Http\Controllers\RegistroController::class, 'imprimirBarcode'])->name('registros.imprimir-barcode');
+
+Route::put('/ventas/{venta}/pagos-financiamiento', [VentaController::class, 'updatePagosFinanciamiento'])
+    ->name('ventas.pagosFinanciamiento.update');
 
 
+Route::get('/productos/create', [ProductoController::class, 'create'])->name('productos.create');
+Route::post('/productos', [ProductoController::class, 'store'])->name('productos.store');
+Route::get('/productos/cards', [ProductoController::class, 'cardsVista'])->name('productos.cards');
+Route::delete('/productos/{producto}', [ProductoController::class, 'destroy'])->name('productos.destroy');
+Route::get('/productos/{producto}/edit', [ProductoController::class, 'edit'])->name('productos.edit');
+Route::put('/productos/{producto}', [ProductoController::class, 'update'])->name('productos.update');
 
 
 

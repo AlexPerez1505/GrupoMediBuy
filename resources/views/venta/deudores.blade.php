@@ -228,4 +228,5 @@ document.querySelectorAll('.reenviar-btn').forEach(button => {
     });
 });
 </script>
+
 @endsection

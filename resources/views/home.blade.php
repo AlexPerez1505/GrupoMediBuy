@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Inicio</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
   <style>
     @import url("https://fonts.googleapis.com/css?family=Poppins:100,300,400,500,600,700,800,900&display=swap");
 
@@ -249,6 +251,67 @@
             background-position: 100% 50%;
         }
     }
+/* Estilos generales del boton flotante tipo WhatsApp */
+.registro-btn {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 9999;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: #007bff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  animation: breathe 2s ease-in-out infinite;
+  transition: background 0.2s;
+  text-decoration: none;
+}
+
+.registro-btn:hover {
+  background-color: #0056b3;
+}
+
+.registro-btn i {
+  color: #fff;
+  font-size: 28px;
+  animation: beat 2s ease-in-out infinite;
+  text-decoration: none;
+}
+
+/* Animación contorno respirando */
+@keyframes breathe {
+  0% {
+    box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.5);
+  }
+  70% {
+    box-shadow: 0 0 0 15px rgba(0, 123, 255, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
+  }
+}
+
+/* Animación de latido del icono */
+@keyframes beat {
+  0% { transform: scale(1);}
+  50% { transform: scale(1.2);}
+  100% { transform: scale(1);}
+}
+
+@media (max-width: 600px) {
+  .registro-btn {
+    width: 48px;
+    height: 48px;
+    right: 14px;
+    bottom: 14px;
+  }
+  .registro-btn i {
+    font-size: 22px;
+  }
+}
   </style>
 </head>
 <body>
@@ -418,6 +481,10 @@
       <i class="fas fa-user-check"></i>
       <p>Asistencias</p>
     </a>
+    <!-- Botón flotante -->
+<a href="/inventario/buscar" target="_self" class="registro-btn" title="Ir a registro">
+  <i class="bi bi-search"></i>
+</a>
     @endif
   @endif
 </div>

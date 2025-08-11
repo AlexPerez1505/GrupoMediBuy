@@ -56,13 +56,14 @@
         </div>
     </div>
 </div>
-
-
                 </div>
             </div>
 
             <div class="mt-4">
-                <h5 class="mb-3">Próximos pagos</h5>
+                <h5 class="mb-3">Próximos pagos <button class="btn btn-outline-primary mb-3" data-bs-toggle="modal" data-bs-target="#modalEditarPagos">
+    Editar pagos de financiamiento
+</button>
+</h5>
                 @php
                     $pagosPendientes = $venta->pagosFinanciamiento->where('pagado', false)->sortBy('fecha_pago');
                 @endphp
@@ -168,6 +169,312 @@
         </div>
     </div>
 </div>
+<!-- Modal Editar Pagos -->
+<div class="modal fade" id="modalEditarPagos" tabindex="-1" aria-labelledby="modalEditarPagosLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <form 
+      action="{{ route('ventas.pagosFinanciamiento.update', $venta->id) }}" 
+      method="POST" 
+      onsubmit="return validarTotalPagos(event)">
+      @csrf
+      @method('PUT')
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalEditarPagosLabel">Editar Pagos de Financiamiento</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3 text-end">
+            <span class="fw-bold">Total venta:</span> ${{ number_format($venta->total, 2) }}
+          </div>
+          <div class="alert alert-danger d-none" id="errorTotalPagos"></div>
+          <div class="table-responsive">
+            <table class="table align-middle table-bordered" style="min-width:450px;">
+              <thead class="table-light">
+                <tr>
+                  <th>Descripción</th>
+                  <th>Fecha</th>
+                  <th>Monto</th>
+                  <th>Eliminar</th>
+                </tr>
+              </thead>
+             <tbody id="pagosTableBody">
+@foreach($venta->pagosFinanciamiento as $pago)
+<tr>
+  <td data-label="Descripción">
+    <input type="text" name="pagos_financiamiento[{{ $pago->id }}][descripcion]" class="form-control" value="{{ $pago->descripcion }}" required>
+  </td>
+  <td data-label="Fecha">
+    <input type="date" name="pagos_financiamiento[{{ $pago->id }}][fecha_pago]" class="form-control" value="{{ $pago->fecha_pago }}" required>
+  </td>
+  <td data-label="Monto">
+    <input type="number" name="pagos_financiamiento[{{ $pago->id }}][monto]" class="form-control monto-pago" value="{{ $pago->monto }}" min="0" step="0.01" required onchange="actualizarTotalPagos()">
+  </td>
+  <td data-label="Eliminar" class="text-center">
+    <button type="button" class="btn btn-outline-danger btn-sm" title="Eliminar pago"
+      onclick="eliminarPagoExistente(this, '{{ $pago->id }}')">
+      <i class="bi bi-trash"></i>
+    </button>
+    <input type="hidden" name="pagos_financiamiento[{{ $pago->id }}][eliminar]" value="0" class="campo-eliminar">
+  </td>
+</tr>
+@endforeach
+</tbody>
+
+            </table>
+          </div>
+          <button type="button" class="btn btn-outline-secondary btn-sm mt-2" onclick="agregarFilaPago()">Agregar pago</button>
+          <div class="mt-3 text-end">
+            <span class="fw-bold">Total de pagos:</span> $<span id="totalPagosSpan">0.00</span>
+          </div>
+        </div>
+        <div class="modal-footer flex-wrap">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="btnGuardarPagos" disabled>Guardar cambios</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+<!-- Incluye moment.js y bootstrap-icons si aún no los tienes -->
+<script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/locale/es.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+
+<script>
+let contadorNuevoPago = 1;
+const totalVenta = {{ $venta->total }};
+
+// Elimina fila de un pago NUEVO (borrado físico)
+function eliminarPagoNuevo(boton) {
+  const fila = boton.closest('tr');
+  fila.remove();
+  renombrarPagos();
+  actualizarTotalPagos();
+}
+
+// Elimina visualmente pago existente y marca el campo hidden
+function eliminarPagoExistente(boton, idPago) {
+  const fila = boton.closest('tr');
+  // Marca el campo hidden "eliminar" en 1
+  fila.querySelector('.campo-eliminar').value = '1';
+  // Oculta la fila visualmente
+  fila.style.display = 'none';
+  renombrarPagos();
+  actualizarTotalPagos();
+}
+
+// Regresa la descripción que toca según el número de pago visible (0-index)
+function obtenerDescripcionPago(n) {
+  const nombres = [
+    'Pago inicial', 'Primer pago', 'Segundo pago', 'Tercer pago', 'Cuarto pago',
+    'Quinto pago', 'Sexto pago', 'Séptimo pago', 'Octavo pago', 'Noveno pago', 'Décimo pago'
+  ];
+  return nombres[n] || `${n}° Pago`;
+}
+
+// Busca la fecha del último pago visible
+function obtenerFechaUltimoPago() {
+  let fechaUltima = null;
+  document.querySelectorAll('#pagosTableBody tr').forEach(fila => {
+    if (fila.style.display !== 'none') {
+      const fechaInput = fila.querySelector('input[type="date"]');
+      if (fechaInput && fechaInput.value) {
+        fechaUltima = fechaInput.value;
+      }
+    }
+  });
+  return fechaUltima;
+}
+
+// Agrega nueva fila de pago con descripción y fecha automática
+function agregarFilaPago() {
+  const tbody = document.getElementById('pagosTableBody');
+  const numPagosVisibles = Array.from(tbody.querySelectorAll('tr')).filter(fila => fila.style.display !== 'none').length;
+  const descripcion = obtenerDescripcionPago(numPagosVisibles);
+  const idx = 'nuevo_' + contadorNuevoPago++;
+
+  let fechaBase = obtenerFechaUltimoPago();
+  let fechaNueva = '';
+  if (fechaBase) {
+    fechaNueva = moment(fechaBase).add(1, 'months').format('YYYY-MM-DD');
+  } else {
+    fechaNueva = moment().format('YYYY-MM-DD');
+  }
+
+  const row = document.createElement('tr');
+  row.innerHTML = `
+    <td>
+      <input type="text" name="pagos_financiamiento[${idx}][descripcion]" class="form-control" value="${descripcion}" required>
+    </td>
+    <td>
+      <input type="date" name="pagos_financiamiento[${idx}][fecha_pago]" class="form-control" value="${fechaNueva}" required>
+    </td>
+    <td>
+      <input type="number" name="pagos_financiamiento[${idx}][monto]" class="form-control monto-pago" min="0" step="0.01" placeholder="Monto" required onchange="actualizarTotalPagos()">
+    </td>
+    <td class="text-center">
+      <button type="button" class="btn btn-outline-danger btn-sm" title="Eliminar pago"
+        onclick="eliminarPagoNuevo(this)">
+        <i class="bi bi-trash"></i>
+      </button>
+    </td>
+  `;
+  tbody.appendChild(row);
+  renombrarPagos();
+  actualizarTotalPagos();
+}
+
+// Renombra automáticamente todos los pagos al agregar/eliminar
+function renombrarPagos() {
+  const filas = Array.from(document.querySelectorAll('#pagosTableBody tr')).filter(fila => fila.style.display !== 'none');
+  filas.forEach((fila, i) => {
+    const inputDesc = fila.querySelector('input[type="text"]');
+    if (inputDesc) {
+      inputDesc.value = obtenerDescripcionPago(i);
+    }
+  });
+}
+
+// Valida la suma de los pagos y muestra errores
+function actualizarTotalPagos() {
+  const filas = document.querySelectorAll('#pagosTableBody tr');
+  let suma = 0;
+  filas.forEach((fila) => {
+    if (fila.style.display === 'none') return;
+    const montoInput = fila.querySelector('.monto-pago');
+    if (montoInput) {
+      const monto = parseFloat(montoInput.value) || 0;
+      suma += monto;
+    }
+  });
+  document.getElementById('totalPagosSpan').textContent = suma.toFixed(2);
+
+  const errorDiv = document.getElementById('errorTotalPagos');
+  const btnGuardar = document.getElementById('btnGuardarPagos');
+  if (suma < totalVenta) {
+    errorDiv.textContent = 'El total de los pagos es menor al total de la venta.';
+    errorDiv.classList.remove('d-none');
+    btnGuardar.disabled = true;
+  } else if (suma > totalVenta) {
+    errorDiv.textContent = 'El total de los pagos es mayor al total de la venta.';
+    errorDiv.classList.remove('d-none');
+    btnGuardar.disabled = true;
+  } else {
+    errorDiv.textContent = '';
+    errorDiv.classList.add('d-none');
+    btnGuardar.disabled = false;
+  }
+}
+
+// Validación final al enviar el formulario
+function validarTotalPagos(event) {
+  actualizarTotalPagos();
+  const totalPagos = parseFloat(document.getElementById('totalPagosSpan').textContent);
+  if (totalPagos !== totalVenta) {
+    event.preventDefault();
+    return false;
+  }
+  return true;
+}
+
+// Recalcula automáticamente al cargar el modal
+document.addEventListener('DOMContentLoaded', function() {
+  setTimeout(() => {
+    renombrarPagos();
+    actualizarTotalPagos();
+  }, 300);
+});
+
+// Recalcula cada vez que abras el modal
+document.getElementById('modalEditarPagos').addEventListener('show.bs.modal', function () {
+  setTimeout(() => {
+    renombrarPagos();
+    actualizarTotalPagos();
+  }, 100);
+});
+</script>
+<style>
+/* Responsive modal y tabla de pagos */
+@media (max-width: 991.98px) {
+  #modalEditarPagos .modal-dialog {
+    max-width: 98vw !important;
+    width: 98vw !important;
+    margin: 1.2rem auto;
+  }
+  #modalEditarPagos .modal-content {
+    border-radius: 1.2rem;
+    padding: 0 0.5rem;
+  }
+  #modalEditarPagos .table-responsive {
+    overflow-x: visible !important;
+  }
+  #modalEditarPagos .table {
+    min-width: unset !important;
+    width: 100% !important;
+  }
+  #modalEditarPagos .table thead {
+    display: none;
+  }
+  #modalEditarPagos .table tbody tr {
+    display: flex;
+    flex-wrap: wrap;
+    border-bottom: 1px solid #e9ecef;
+    margin-bottom: 1rem;
+    background: #f7fafc;
+    border-radius: 1rem;
+    box-shadow: 0 3px 10px 0 rgba(80,120,170,0.07);
+    padding: 0.7rem 0.3rem;
+  }
+  #modalEditarPagos .table td {
+    flex: 1 1 100%;
+    border: none;
+    padding: 0.4rem 0;
+    display: flex;
+    align-items: center;
+    word-break: break-word;
+    /* Evita desbordamientos */
+  }
+  #modalEditarPagos .table td:not(:last-child) {
+    margin-bottom: 0.35rem;
+  }
+  #modalEditarPagos .table td:before {
+    content: attr(data-label);
+    flex: 0 0 110px;
+    font-weight: 600;
+    color: #7a869a;
+    margin-right: 0.7rem;
+    font-size: 0.97em;
+    min-width: 85px;
+  }
+}
+
+@media (max-width: 575.98px) {
+  #modalEditarPagos .modal-dialog {
+    max-width: 98vw !important;
+    width: 98vw !important;
+    margin: 0.7rem auto;
+  }
+  #modalEditarPagos .modal-content {
+    padding: 0.3rem !important;
+    border-radius: 0.7rem;
+  }
+  #modalEditarPagos .table-responsive {
+    overflow-x: visible !important;
+  }
+  #modalEditarPagos .table {
+    min-width: unset !important;
+    width: 100% !important;
+  }
+}
+
+/* Siempre asegura que el body no tenga scroll lateral cuando el modal está abierto */
+body.modal-open {
+  overflow-x: hidden;
+}
+</style>
+
+
 
 <!-- Inicializa tooltips -->
 <script>
@@ -178,9 +485,6 @@
         })
     });
 </script>
-
-
-
 @include('partials.pago-modal')
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>

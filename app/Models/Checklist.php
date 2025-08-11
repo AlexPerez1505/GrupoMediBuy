@@ -9,32 +9,34 @@ class Checklist extends Model
 {
     use HasFactory;
 
+    protected $table = 'checklists';
+
     protected $fillable = [
         'venta_id',
-        'fecha_inicio',
-        'fecha_fin',
-        'finalizado',
-        'etapa', // si lo usas para saber en qué paso va
     ];
 
     public function venta()
     {
-        return $this->belongsTo(Venta::class, 'venta_id');
+        return $this->belongsTo(Venta::class);
     }
 
-    // Relación con etapas:
     public function ingenieria()
     {
-        return $this->hasOne(ChecklistIngenieria::class);
+        return $this->hasOne(ChecklistIngenieria::class, 'checklist_id');
     }
 
     public function embalaje()
     {
-        return $this->hasOne(ChecklistEmbalaje::class);
+        return $this->hasOne(ChecklistEmbalaje::class, 'checklist_id');
     }
 
     public function entrega()
     {
-        return $this->hasOne(ChecklistEntrega::class);
+        return $this->hasOne(ChecklistEntrega::class, 'checklist_id');
+    }
+
+    public function recepcion()
+    {
+        return $this->hasOne(ChecklistRecepcion::class, 'checklist_id');
     }
 }

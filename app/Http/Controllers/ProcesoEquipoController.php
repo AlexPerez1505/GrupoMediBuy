@@ -109,10 +109,12 @@ class ProcesoEquipoController extends Controller
     
     
     
-    public function stock($id) {
-        $fichas = FichaTecnica::all(); // Obtiene las fichas
-        return view('procesos.stock', compact('fichas', 'id'));
-    }
+public function stock($id) {
+    $registro = Registro::findOrFail($id);
+    $fichas = FichaTecnica::all();
+    return view('procesos.stock', compact('registro', 'fichas', 'id'));
+}
+
     
     
     
@@ -165,9 +167,4 @@ class ProcesoEquipoController extends Controller
     
         $registro->save();
     }
-  
-
-    
-    
-    
 }

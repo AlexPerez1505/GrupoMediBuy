@@ -2966,8 +2966,6 @@ textarea {
     </div>
 </div>
 </div>
-
-
 <!-- Contenedor de imágenes -->
 <div id="fileContainer" style="display: none;">
     @if(!empty($photos) && is_array($photos))
@@ -2978,13 +2976,6 @@ textarea {
         <p>No hay evidencia disponible</p>
     @endif
 </div>
-
-
-
-
-    
-
-
 <div class="row">
     <!-- Mensaje -->
     <div class="form-grupo col-12 col-md-6 px-3">
@@ -2995,11 +2986,6 @@ textarea {
             </div>
         </div>
     </div>
- 
-
-
-
-
     <!-- Observaciones -->
     <div class="form-grupo col-12 col-md-6 px-3">
         <div class="label-container">
@@ -3009,6 +2995,23 @@ textarea {
             </div>
         </div>
     </div>
+    <!-- Botón para imprimir el ticket/etiqueta con código de barras -->
+<div id="barcodePrintContainer" style="margin-top:18px;display:none;">
+    <button id="btnImprimirTicket" class="btn btn-pastel-barcode" style="
+        background: #f0f4ff;
+        color: #228be6;
+        border: 1.5px solid #cfd8dc;
+        border-radius: 1.2rem;
+        font-weight: 600;
+        padding: 6px 22px;
+        font-size: 1rem;
+        box-shadow: 0 2px 8px rgba(34,139,230,0.04);
+        transition: background .15s;
+    ">
+        <i class="fa fa-barcode"></i> Imprimir etiqueta
+    </button>
+</div>
+
     <div class="container">
     <div class="row align-items-center">
         <!-- Columna del video -->
@@ -3760,13 +3763,6 @@ $(document).ready(function () {
     $('#firmaDigitalImagen').hide();
     $('#firmaUsuarioNombre').hide();
 }
-
-
-
-
-                
-            
-
                 if (response.documentoPDF) {
                     const pdfPath = response.documentoPDF.startsWith('/storage/') || response.documentoPDF.startsWith('http')
                         ? response.documentoPDF
@@ -3816,8 +3812,16 @@ $(document).ready(function () {
                 } else {
                     $('#videoContainer').html('<p>No hay video disponible</p>').show();
                 }
+                // ⬇️ BLOQUE NUEVO para mostrar el botón de imprimir ticket/etiqueta
+                if (response.imprimir_barcode_url) {
+                    $('#barcodePrintContainer').show();
+                    $('#btnImprimirTicket').off('click').on('click', function() {
+                        window.open(response.imprimir_barcode_url, '_blank');
+                    });
+                } else {
+                    $('#barcodePrintContainer').hide();
+                }
 
-                // Procesos
 // Procesos
 $('#procesosContainer').empty();
 

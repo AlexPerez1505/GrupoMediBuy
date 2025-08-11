@@ -3,43 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <link rel="icon" type="image/png" href="{{ asset('images/logoai.png') }}?v=1">
+    <link rel="icon" type="image/png" href="{{ asset('images/logoai.png') }}?v=1">
     <title>@yield('title', 'Sistema de Cotizaciones')</title>
-
     <meta name="csrf-token" content="{{ csrf_token() }}">
-
-
-<!-- Bootstrap CSS -->
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-<!-- DataTables CSS -->
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
-<!-- Estilos personalizados -->
-<link rel="stylesheet" href="{{ asset('css/styles.css') }}?v={{ time() }}">
-
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.8/index.global.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.8/locales/es.js"></script> <!-- Español -->
-
-
-
-
-    @yield('styles')
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
+    <!-- Estilos personalizados -->
+    <link rel="stylesheet" href="{{ asset('css/styles.css') }}?v={{ time() }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.8/index.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.8/locales/es.js"></script> <!-- Español -->
+@yield('styles')
 </head>
 <body>
-<div class="header-container"> 
+    <div class="header-container">
     <div class="menu-hamburguesa">
-        <!-- Botón de menú con icono personalizado -->
         <button onclick="toggleMenu()" class="menu-icon">
             <img src="{{ asset('images/menu.png') }}" alt="Menu Icon">
         </button>
 
-        <!-- Menú lateral -->
         <nav id="menu-sidebar" class="menu-sidebar">
-            <!-- Logo del proyecto -->
             <div class="menu-header">
                 <img src="{{ asset('images/logomedy.png') }}" alt="Logo" class="menu-logo">
             </div>
 
-            <!-- Bienvenida personalizada -->
             @auth
                 <div class="welcome-section">
                     <a href="{{ route('perfil') }}" class="welcome-link">
@@ -49,163 +37,189 @@
                 </div>
             @endauth
 
-            <!-- Ítems del menú -->
             <ul class="menu-items">
-                <li class="menu-items">
-    <a href="#" onclick="toggleSubmenu(event, 'submenu-publicacion')">
-        <img src="{{ asset('images/publicacion.png') }}" alt="Icono de Publicacion" class="menu-icon-image">
-        Publicaciones
-    </a>
-    <ul id="submenu-publicacion" class="submenu">
-        <li><a href="{{ url('/publicaciones') }}">Ver publicaciones</a></li>
-        <li><a href="{{ url('/publicaciones/crear') }}">+ Agregar</a></li>
-
-    </ul>
-</li>
-            <li class="menu-items">
-    <a href="#" onclick="toggleSubmenu(event, 'submenu-inventario')">
-        <img src="{{ asset('images/inventario.png') }}" alt="Icono de Inventario" class="menu-icon-image">
-        Inventario
-    </a>
-    <ul id="submenu-inventario" class="submenu">
-        <li><a href="{{ url('/') }}">Registro Interno</a></li>
-        <li><a href="{{ url('/inventario') }}">Inventario Interno</a></li>
-        <li><a href="{{ url('/servicio') }}">Registro Externo</a></li>
-        <li><a href="{{ url('/inventario/servicio') }}">Inventario Externo</a></li>
-    </ul>
-</li>
-
-
-                <!-- Opción de Cotizaciones con Submenú -->
-                @if(Auth::user()->hasRole('admin') || Auth::user()->hasRole('editor'))
-                <li class="menu-items">
-                    <a href="#" onclick="toggleSubmenu(event, 'submenu-cotizaciones')">
-                        <img src="{{ asset('images/cotizaciones.png') }}" alt="Icono de Cotizaciones" class="menu-icon-image">
-                        Cotizaciones
+                <!-- Publicaciones -->
+                <li>
+                    <a href="#" onclick="toggleSubmenu(event, 'submenu-publicacion')">
+                        <img src="{{ asset('images/publicacion.png') }}" alt="Icono de Publicacion" class="menu-icon-image">
+                        Publicaciones
                     </a>
-                    <ul id="submenu-cotizaciones" class="submenu">
-                        <li><a href="{{ url('/cotizaciones') }}">+ Crear Cotización</a></li>
-                        <li><a href="{{ url('/clientes/vista') }}">Clientes</a></li>
-                        <li><a href="{{ route('historial-cotizaciones') }}">Historial de Cotizaciones</a></li>
+                    <ul id="submenu-publicacion" class="submenu">
+                        <li><a href="{{ url('/publicaciones') }}">Ver publicaciones</a></li>
+                        <li><a href="{{ url('/publicaciones/crear') }}">+ Agregar</a></li>
                     </ul>
                 </li>
-                @endif
-                <!-- Opción de mantenimiento con Submenú -->
-                @if(Auth::user()->hasRole('admin') || Auth::user()->hasRole('editor'))
-                <li class="menu-items">
-                    <a href="#" onclick="toggleSubmenu(event, 'submenu-orden')">
-                        <img src="{{ asset('images/orden.png') }}" alt="Icono de Orden" class="menu-icon-image">
-                        Mantenimiento
+
+                <!-- Inventario -->
+                <li>
+                    <a href="#" onclick="toggleSubmenu(event, 'submenu-inventario')">
+                        <img src="{{ asset('images/inventario.png') }}" alt="Icono de Inventario" class="menu-icon-image">
+                        Inventario
                     </a>
-                    <ul id="submenu-orden" class="submenu">
-                        <li><a href="{{ url('/remisions/create') }}">+ Crear Orden</a></li>
-                        <li><a href="{{ url('/remisions') }}">Historial</a></li>
+                    <ul id="submenu-inventario" class="submenu">
+                        <li><a href="{{ url('/') }}">Registro Interno</a></li>
+                        <li><a href="{{ url('/inventario') }}">Inventario Interno</a></li>
+                        <li><a href="{{ url('/servicio') }}">Registro Externo</a></li>
+                        <li><a href="{{ url('/inventario/servicio') }}">Inventario Externo</a></li>
                     </ul>
                 </li>
+
+                @if(Auth::user()->hasRole('admin') || Auth::user()->hasRole('editor'))
+                    <!-- Cotizaciones -->
+                    <li>
+                        <a href="#" onclick="toggleSubmenu(event, 'submenu-cotizaciones')">
+                            <img src="{{ asset('images/cotizaciones.png') }}" alt="Icono de Cotizaciones" class="menu-icon-image">
+                            Cotizaciones
+                        </a>
+                        <ul id="submenu-cotizaciones" class="submenu">
+                            <li><a href="{{ url('/propuestas') }}">Cotización</a></li>
+                            <li><a href="{{ url('/clientes/vista') }}">Clientes</a></li>
+                        </ul>
+                    </li>
+
+                    <!-- Mantenimiento -->
+                    <li>
+                        <a href="#" onclick="toggleSubmenu(event, 'submenu-orden')">
+                            <img src="{{ asset('images/orden.png') }}" alt="Icono de Orden" class="menu-icon-image">
+                            Mantenimiento
+                        </a>
+                        <ul id="submenu-orden" class="submenu">
+                            <li><a href="{{ url('/remisions/create') }}">+ Crear Orden</a></li>
+                            <li><a href="{{ url('/remisions') }}">Historial</a></li>
+                        </ul>
+                    </li>
+
+                    <!-- Remisiones y Financiamientos -->
+                    <li>
+                        <a href="{{ url('/ventas') }}">
+                            <img src="{{ asset('images/remisiones.png') }}" alt="Icono de remisiones" class="menu-icon-image">
+                            Remisiones
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url('/ventas/deudores') }}">
+                            <img src="{{ asset('images/cuentas.png') }}" alt="Icono de deudores" class="menu-icon-image">
+                            Financiamientos
+                        </a>
+                    </li>
+                    <!-- Productos -->
+                    <li>
+                        <a href="{{ url('/productos/cards') }}">
+                            <img src="{{ asset('images/productos.png') }}" alt="Icono de productos" class="menu-icon-image">
+                            Productos
+                        </a>
+                    </li>
                 @endif
- @if(Auth::user()->hasRole('admin') || Auth::user()->hasRole('editor'))
-                <li>
-                    <a href="{{ url('/ventas') }}">
-                        <img src="{{ asset('images/remisiones.png') }}" alt="Icono de remisiones" class="menu-icon-image">
-                        Remisiones
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ url('/ventas/deudores') }}">
-                        <img src="{{ asset('images/cuentas.png') }}" alt="Icono de deudores" class="menu-icon-image">
-                        Financiamientos
-                    </a>
-                </li>
-                @endif
+                <!-- Ítems generales -->
                 <li>
                     <a href="{{ url('/agenda') }}">
                         <img src="{{ asset('images/agenda.png') }}" alt="Icono de agenda" class="menu-icon-image">
                         Agenda
                     </a>
                 </li>
-                       <li>
-    <a href="{{ route('fichas.index') }}">
-        <img src="{{ asset('images/documento.png') }}" alt="Icono de fichas técnicas" class="menu-icon-image">
-        Fichas Técnicas
-    </a>
-</li>
-                       <li>
-    <a href="{{ url('/carta-garantia') }}">
-        <img src="{{ asset('images/garantia.png') }}" alt="Icono de garantia" class="menu-icon-image">
-        Garantias
-    </a>
-</li>
-
-                <!-- Nueva opción: Guias y Entregas, visible para todos los usuarios autenticados -->
-                @auth
-                <li class="menu-items">
-                    <a href="#" onclick="toggleSubmenu(event, 'submenu-guias')">
-                        <img src="{{ asset('images/fedex.png') }}" alt="Icono de Guías" class="menu-icon-image">
-                        Guias
+                <li>
+                    <a href="{{ route('fichas.index') }}">
+                        <img src="{{ asset('images/documento.png') }}" alt="Icono de fichas técnicas" class="menu-icon-image">
+                        Fichas Técnicas
                     </a>
-                    <ul id="submenu-guias" class="submenu">
-                        <li><a href="{{ route('guias.create') }}">+ Crear Guía</a></li>
-                        <li><a href="{{ route('entrega.create') }}">Entregar Guía</a></li>
-                        <li><a href="{{ route('entregas.index') }}">Ver Entregas</a></li>
-                    </ul>
                 </li>
+                <li>
+                    <a href="{{ url('/carta-garantia') }}">
+                        <img src="{{ asset('images/garantia.png') }}" alt="Icono de garantia" class="menu-icon-image">
+                        Garantias
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url('/cuentas') }}">
+                        <img src="{{ asset('images/viaticos.png') }}" alt="Icono de viaticos" class="menu-icon-image">
+                        Gastos Viáticos
+                    </a>
+                </li>
+
+                @auth
+                    <!-- Guías -->
+                    <li>
+                        <a href="#" onclick="toggleSubmenu(event, 'submenu-guias')">
+                            <img src="{{ asset('images/fedex.png') }}" alt="Icono de Guías" class="menu-icon-image">
+                            Guias
+                        </a>
+                        <ul id="submenu-guias" class="submenu">
+                            <li><a href="{{ route('guias.create') }}">+ Crear Guía</a></li>
+                            <li><a href="{{ route('entrega.create') }}">Entregar Guía</a></li>
+                            <li><a href="{{ route('entregas.index') }}">Ver Entregas</a></li>
+                        </ul>
+                    </li>
+
+                    <!-- Camionetas -->
+                    <li>
+                        <a href="#" onclick="toggleSubmenu(event, 'submenu-camionetas')">
+                            <img src="{{ asset('images/cady.png') }}" alt="Icono de Camionetas" class="menu-icon-image">
+                            Camionetas
+                        </a>
+                        <ul id="submenu-camionetas" class="submenu">
+                            <li><a href="{{ route('camionetas.create') }}">+ Agregar Camioneta</a></li>
+                            <li><a href="{{ route('camionetas.index') }}">Lista de Camionetas</a></li>
+                        </ul>
+                    </li>
+
+                    <!-- Solicitudes de Material -->
+                    <li>
+                        <a href="#" onclick="toggleSubmenu(event, 'submenu-solicitudes-material')">
+                            <img src="{{ asset('images/material.png') }}" alt="Icono de Solicitudes de Material" class="menu-icon-image">
+                            Solicitudes de Material
+                        </a>
+                        <ul id="submenu-solicitudes-material" class="submenu">
+                            @if(Auth::user()->hasRole('admin'))
+                                <li><a href="{{ route('solicitudes.admin') }}">Solicitudes Pendientes</a></li>
+                            @endif
+                            <li><a href="{{ route('solicitudes.index') }}">Ver Mis Solicitudes</a></li>
+                            <li><a href="{{ route('solicitudes.create') }}">+ Crear Solicitud</a></li>
+                        </ul>
+                    </li>
+
+                    <!-- Pedidos -->
+                    <li>
+                        <a href="#" onclick="toggleSubmenu(event, 'submenu-pedidos')">
+                            <img src="{{ asset('images/compras.png') }}" alt="Icono de Pedidos" class="menu-icon-image">
+                            Compras
+                        </a>
+                        <ul id="submenu-pedidos" class="submenu">
+                            @if(Auth::user()->hasRole('admin'))
+                                <li><a href="{{ url('/pedidos') }}">Pedido Solicitado</a></li>
+                            @endif
+                            <li><a href="{{ url('/recepciones') }}">Ver Mis Solicitudes</a></li>
+                            <li><a href="{{ url('/recepciones/timeline') }}">Historial Global</a></li>
+                        </ul>
+                    </li>
+
+                    <!-- Préstamos -->
+                    <li>
+                        <a href="{{ route('prestamos.index') }}">
+                            <img src="{{ asset('images/endoscopia.png') }}" alt="Icono de Préstamos" class="menu-icon-image">
+                            Préstamos
+                        </a>
+                    </li>
                 @endauth
-                 @auth
-                <li class="menu-items">
-    <a href="#" onclick="toggleSubmenu(event, 'submenu-camionetas')">
-        <img src="{{ asset('images/cady.png') }}" alt="Icono de Camionetas" class="menu-icon-image">
-        Camionetas
-    </a>
-    <ul id="submenu-camionetas" class="submenu">
-        <li><a href="{{ route('camionetas.create') }}">+ Agregar Camioneta</a></li>
-        <li><a href="{{ route('camionetas.index') }}">Lista de Camionetas</a></li>
-    </ul>
-</li>
-@endauth
-<!-- Nueva opción: Solicitudes de Material (visible para todos los autenticados) -->
-@auth
-<li class="menu-items">
-    <a href="#" onclick="toggleSubmenu(event, 'submenu-solicitudes-material')">
-        <img src="{{ asset('images/material.png') }}" alt="Icono de Solicitudes de Material" class="menu-icon-image">
-        Solicitudes de Material
-    </a>
-    <ul id="submenu-solicitudes-material" class="submenu">
-        <!-- Solo visible para admin -->
-        @if(Auth::user()->hasRole('admin'))
-            <li><a href="{{ route('solicitudes.admin') }}">Solicitudes Pendientes</a></li>
-        @endif
-        <!-- Visible para todos los autenticados -->
-        <li><a href="{{ route('solicitudes.index') }}">Ver Mis Solicitudes</a></li>
-        <li><a href="{{ route('solicitudes.create') }}">+ Crear Solicitud</a></li>
-    </ul>
-</li>
-@endauth
 
-                <!-- Nueva opción: Usuarios, visible solo para el Admin con Submenú -->
                 @if(Auth::user()->hasRole('admin'))
-                <li class="menu-items">
-                    <a href="#" onclick="toggleSubmenu(event, 'submenu-usuarios')">
-                        <img src="{{ asset('images/empleado.png') }}" alt="Icono de Usuarios" class="menu-icon-image">
-                        Usuarios
-                    </a>
-                    <ul id="submenu-usuarios" class="submenu">
-                        <li><a href="{{ route('users.create') }}">+ Agregar Usuario</a></li>
-                        <li><a href="{{ url('/usuarios') }}">Lista de Usuarios</a></li>
-                        <li><a href="{{ url('/asistencias/historial') }}">Reporte Asistencias</a></li>
-                        <li> <a href="{{ route('asistencias.index') }}"> Registrar Asistencias</a></li>
-                    </ul> 
-                </li>
+
+                    <!-- Usuarios -->
+                    <li>
+                        <a href="#" onclick="toggleSubmenu(event, 'submenu-usuarios')">
+                            <img src="{{ asset('images/empleado.png') }}" alt="Icono de Usuarios" class="menu-icon-image">
+                            Usuarios
+                        </a>
+                        <ul id="submenu-usuarios" class="submenu">
+                            <li><a href="{{ route('users.create') }}">+ Agregar Usuario</a></li>
+                            <li><a href="{{ url('/usuarios') }}">Lista de Usuarios</a></li>
+                            <li><a href="{{ url('/asistencias/historial') }}">Reporte Asistencias</a></li>
+                            <li><a href="{{ route('asistencias.index') }}">Registrar Asistencias</a></li>
+                        </ul>
+                    </li>
                 @endif
-                @auth
-<li>
-    <a href="{{ route('prestamos.index') }}">
-        <img src="{{ asset('images/endoscopia.png') }}" alt="Icono de Préstamos" class="menu-icon-image">
-        Préstamos
-    </a>
-</li>
-@endauth
 
                 @auth
+                    <!-- Cerrar Sesión -->
                     <li>
                         <form action="{{ route('logout') }}" method="POST">
                             @csrf
@@ -224,16 +238,13 @@
                 @endauth
             </ul>
         </nav>
-        <!-- Overlay para cerrar el menú -->
+
         <div id="menu-overlay" class="menu-overlay" onclick="closeMenu()"></div>
     </div>
 
-        <h1 class="titulos">@yield('titulo', 'Cotizaciones')</h1>
-
-
-        <!-- Línea animada -->
-        <div class="gradient-bg-animation"></div>
-    </div>
+    <h1 class="titulos">@yield('titulo', 'Cotizaciones')</h1>
+    <div class="gradient-bg-animation"></div>
+</div>
 
 
     @yield('content')

@@ -103,5 +103,8 @@ public function pagoFinanciamiento()
 {
     return $this->hasMany(PagoFinanciamiento::class, 'venta_id');
 }
-
+    public function checklist()
+    {
+        return $this->hasOne(Checklist::class);
+    }
 }

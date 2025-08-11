@@ -646,6 +646,41 @@ public function productos($ventaId)
 
     return view('venta.productos', compact('venta', 'productos'));
 }
+public function updatePagosFinanciamiento(Request $request, Venta $venta)
+{
+    if ($request->has('pagos_financiamiento')) {
+        foreach ($request->pagos_financiamiento as $pagoId => $datos) {
+            // Nuevo pago
+            if (Str::startsWith($pagoId, 'nuevo_')) {
+                if (!empty($datos['eliminar'])) continue;
+
+                PagoFinanciamiento::create([
+                    'venta_id' => $venta->id,
+                    'fecha_pago' => $datos['fecha_pago'],
+                    'monto' => $datos['monto'],
+                    'descripcion' => $datos['descripcion'] ?? 'Pago planeado',
+                ]);
+            } else {
+                // Existente
+                $pago = PagoFinanciamiento::find($pagoId);
+                if (!$pago) continue;
+
+                if (!empty($datos['eliminar'])) {
+                    $pago->delete();
+                    continue;
+                }
+
+                $pago->update([
+                    'fecha_pago' => $datos['fecha_pago'],
+                    'monto' => $datos['monto'],
+                    'descripcion' => $datos['descripcion'] ?? $pago->descripcion,
+                ]);
+            }
+        }
+    }
+
+    return redirect()->back()->with('success', 'Pagos actualizados correctamente.');
+}
 
 }
 

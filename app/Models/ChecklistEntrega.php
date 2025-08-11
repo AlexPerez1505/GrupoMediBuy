@@ -14,17 +14,33 @@ class ChecklistEntrega extends Model
     protected $fillable = [
         'checklist_id',
         'user_id',
-        'datos_entrega', // json
+
+        // esquema unificado
+        'verificados',
+        'no_verificados',
+        'componentes',
         'observaciones',
+
+        // payload de entrega (presencial / envío, etc.)
+        'datos_entrega',
+
+        // firmas
         'firma_cliente',
         'firma_entrega',
-        'evidencias', // json
+
+        // evidencias
+        'evidencias',
     ];
 
     protected $casts = [
-        'datos_entrega' => 'array',
-        'evidencias' => 'array',
+        'verificados'    => 'array',
+        'no_verificados' => 'array',
+        'componentes'    => 'array',
+        'evidencias'     => 'array',
+        'datos_entrega'  => 'array',
     ];
+
+    /* -------- Relaciones -------- */
 
     public function checklist()
     {

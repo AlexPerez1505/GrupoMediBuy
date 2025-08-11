@@ -10,135 +10,138 @@ use Illuminate\Support\Facades\Auth;
 
 class RegistroController extends Controller
 {
-    public function guardarRegistro(Request $request) 
-    {
+public function guardarRegistro(Request $request) 
+{
+    $validator = Validator::make($request->all(), [
+        'Tipo_de_Equipo' => 'required|string|max:255',
+        'Subtipo_de_Equipo' => 'nullable|string|max:255',
+        'Subtipo_de_Equipo_Otro' => 'nullable|string|max:255',
+        'Numero_de_Serie' => 'required|string|max:255',
+        'Marca' => 'required|string|max:255',
+        'Modelo' => 'required|string|max:255',
+        'Año' => 'nullable|string|max:4',
+        'descripcion' => 'required|string',
+        'estado_actual' => 'nullable|in:1,2,3,4',
+        'fecha_inicial' => 'required|date',
+        'fecha_mantenimiento' => 'nullable|date',
+        'proximo_mantenimiento' => 'nullable|date',
+        'evidencia1' => 'nullable|image|mimes:jpg,jpeg,png,gif,webp,heic,heif',
+        'evidencia2' => 'nullable|image|mimes:jpg,jpeg,png,gif,webp,heic,heif',
+        'evidencia3' => 'nullable|image|mimes:jpg,jpeg,png,gif,webp,heic,heif',
+        'video-evidencia' => 'nullable|file|mimetypes:video/mp4,video/avi,video/mpeg,video/webm,video/quicktime,video/x-msvideo,video/x-flv,video/3gpp,video/3gpp2,video/x-matroska,video/x-ms-wmv,video/hevc,video/h265,video/mp2t,video/ogg,video/x-matroska,video/mkv',
+        'documentoPDF' => 'nullable|file|mimes:pdf|max:10240',
+        'observaciones' => 'nullable|string',
+        'firmaDigital' => 'required|string',
+    ]);
 
-        $validator = Validator::make($request->all(), [
-            'Tipo_de_Equipo' => 'required|string|max:255',
-            'Subtipo_de_Equipo' => 'nullable|string|max:255',
-            'Subtipo_de_Equipo_Otro' => 'nullable|string|max:255',
-            'Numero_de_Serie' => 'required|string|max:255',
-            'Marca' => 'required|string|max:255',
-            'Modelo' => 'required|string|max:255',
-            'Año' => 'nullable|string|max:4', 
-            'descripcion' => 'required|string',
-            'estado_actual' => 'nullable|in:1,2,3,4', 
-            'fecha_inicial' => 'required|date',
-            'fecha_mantenimiento' => 'nullable|date',
-            'proximo_mantenimiento' => 'nullable|date',
-            'evidencia1' => 'nullable|image|mimes:jpg,jpeg,png,gif,webp,heic,heif',
-            'evidencia2' => 'nullable|image|mimes:jpg,jpeg,png,gif,webp,heic,heif',
-            'evidencia3' => 'nullable|image|mimes:jpg,jpeg,png,gif,webp,heic,heif',
-            'video-evidencia' => 'nullable|file|mimetypes:video/mp4,video/avi,video/mpeg,video/webm,video/quicktime,video/x-msvideo,video/x-flv,video/3gpp,video/3gpp2,video/x-matroska,video/x-ms-wmv,video/hevc,video/h265,video/mp2t,video/ogg,video/x-matroska,video/mkv',
-            'documentoPDF' => 'nullable|file|mimes:pdf|max:10240',
-            'observaciones' => 'nullable|string',
-            'firmaDigital' => 'required|string',
-        ]);
-    
-        if ($validator->fails()) {
-            Log::warning('Validación fallida.', $validator->errors()->toArray());
-            return response()->json([
-                'success' => false,
-                'errors' => $validator->errors()
-            ], 422);
-        }
-        try {
-            Log::info('Inicio del proceso de guardar registro.');
-            $evidencias = [null, null, null];
-    
-            // Manejo de imágenes separadas
-            for ($i = 1; $i <= 3; $i++) {
-                $campo = "evidencia$i";
-                if ($request->hasFile($campo)) {
-                    if ($request->file($campo)->isValid()) {
-                        $ruta = $request->file($campo)->store('public/evidencias');
-                        $evidencias[$i - 1] = Storage::url($ruta);
-                        Log::info("Imagen $i guardada correctamente.", ['ruta' => $ruta]);
-                    } else {
-                        Log::warning("El archivo $i no es válido.");
-                    }
+    if ($validator->fails()) {
+        Log::warning('Validación fallida.', $validator->errors()->toArray());
+        return response()->json([
+            'success' => false,
+            'errors' => $validator->errors()
+        ], 422);
+    }
+    try {
+        Log::info('Inicio del proceso de guardar registro.');
+        $evidencias = [null, null, null];
+
+        // Manejo de imágenes separadas
+        for ($i = 1; $i <= 3; $i++) {
+            $campo = "evidencia$i";
+            if ($request->hasFile($campo)) {
+                if ($request->file($campo)->isValid()) {
+                    $ruta = $request->file($campo)->store('public/evidencias');
+                    $evidencias[$i - 1] = Storage::url($ruta);
+                    Log::info("Imagen $i guardada correctamente.", ['ruta' => $ruta]);
+                } else {
+                    Log::warning("El archivo $i no es válido.");
                 }
             }
-            $video = null;
-            if ($request->hasFile('video-evidencia') && $request->file('video-evidencia')->isValid()) {
-                $rutaVideo = $request->file('video-evidencia')->store('public/videos');
-                $video = Storage::url($rutaVideo);
-                Log::info('Video guardado correctamente.', ['ruta' => $rutaVideo]);
+        }
+        $video = null;
+        if ($request->hasFile('video-evidencia') && $request->file('video-evidencia')->isValid()) {
+            $rutaVideo = $request->file('video-evidencia')->store('public/videos');
+            $video = Storage::url($rutaVideo);
+            Log::info('Video guardado correctamente.', ['ruta' => $rutaVideo]);
+        }
+
+        $documentoPDF = null;
+        if ($request->hasFile('documentoPDF') && $request->file('documentoPDF')->isValid()) {
+            $rutaPDF = $request->file('documentoPDF')->store('public/documentos/pdf');
+            $documentoPDF = Storage::url($rutaPDF);
+            Log::info('Documento PDF guardado correctamente.', ['ruta' => $rutaPDF]);
+        }
+
+        $firma = null;
+        if ($request->firmaDigital) {
+            $base64Image = preg_replace('#^data:image/\w+;base64,#i', '', $request->firmaDigital);
+            $decodedImage = base64_decode($base64Image);
+            if ($decodedImage !== false) {
+                $nombreFirma = 'firma_' . time() . '.png';
+                Storage::put('public/firmas/' . $nombreFirma, $decodedImage);
+                $firma = Storage::url('firmas/' . $nombreFirma);
+                Log::info('Firma digital guardada correctamente.', ['ruta' => $firma]);
+            } else {
+                Log::error('Error al decodificar la firma.');
             }
-    
-            // Manejar archivo PDF
-            $documentoPDF = null;
-            if ($request->hasFile('documentoPDF') && $request->file('documentoPDF')->isValid()) {
-                $rutaPDF = $request->file('documentoPDF')->store('public/documentos/pdf');
-                $documentoPDF = Storage::url($rutaPDF);
-                Log::info('Documento PDF guardado correctamente.', ['ruta' => $rutaPDF]);
-            }
-    
-            // Manejar firma digital
-           // Manejar firma digital
-$firma = null;
-if ($request->firmaDigital) {
-    // Quitar encabezado 'data:image/png;base64,'
-    $base64Image = preg_replace('#^data:image/\w+;base64,#i', '', $request->firmaDigital);
-    $decodedImage = base64_decode($base64Image);
-    if ($decodedImage !== false) {
-        $nombreFirma = 'firma_' . time() . '.png';
-        Storage::put('public/firmas/' . $nombreFirma, $decodedImage);
-        $firma = Storage::url('firmas/' . $nombreFirma);
-        Log::info('Firma digital guardada correctamente.', ['ruta' => $firma]);
-    } else {
-        Log::error('Error al decodificar la firma.');
+        }
+
+        $registro = Registro::create([
+            'tipo_equipo' => $request->Tipo_de_Equipo,
+            'subtipo_equipo' => $request->Subtipo_de_Equipo,
+            'subtipo_equipo_otro' => $request->Subtipo_de_Equipo_Otro,
+            'numero_serie' => $request->Numero_de_Serie,
+            'marca' => $request->Marca,
+            'modelo' => $request->Modelo,
+            'anio' => $request->Año,
+            'descripcion' => $request->descripcion,
+            'estado_actual' => $request->estado_actual,
+            'fecha_adquisicion' => $request->fecha_inicial,
+            'ultimo_mantenimiento' => $request->fecha_mantenimiento,
+            'proximo_mantenimiento' => $request->proximo_mantenimiento,
+            'evidencia1' => $evidencias[0],
+            'evidencia2' => $evidencias[1],
+            'evidencia3' => $evidencias[2],
+            'video' => $video,
+            'documentoPDF' => $documentoPDF,
+            'observaciones' => $request->observaciones,
+            'firma_digital' => $firma,
+            'user_name' => Auth::user()->name,
+        ]);
+
+        Log::info('Registro creado exitosamente.', ['id' => $registro->id]);
+
+        // Puedes hacer un redirect o retornar a la vista inventario si NO es AJAX
+        return response()->json([
+            'success' => true,
+            'message' => 'Registro guardado exitosamente.',
+            'registro_id' => $registro->id,
+            'imprimir_barcode_url' => route('registros.imprimir-barcode', $registro->id),
+        ]);
+    } catch (\Exception $e) {
+        Log::error('Error al guardar el registro.', [
+            'error' => $e->getMessage(),
+            'stack' => $e->getTraceAsString(),
+        ]);
+        return response()->json([
+            'success' => false,
+            'error' => 'Hubo un error al guardar el registro.'
+        ], 500);
     }
 }
-            $registro = Registro::create([
-                'tipo_equipo' => $request->Tipo_de_Equipo,
-                'subtipo_equipo' => $request->Subtipo_de_Equipo,
-                'subtipo_equipo_otro' => $request->Subtipo_de_Equipo_Otro,
-                'numero_serie' => $request->Numero_de_Serie,
-                'marca' => $request->Marca,
-                'modelo' => $request->Modelo,
-                'anio' => $request->Año,
-                'descripcion' => $request->descripcion,
-                'estado_actual' => $request->estado_actual,
-                'fecha_adquisicion' => $request->fecha_inicial,
-                'ultimo_mantenimiento' => $request->fecha_mantenimiento,
-                'proximo_mantenimiento' => $request->proximo_mantenimiento,
-                'evidencia1' => $evidencias[0],
-                'evidencia2' => $evidencias[1],
-                'evidencia3' => $evidencias[2],
-                'video' => $video,
-                'documentoPDF' => $documentoPDF,
-                'observaciones' => $request->observaciones,
-                'firma_digital' => $firma,
-                'user_name' => Auth::user()->name,
-            ]);
-    
-            Log::info('Registro creado exitosamente.', ['id' => $registro->id]);
-            return response()->json(['success' => true, 'message' => 'Registro guardado exitosamente.']);
-        } catch (\Exception $e) {
-            Log::error('Error al guardar el registro.', [
-                'error' => $e->getMessage(),
-                'stack' => $e->getTraceAsString(),
-            ]);
-            return response()->json([
-                'success' => false,
-                'error' => 'Hubo un error al guardar el registro.'
-            ], 500);
-        }
-    }
+
+
 public function mostrarProductos()
 {
     $productos = Registro::all();
-
     $procesos = collect(); 
     return view('inventario', compact('productos', 'procesos'));
 }
+
 public function obtenerDetalles($id)
 {
-    // Cargar el registro con la relación 'procesos' y 'fichaTecnica'
     $registro = Registro::with('procesos.fichaTecnica')->findOrFail($id);
 
-    // Definir los estados posibles
     $estados = [
         1 => 'En Stock',
         2 => 'Vendido',
@@ -147,7 +150,6 @@ public function obtenerDetalles($id)
     ];
     $estadoActual = $estados[$registro->estado_actual] ?? 'Estado desconocido';
 
-    // Mapear procesos con los datos requeridos
     $procesos = $registro->procesos->map(function ($proceso) {
         $fichaArchivo = $proceso->fichaTecnica ? $proceso->fichaTecnica->archivo : null;
 
@@ -185,7 +187,9 @@ public function obtenerDetalles($id)
         $firmaUrl = null;
     }
 
-    // Retornar la respuesta JSON
+    // Nueva URL del ticket/código de barras
+    $barcodeUrl = route('registros.imprimir-barcode', $registro->id);
+
     return response()->json([
         'tipo_equipo' => $registro->tipo_equipo,
         'subtipo_equipo' => $registro->subtipo_equipo,
@@ -207,8 +211,10 @@ public function obtenerDetalles($id)
         'firma_digital' => $firmaUrl,
         'user_name' => $registro->user_name,
         'procesos' => $procesos,
+        'imprimir_barcode_url' => $barcodeUrl, // <-- Aquí llega la URL lista para imprimir
     ]);
 }
+
 
 public function actualizarRegistro(Request $request, $id)
 {
@@ -328,8 +334,64 @@ public function info($id)
     ]);
 }
 
+    public function imprimirBarcode($id)
+        {
+            $registro = Registro::findOrFail($id);
+            $barcodeData = $registro->numero_serie; 
+
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('registros.ticket-barcode', compact('registro', 'barcodeData'));
+            return $pdf->stream('Etiqueta_'.$registro->numero_serie.'.pdf');
+        } 
+        public function vistaBuscar()
+{
+    return view('inventario.buscar'); // La vista anterior
+}
+
+public function buscarSubmit(Request $request)
+{
+    $serie = $request->input('serie');
+    $query = $request->input('query');
+
+    if ($serie) {
+        $registro = Registro::where('numero_serie', $serie)->first();
+        if (!$registro) {
+            return back()->with('error', 'No se encontró el equipo con ese número de serie.');
+        }
+        // Redirige al detalle y ahí puedes mostrar la ficha y los procesos del equipo
+        return redirect()->route('inventario.detalle', $registro->id);
+    }
+
+    if ($query) {
+        $resultados = Registro::where('tipo_equipo', 'like', "%$query%")
+                        ->orWhere('marca', 'like', "%$query%")
+                        ->orWhere('modelo', 'like', "%$query%")
+                        ->get();
+        return view('inventario.resultados', compact('resultados', 'query'));
+    }
+
+    return back()->with('error', 'Debes ingresar algún dato de búsqueda.');
+}
+public function mostrarProductoDetalle($id)
+{
+    $registro = Registro::with('procesos.fichaTecnica')->findOrFail($id);
+
+    // Orden de los pasos en el flujo
+    $pasos = [
+        'hojalateria',
+        'mantenimiento',
+        'stock',
+        'vendido',
+        // 'defectuoso' // Opcional si tienes ese flujo
+    ];
+
+    // Agrupar procesos por tipo
+    $procesos = [];
+    foreach ($pasos as $paso) {
+        $procesos[$paso] = $registro->procesos->firstWhere('tipo_proceso', $paso);
+    }
+
+    return view('inventario.detalle', compact('registro', 'procesos', 'pasos'));
+}
 
 
-
-  
 }
