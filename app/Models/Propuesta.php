@@ -49,4 +49,10 @@ class Propuesta extends Model
     {
         return $this->hasMany(\App\Models\PagoFinanciamientoPropuesta::class, 'propuesta_id');
     }
+    // app/Models/Propuesta.php
+public function whatsappLogs()
+{
+    return $this->hasMany(\App\Models\WhatsAppLog::class)->latest();
+}
+
 }

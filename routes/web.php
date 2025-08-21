@@ -47,7 +47,10 @@ use App\Http\Controllers\ChecklistController;
 use App\Http\Controllers\ChecklistFirmaController;
 use App\Http\Controllers\IncidenteController;
 use App\Http\Controllers\EvidenciaController;
-
+use App\Http\Controllers\WhatsappPromotionController;
+use App\Http\Controllers\WhatsappWebhookController;
+use App\Http\Controllers\WhatsappInboxController;
+use App\Http\Middleware\VerifyCsrfToken;
 
 // Rutas de autenticación (sin middleware 'auth')
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
@@ -225,7 +228,7 @@ Route::get('/movimientos/entrada-dueno/{id}', [MovimientoController::class, 'ent
 // Guardar movimiento (envío del formulario)
 Route::post('/movimientos/guardar/{id}', [MovimientoController::class, 'guardar'])->name('movimientos.guardar');
 
-Route::resource('prestamos', PrestamoController::class);
+
 Route::get('/publicaciones', [PublicacionController::class, 'index'])->name('publicaciones.index');
 Route::get('/publicaciones/crear', [PublicacionController::class, 'create'])->name('publicaciones.create');
 Route::post('/publicaciones', [PublicacionController::class, 'store'])->name('publicaciones.store');
@@ -507,14 +510,53 @@ Route::get('/productos/cards', [ProductoController::class, 'cardsVista'])->name(
 Route::delete('/productos/{producto}', [ProductoController::class, 'destroy'])->name('productos.destroy');
 Route::get('/productos/{producto}/edit', [ProductoController::class, 'edit'])->name('productos.edit');
 Route::put('/productos/{producto}', [ProductoController::class, 'update'])->name('productos.update');
+Route::get('/ventas/{venta}/etiqueta', [VentaController::class, 'etiqueta'])->name('ventas.etiqueta');
+
+// routes/web.php
+// routes/web.php
+Route::resource('prestamos', PrestamoController::class); // incluye create/show/etc
+Route::post('registros/lookup', [PrestamoController::class, 'lookupBySerie'])->name('registros.lookup');
+
+// (Opcional) alias por si tienes enlaces viejos a 'prestamos.wizard'
+Route::get('prestamos/wizard', fn () => redirect()->route('prestamos.create'))
+     ->name('prestamos.wizard');
+// routes/web.php
+Route::get('prestamos/{id}/pdf', [PrestamoController::class, 'pdf'])->name('prestamos.pdf');
+
+Route::middleware(['auth'])->group(function () {
+    // Formulario + filtros
+    Route::get('/promos/whatsapp/direct', [WhatsappPromotionController::class, 'directCreate'])
+        ->name('promos.whatsapp.direct.create');
+
+    // Envío
+    Route::post('/promos/whatsapp/direct', [WhatsappPromotionController::class, 'directSend'])
+        ->name('promos.whatsapp.direct.send');
+        // ->middleware('throttle:wa-promos'); // <- opcional si quieres limitar la tasa
+});
+
+// ✅ Envío por WhatsApp (Plantilla fija doc_pdf_utility_v1 – botón único en la vista)
+Route::post('/propuestas/{propuesta}/whatsapp/plantilla', [PropuestaController::class, 'sendWhatsappTemplateRemision'])
+    ->name('propuestas.whatsapp.plantilla');
+
+// (Opcional) Endpoints usados para depurar / cargar plantillas
+Route::get('/whatsapp/templates', [PropuestaController::class, 'whatsappTemplates'])
+    ->name('whatsapp.templates');
+
+Route::get('/whatsapp/debug', [PropuestaController::class, 'whatsappDebug'])
+    ->name('whatsapp.debug');
+
+Route::get('/ventas/{venta}/pdf', [VentaController::class, 'pdf'])->name('ventas.pdf');
+Route::post('/ventas/{venta}/whatsapp/plantilla', [VentaController::class, 'sendWhatsappTemplateRemision'])
+    ->name('ventas.whatsapp.plantilla');
 
 
-
-
-
-
-
-
-
-
-
+// ✅ Chat interno (requiere auth)
+Route::middleware('auth')->group(function () {
+    Route::get ('/whatsapp/inbox', [WhatsappInboxController::class, 'index'])->name('wa.inbox');
+    Route::get('/whatsapp/inbox/fetch', [WhatsappInboxController::class, 'fetchThreads'])->name('wa.inbox.fetch');
+    Route::get ('/whatsapp/chat/{msisdn}', [WhatsappInboxController::class, 'show'])->name('wa.chat');
+    Route::post('/whatsapp/chat/{msisdn}', [WhatsappInboxController::class, 'send'])->name('wa.chat.send');
+    Route::get ('/whatsapp/chat/{msisdn}/fetch', [WhatsappInboxController::class, 'fetch'])->name('wa.chat.fetch');
+    Route::get('/whatsapp/media/{mediaId}', [WhatsappMediaController::class, 'show'])
+        ->name('wa.media');
+});

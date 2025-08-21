@@ -4,6 +4,11 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\CamionetaApiController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\WhatsappWebhookController;
+
+Route::get('/webhooks/whatsapp', [WhatsappWebhookController::class, 'verify']);
+Route::post('/webhooks/whatsapp', [WhatsappWebhookController::class, 'receive']);
+
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/camionetas', [CamionetaApiController::class, 'index']);

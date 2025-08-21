@@ -1,0 +1,347 @@
+
+        body {
+        font-family: Arial, sans-serif;
+        background-color: #f5faff;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        overflow: auto;
+    }
+
+    .container {
+        margin-top:70px;
+        padding: 30px;
+        border-radius: 10px;
+       
+        width: 90%;
+        max-width: 1200px;
+        text-align: left;
+        opacity: 0;
+        transform: translateY(-20px);
+        animation: fadeIn 1s forwards;
+    }
+
+    @keyframes fadeIn {
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    /* Diseño de usuarios en filas de tres */
+    .users-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        justify-content: space-between;
+    }
+
+    /* Tarjeta de perfil */
+.profile-container {
+    flex: 1 1 calc(33.33% - 20px);
+    background: #fff;
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    cursor: pointer;
+}
+
+
+/* Animación al pasar el mouse */
+.profile-container:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* 📌 Ajuste para cada fila de información */
+.info {
+    font-size: 14px;
+    color: #555;
+    display: flex;
+    flex-direction: column; /* Coloca el título arriba y el dato abajo */
+    align-items: flex-start; /* Alinea todo a la izquierda */
+    gap: 3px; /* Espacio entre el título y el dato */
+    opacity: 0;
+    transform: translateX(-10px);
+    animation: slideIn 0.5s forwards;
+}
+/* 🖥️ SOLO en pantallas grandes (mínimo 768px) → Dos columnas */
+@media (min-width: 768px) {
+    .profile-container.expanded .extra-info {
+        grid-template-columns: 1fr 1fr; /* Divide en dos columnas */
+    }
+}
+
+/* 📱 Para pantallas pequeñas (menos de 768px) → Una columna */
+@media (max-width: 767px) {
+    .profile-container.expanded .extra-info {
+        grid-template-columns: 1fr; /* Solo una columna en móviles */
+        text-align: left; /* Mantiene la alineación izquierda */
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start; /* Alinea todo a la izquierda */
+    }
+
+    /* Asegurar que los textos estén bien alineados */
+    .info {
+        align-items: flex-start; /* Evita que los textos se desordenen */
+    }
+}
+
+/* Negritas bien alineadas */
+.info strong {
+    font-weight: 600;
+    white-space: nowrap; /* Evita que el texto fuerte se divida en dos líneas */
+    color: #333;
+    font-size: 13px;
+    text-transform: uppercase;
+}
+
+/* Dato del usuario con mayor contraste */
+.info span {
+    font-size: 15px;
+    font-weight: 500;
+    color: #000;
+}
+
+
+    hr {
+        width: 100%;
+        border: 1px solid #ddd;
+        margin-top: 20px;
+    }
+
+    /* Responsividad */
+    @media (max-width: 1024px) {
+        .profile-container {
+            flex: 1 1 calc(50% - 20px);
+        }
+    }
+
+    @media (max-width: 768px) {
+        .profile-container {
+            flex: 1 1 100%;
+        }
+    }
+        h2 {
+            margin-bottom: 20px;
+            color: #333;
+            font-size: 24px;
+            text-align: center;
+        }
+ /* 📌 Ajuste para cada fila de información */
+/* 📌 Ajuste para cada fila de información */
+.info {
+    font-size: 14px;
+    color: #555;
+    display: flex;
+    flex-direction: column; /* Coloca el título arriba y el dato abajo */
+    align-items: flex-start; /* Alinea todo a la izquierda */
+    gap: 3px; /* Espacio entre el título y el dato */
+    opacity: 0;
+    transform: translateX(-10px);
+    animation: slideIn 0.5s forwards;
+}
+
+
+        .info:nth-child(even) {
+            animation-delay: 0.3s;
+        }
+        .info:nth-child(odd) {
+            animation-delay: 0.6s;
+        }
+        @keyframes slideIn {
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+      
+        /* Asegurar que el texto fluya correctamente */
+.info span {
+    flex: 1;
+    text-align: left;
+}
+        .btn-edit {
+        background: none;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-edit img {
+        width: 20px;
+        height: 20px;
+    }
+    .btn-save {
+        position: absolute;
+        right: 10px;
+        background: none;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-save img {
+        width: 24px;
+        height: 24px;
+    }
+    .hidden {
+        display: none;
+    }
+       
+        .input-field {
+        width: 100%;
+        padding: 10px 40px 10px 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 16px;
+    }
+    .input-container {
+        display: flex;
+        align-items: center;
+    }
+    .input-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+        width: 100%;
+    }
+        .input-field:focus {
+            border-color: #007BFF;
+            outline: none;
+        }
+        .modify-section {
+    margin-top: 30px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+        .modify-section label {
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 6px;
+            display: block;
+        }
+        .hidden {
+            display: none;
+        }
+
+.header-container {
+            position: fixed; /* Hace que el contenedor sea fijo */
+            top: 0; /* Lo fija en la parte superior de la pantalla */
+            left: 0; /* Lo fija al inicio del viewport horizontal */
+            width: 100%; /* Asegura que el encabezado abarque todo el ancho de la pantalla */
+            z-index: 1000; /* Coloca el encabezado por encima de otros elementos */
+            background-color: #ffffff; /* Añade un fondo para que no se superponga con otros elementos */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Añade una ligera sombra para destacarlo */
+            display: grid;
+            grid-template-columns: auto 1fr auto; /* Tres columnas: menú, título, espacio */
+            align-items: center;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        body {
+    padding-top: 10px; /* Ajusta este valor al alto del encabezado */
+}
+       /* Logo de encabezado */
+       .logo {
+            width: 230px; /* Tamaño del logo en pantallas grandes */
+            height: auto;
+        }
+          /* Media query para pantallas pequeñas */
+
+
+        .profile-picture {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    .profile-picture {
+        display: flex;
+        justify-content: center; /* Centrar horizontalmente */
+        align-items: center; /* Centrar verticalmente si es necesario */
+        flex-direction: column; /* Para que los elementos dentro se apilen verticalmente */
+        margin-bottom: 20px;
+    }
+
+    .profile-picture img {
+        width: 150px;
+        height: 150px;
+        object-fit: cover;
+        border-radius: 50%;
+        border: 3px solid #ddd; /* Opcional: agregar borde */
+    }
+    .password-container {
+    display: flex;
+    justify-content: center; /* Centrar horizontalmente */
+    margin-top: 20px; /* Espacio superior */
+}
+
+.btn-modify { 
+    background-color: #1E6BB8;
+    gap: 8px;
+    width: 140px;
+    height: 45px;
+    font-family: 'Roboto', sans-serif;
+    font-weight: bold;
+    font-size: 15px;
+    text-align: center;
+    border: none;
+    color: white;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    display: flex;
+    align-items: center; 
+    justify-content: center; /* Centrar el texto dentro del botón */
+}
+
+.btn-modify:hover {
+    background-color: #155a91;
+    transform: scale(1.05);
+}
+
+
+.extra-info { 
+    display: none; /* Ocultamos por defecto */
+    margin-top: 10px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 10px;
+    width: 100%;
+    max-height: 250px; /* Evita que se expanda demasiado */
+    overflow-y: auto; /* Activa el scroll si hay demasiada información */
+}
+
+
+
+/* Usuario seleccionado: agrandamos y mostramos */
+.profile-container.expanded {
+    max-width: 600px;
+    background: #f9f9f9;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Ocultar a los demás usuarios cuando uno esté expandido */
+.users-container.single-view .profile-container:not(.expanded) {
+    display: none;
+}
+
+/* Cuando el perfil está expandido, se muestra la info */
+.profile-container.expanded .extra-info {
+    display: grid;
+    gap: 10px; /* Espaciado entre elementos */
+}
+/* Información básica */
+.basic-info {
+    font-size: 14px;
+    color: #555;
+    margin-top:10px;
+}

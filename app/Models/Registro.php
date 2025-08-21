@@ -58,6 +58,8 @@ public function producto()
     return $this->belongsTo(Producto::class);
 }
 
-
+public function prestamos() {
+    return $this->belongsToMany(Prestamo::class, 'prestamo_registro')->withTimestamps();
+}
 
 }

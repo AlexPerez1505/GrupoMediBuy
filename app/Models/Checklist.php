@@ -13,6 +13,10 @@ class Checklist extends Model
 
     protected $fillable = [
         'venta_id',
+         // ... otros campos que ya tengas
+    'qr_url',
+    'qr_path',
+    'label_path',
     ];
 
     public function venta()

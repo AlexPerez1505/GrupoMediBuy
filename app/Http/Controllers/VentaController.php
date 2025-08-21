@@ -24,7 +24,8 @@ use Illuminate\Support\Str;  // <-- Aquí IMPORTA Str correctamente
 use App\Models\DocumentoPago;
 use App\Models\Registro;
 use Illuminate\Support\Facades\DB;
-
+use App\Models\Checklist;
+use App\Services\WhatsAppService;
 
 class VentaController extends Controller
 {
@@ -188,70 +189,6 @@ public function index()
 
     return view('venta.index', compact('ventas'));
 }
-public function pdf(Venta $venta)
-{
-    $venta->load(['cliente', 'usuario', 'productos.producto', 'pagos', 'cartaGarantia']);
-    $pagos = $venta->pagos;
-    $totalPagado = $pagos->sum('monto');
-
-    $url = route('ventas.show', $venta->id);
-
-    $qr = base64_encode(
-        QrCode::format('svg')
-            ->size(120)
-            ->generate($url)
-    );
-
-    $plan = $venta->plan;
-
-    $pdfVenta = PDF::loadView('venta.pdf', compact('venta', 'qr', 'pagos', 'totalPagado', 'plan'))
-                   ->setPaper('a4', 'portrait');
-
-    $rutaVenta = storage_path("app/public/temp/venta_{$venta->id}.pdf");
-    file_put_contents($rutaVenta, $pdfVenta->output());
-
-    $rutaCarta = $venta->cartaGarantia?->archivo
-        ? storage_path("app/public/" . $venta->cartaGarantia->archivo)
-        : null;
-
-    if (!$rutaCarta) {
-        dd("No existe ruta para carta de garantía");
-    }
-    if (!file_exists($rutaVenta)) {
-        dd("Archivo PDF venta NO existe en: " . $rutaVenta);
-    }
-    if (!file_exists($rutaCarta)) {
-        dd("Archivo PDF carta garantía NO existe en: " . $rutaCarta);
-    }
-
-    $pdf = new Fpdi();
-    $archivos = [$rutaVenta, $rutaCarta];
-
-    foreach ($archivos as $archivo) {
-        $pageCount = $pdf->setSourceFile($archivo);
-        for ($i = 1; $i <= $pageCount; $i++) {
-            $tpl = $pdf->importPage($i);
-            $size = $pdf->getTemplateSize($tpl);
-            $pdf->AddPage($size['orientation'], [$size['width'], $size['height']]);
-            $pdf->useTemplate($tpl);
-        }
-    }
-
-    $rutaFinal = storage_path("app/public/temp/final_venta_{$venta->id}.pdf");
-    $pdf->Output($rutaFinal, 'F');
-
-    if (!file_exists($rutaFinal)) {
-        dd("El archivo PDF final NO se generó");
-    }
-
-    // Limpiar el nombre del cliente para que sea válido en el nombre del archivo
-    $clienteNombre = preg_replace('/[^A-Za-z0-9 _-]/', '', $venta->cliente->nombre);
-
-    // Usar "Remisión" en lugar de "venta"
-    $nombreArchivo = "Remisión_{$venta->id}_{$clienteNombre}.pdf";
-
-    return response()->download($rutaFinal, $nombreArchivo);
-}
 
 
 public function update(Request $request, $id)
@@ -387,8 +324,70 @@ public function update(Request $request, $id)
     return redirect()->route('ventas.show', $venta->id)->with('success', 'Venta actualizada correctamente.');
 }
 
+public function pdf(Venta $venta)
+{
+    $venta->load(['cliente', 'usuario', 'productos.producto', 'pagos', 'cartaGarantia']);
+    $pagos = $venta->pagos;
+    $totalPagado = $pagos->sum('monto');
 
+    $url = route('ventas.show', $venta->id);
 
+    $qr = base64_encode(
+        QrCode::format('svg')
+            ->size(120)
+            ->generate($url)
+    );
+
+    $plan = $venta->plan;
+
+    $pdfVenta = PDF::loadView('venta.pdf', compact('venta', 'qr', 'pagos', 'totalPagado', 'plan'))
+                   ->setPaper('a4', 'portrait');
+
+    $rutaVenta = storage_path("app/public/temp/venta_{$venta->id}.pdf");
+    file_put_contents($rutaVenta, $pdfVenta->output());
+
+    $rutaCarta = $venta->cartaGarantia?->archivo
+        ? storage_path("app/public/" . $venta->cartaGarantia->archivo)
+        : null;
+
+    if (!$rutaCarta) {
+        dd("No existe ruta para carta de garantía");
+    }
+    if (!file_exists($rutaVenta)) {
+        dd("Archivo PDF venta NO existe en: " . $rutaVenta);
+    }
+    if (!file_exists($rutaCarta)) {
+        dd("Archivo PDF carta garantía NO existe en: " . $rutaCarta);
+    }
+
+    $pdf = new Fpdi();
+    $archivos = [$rutaVenta, $rutaCarta];
+
+    foreach ($archivos as $archivo) {
+        $pageCount = $pdf->setSourceFile($archivo);
+        for ($i = 1; $i <= $pageCount; $i++) {
+            $tpl = $pdf->importPage($i);
+            $size = $pdf->getTemplateSize($tpl);
+            $pdf->AddPage($size['orientation'], [$size['width'], $size['height']]);
+            $pdf->useTemplate($tpl);
+        }
+    }
+
+    $rutaFinal = storage_path("app/public/temp/final_venta_{$venta->id}.pdf");
+    $pdf->Output($rutaFinal, 'F');
+
+    if (!file_exists($rutaFinal)) {
+        dd("El archivo PDF final NO se generó");
+    }
+
+    // Limpiar el nombre del cliente para que sea válido en el nombre del archivo
+    $clienteNombre = preg_replace('/[^A-Za-z0-9 _-]/', '', $venta->cliente->nombre);
+
+    // Usar "Remisión" en lugar de "venta"
+    $nombreArchivo = "Remisión_{$venta->id}_{$clienteNombre}.pdf";
+
+    return response()->download($rutaFinal, $nombreArchivo);
+}
 
 public function edit($id)
 {
@@ -681,7 +680,193 @@ public function updatePagosFinanciamiento(Request $request, Venta $venta)
 
     return redirect()->back()->with('success', 'Pagos actualizados correctamente.');
 }
+/** Ver/Imprimir la etiqueta 4x8 (stream del PDF) */
+public function etiqueta(Venta $venta)
+{
+    $checklist = Checklist::firstOrCreate(['venta_id' => $venta->id]);
 
+    // Si no existe la etiqueta, la generamos
+    if (empty($checklist->label_path) || !file_exists(public_path($checklist->label_path))) {
+        $this->ensureChecklistAssets($venta);
+        $checklist->refresh();
+    }
+
+    return response()->file(public_path($checklist->label_path));
+}
+
+/** Genera QR + etiqueta 4x8 y guarda rutas en Checklist */
+private function ensureChecklistAssets(Venta $venta): Checklist
+{
+    $checklist = Checklist::firstOrCreate(['venta_id' => $venta->id]);
+
+    $url = route('checklists.wizard', $venta->id);
+
+    // Generar QR si falta (con fallback a SVG)
+    if (empty($checklist->qr_path) || !file_exists(public_path($checklist->qr_path))) {
+        $ext = 'png';
+        try {
+            // intenta PNG (requiere imagick)
+            $qrBinary = \QrCode::format('png')->size(380)->errorCorrection('H')->margin(1)->generate($url);
+        } catch (\Throwable $e) {
+            // fallback a SVG (no requiere imagick)
+            $qrBinary = \QrCode::format('svg')->size(380)->errorCorrection('H')->margin(1)->generate($url);
+            $ext = 'svg';
+        }
+
+        $qrPath = "checklists/venta_{$venta->id}/qr.$ext";
+        \Storage::disk('public')->put($qrPath, $qrBinary);
+
+        $checklist->qr_url  = $url;
+        $checklist->qr_path = 'storage/'.$qrPath;
+    }
+
+    // --- tu código que arma la etiqueta PDF ---
+    $productos = \DB::table('venta_productos')
+        ->join('productos', 'venta_productos.producto_id', '=', 'productos.id')
+        ->leftJoin('registros', 'venta_productos.registro_id', '=', 'registros.id')
+        ->where('venta_productos.venta_id', $venta->id)
+        ->select('productos.tipo_equipo','productos.marca','productos.modelo','registros.numero_serie')
+        ->get();
+
+    $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('checklists.label-4x8', [
+            'venta'     => $venta,
+            'checklist' => $checklist,
+            'qr_path'   => $checklist->qr_path, // puede ser .png o .svg
+            'qr_url'    => $checklist->qr_url,
+            'productos' => $productos,
+        ])
+        ->setPaper([0,0,288,576], 'portrait'); // 4x8"
+
+    $labelPath = "checklists/venta_{$venta->id}/label_4x8.pdf";
+    \Storage::disk('public')->put($labelPath, $pdf->output());
+    $checklist->label_path = 'storage/'.$labelPath;
+
+    $checklist->save();
+    return $checklist;
+}
+
+public function sendWhatsappTemplateRemision(Venta $venta, Request $request, WhatsAppService $wa)
+{
+    // Permite override, pero por default usamos la tpl fija y es_MX
+    $request->validate([
+        'template_name' => ['nullable','string','max:128'],
+        'template_lang' => ['nullable','string','max:12'],
+    ]);
+
+    $venta->load(['cliente','usuario','productos.producto','cartaGarantia','pagos']);
+
+    $to = WhatsAppService::normalizeMsisdn($venta->cliente->telefono ?? '');
+    if (!$to) {
+        return back()->with('wa_info', 'El cliente no tiene teléfono válido.');
+    }
+
+    /* =====  Generar el MISMO PDF final que tu método pdf(), pero sin descargar  ===== */
+    try {
+        $url = route('ventas.show', $venta->id);
+        $qr  = base64_encode(QrCode::format('svg')->size(120)->generate($url));
+
+        $pagos        = $venta->pagos;
+        $totalPagado  = $pagos->sum('monto');
+        $plan         = $venta->plan;
+
+        $dirTemp = storage_path('app/public/temp');
+        if (!is_dir($dirTemp)) @mkdir($dirTemp, 0775, true);
+
+        // venta.pdf temporal
+        $rutaVenta = "{$dirTemp}/venta_{$venta->id}.pdf";
+        $pdfVenta  = PDF::loadView('venta.pdf', compact('venta','qr','pagos','totalPagado','plan'))
+                        ->setPaper('a4','portrait');
+        file_put_contents($rutaVenta, $pdfVenta->output());
+
+        // carta de garantía (si existe)
+        $rutaCarta = $venta->cartaGarantia?->archivo
+            ? storage_path('app/public/'.$venta->cartaGarantia->archivo)
+            : null;
+
+        // concatenar
+        $pdf = new Fpdi();
+        $archivos = [$rutaVenta];
+        if ($rutaCarta && is_file($rutaCarta)) $archivos[] = $rutaCarta;
+
+        foreach ($archivos as $archivo) {
+            $pageCount = $pdf->setSourceFile($archivo);
+            for ($i = 1; $i <= $pageCount; $i++) {
+                $tpl  = $pdf->importPage($i);
+                $size = $pdf->getTemplateSize($tpl);
+                $pdf->AddPage($size['orientation'], [$size['width'], $size['height']]);
+                $pdf->useTemplate($tpl);
+            }
+        }
+
+        $rutaFinal = "{$dirTemp}/final_venta_{$venta->id}.pdf";
+        $pdf->Output($rutaFinal, 'F');
+
+        if (!is_file($rutaFinal)) {
+            return back()->with('wa_info', 'No se pudo generar el PDF final de la remisión.');
+        }
+
+        $clienteNombre = preg_replace('/[^A-Za-z0-9 _-]/', '', (string) $venta->cliente->nombre);
+        $filename = "Remision_{$venta->id}_{$clienteNombre}.pdf";
+    } catch (\Throwable $e) {
+        \Log::error('VENTA_PDF_BUILD_FAIL', ['venta' => $venta->id, 'e' => $e->getMessage()]);
+        return back()->with('wa_info', 'No se pudo generar el PDF de la remisión.');
+    }
+
+    /* ============================  Subir a WA  ============================ */
+    $upload  = $wa->uploadMediaPath($rutaFinal, $filename, 'application/pdf');
+    $uJson   = $upload->json();
+    $mediaId = data_get($uJson, 'id');
+
+    if (!$upload->successful() || !$mediaId) {
+        \Log::warning('WA_MEDIA_UPLOAD_FAIL', ['resp' => $uJson]);
+        return back()->with('wa_info', 'No se pudo subir el PDF a WhatsApp.')
+                     ->with('wa_fail', [$uJson]);
+    }
+
+    /* ========================  Enviar plantilla fija  ===================== */
+    $templateName  = (string) ($request->input('template_name') ?: 'doc_pdf_utility_v2');
+    $langCode      = (string) ($request->input('template_lang') ?: ($wa->pickTemplateLanguage($templateName) ?? 'es_MX'));
+    $clienteNombre = trim(($venta->cliente->nombre ?? '') . ' ' . ($venta->cliente->apellido ?? ''));
+
+    // Solo {{1}} → evita #132000
+    $resp = $wa->sendTemplateWithDocument(
+        to: $to,
+        templateName: $templateName,
+        langCode: $langCode,
+        mediaId: $mediaId,
+        filename: $filename,
+        clienteNombre: $clienteNombre,
+        frase: null,
+        btn0UrlSuffix: null,
+        btn1UrlSuffix: null
+    );
+
+    $json  = $resp->json();
+    $wamid = data_get($json, 'messages.0.id');
+
+    if ($resp->successful() && $wamid) {
+        \Log::info('WA_OK_TPL_REMISION', [
+            'venta' => $venta->id, 'to' => $to, 'tpl' => $templateName, 'lang' => $langCode, 'wamid' => $wamid
+        ]);
+        return back()->with('wa_success', "Remisión enviada por WhatsApp ✅ ({$templateName} · {$langCode})");
+    }
+
+    $code   = data_get($json, 'error.code');
+    $detail = data_get($json, 'error.message') ?: data_get($json, 'error.error_data.details');
+    $suggestions = $wa->groupTemplatesByName($wa->fetchTemplatesSmart(200));
+
+    \Log::warning('WA_FAIL_TPL_REMISION', [
+        'venta' => $venta->id, 'to' => $to, 'resp' => $json, 'tpl' => $templateName, 'lang' => $langCode
+    ]);
+
+    return back()
+        ->with('wa_info', 'No se pudo enviar la remisión por WhatsApp. Verifica nombre/idioma tal cual existen en tu WABA.')
+        ->with('wa_fail', [[
+            'n' => $to, 'code' => $code, 'detail' => $detail, 'raw' => $json,
+            'template_tried' => $templateName, 'lang_tried' => $langCode,
+        ]])
+        ->with('wa_templates_grouped', $suggestions);
+}
 }
 
 

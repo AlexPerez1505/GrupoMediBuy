@@ -27,11 +27,25 @@ return [
     'resend' => [
         'key' => env('RESEND_KEY'),
     ],
-    'twilio' => [
-    'sid' => env('TWILIO_SID'),
-    'token' => env('TWILIO_AUTH_TOKEN'),
-    'whatsapp_from' => env('TWILIO_WHATSAPP_FROM'),
+// config/services.php
+
+    // ...
+
+    // ...
+// config/services.php
+'whatsapp' => [
+    'token'       => env('WHATSAPP_ACCESS_TOKEN', ''),
+    'version'     => env('WHATSAPP_API_VERSION', 'v21.0'),
+    'phone_id'    => env('WHATSAPP_PHONE_NUMBER_ID', ''),
+    'phone_e164'  => env('WHATSAPP_PHONE_NUMBER', ''), // en E.164, ya lo tienes 5215665864626
+    'waba_id'     => env('WHATSAPP_BUSINESS_ACCOUNT_ID', ''),
+    'verify_token'=> env('WHATSAPP_VERIFY_TOKEN', ''), // 👈 nuevo
 ],
+
+
+
+
+
 
 
     'slack' => [

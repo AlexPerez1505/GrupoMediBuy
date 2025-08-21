@@ -1,301 +1,232 @@
 @extends('layouts.app')
+
 @section('title', 'Préstamos')
 @section('titulo', 'Préstamos')
+
 @section('content')
-@php
-    registrarModuloUso('Prestamos', '/prestamos', 'fas fa-user-circle');
-@endphp
-<!-- Estilos personalizados -->
-<link rel="stylesheet" href="{{ asset('css/prestamos.css') }}?v={{ time() }}">
-    <!-- DataTables JS -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.js"></script>
-<link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.2.7/css/responsive.dataTables.min.css">
-<link rel="stylesheet" href="https://cdn.datatables.net/buttons/1.7.1/css/buttons.dataTables.min.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
+<link href="https://fonts.googleapis.com/css?family=Open+Sans:400,600,700" rel="stylesheet">
 
-<div class="container card-table">
+<style>
+:root{
+  --mint:#48cfad; --mint-dark:#34c29e;
+  --ink:#2a2e35; --muted:#7a7f87; --line:#e9ecef; --card:#ffffff;
+}
+*{box-sizing:border-box}
+body{font-family:"Open Sans",sans-serif;background:#eaebec}
 
+/* Page */
+.edit-wrap{max-width:1100px;margin:110px auto 40px;padding:0 16px;}
+.panel{background:var(--card);border-radius:16px;box-shadow:0 16px 40px rgba(18,38,63,.12);overflow:hidden;}
+.panel-head{padding:22px 26px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px;justify-content:space-between;}
+.hgroup h2{margin:0;font-weight:700;color:var(--ink);}
+.hgroup p{margin:2px 0 0;color:var(--muted);font-size:14px}
+.actions-top{display:flex;gap:10px;flex-wrap:wrap}
 
-    <!-- Encabezado y botón -->
-    <div class="card-table-header">
-        <h2>Lista de Préstamos</h2>
-        <a href="{{ route('prestamos.create') }}" class="btn-crear">
-        <i class="fa fa-plus"></i> Crear Nuevo
-        </a>
+/* Toolbar + Search */
+.toolbar{padding:18px 26px;display:flex;gap:12px;align-items:center;justify-content:space-between}
+.searchbar{display:flex;align-items:center;gap:10px;position:relative}
+.icon-btn{
+  width:42px;height:42px;border-radius:999px;border:1px solid var(--line);
+  background:#fff;display:grid;place-items:center;cursor:pointer;
+  transition:transform .1s ease, border-color .2s ease, box-shadow .2s ease;
+}
+.icon-btn:hover{border-color:#dfe3e8;box-shadow:0 6px 16px rgba(18,38,63,.08)}
+.icon-btn:active{transform:scale(.98)}
+.searchform .input{
+  border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#fff;
+  width:0;opacity:0;pointer-events:none;transition:width .25s ease,opacity .2s ease;
+}
+.searchbar.open .searchform .input{width:240px;opacity:1;pointer-events:auto}
+@media (min-width: 900px){
+  .icon-btn{display:none}
+  .searchform .input{width:260px;opacity:1;pointer-events:auto}
+}
+.btn{border:0;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer;transition:transform .05s,box-shadow .2s,background .2s,color .2s;}
+.btn:active{transform:translateY(1px)}
+.btn-primary{background:var(--mint);color:#fff;box-shadow:0 12px 22px rgba(72,207,173,.26);}
+.btn-primary:hover{background:var(--mint-dark)}
+.btn-ghost{background:#fff;color:var(--ink);border:1px solid var(--line);}
+.btn-ghost:hover{border-color:#dfe3e8}
+.btn-icon{border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px;display:inline-grid;place-items:center;transition:transform .08s ease,border-color .2s ease;}
+.btn-icon:hover{border-color:#dfe3e8;transform:translateY(-1px)}
+.btn-danger{background:#ef4444;color:#fff}
+
+/* Table (desktop) */
+.table{width:100%;border-collapse:collapse}
+.table th,.table td{padding:12px 14px;border-bottom:1px solid #edf0f3;text-align:left;vertical-align:middle}
+.table thead th{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
+.row-link{color:inherit;text-decoration:none}
+tbody tr{transition:background .2s ease, transform .08s ease}
+tbody tr:hover{background:#fafbfc}
+tbody tr:active{transform:scale(.999)}
+
+/* Responsive table -> cards */
+@media (max-width: 760px){
+  .table thead{display:none}
+  .table, .table tbody, .table tr, .table td{display:block;width:100%}
+  .table tr{
+    background:#fff;border:1px solid var(--line);border-radius:12px;
+    padding:10px;margin:10px 0;box-shadow:0 10px 22px rgba(18,38,63,.06);
+  }
+  .table td{
+    border-bottom:none;padding:8px 6px;
+  }
+  .table td::before{
+    content: attr(data-label);
+    display:block;font-size:11px;color:var(--muted);
+    text-transform:uppercase;letter-spacing:.03em;margin-bottom:2px;
+  }
+  .td-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:8px}
+}
+
+/* Pills (estado) */
+.pill{display:inline-block;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700}
+.pill--activo{background:#e7fdf6;color:#127c64}
+.pill--retrasado{background:#fff4e5;color:#9a5800}
+.pill--devuelto{background:#eef7ff;color:#0b4c8c}
+.pill--cancelado{background:#f7f7f8;color:#6a6e76}
+.pill--vendido{background:#ffeef0;color:#b6232a}
+
+/* Empty */
+.empty{padding:36px;text-align:center;color:var(--muted)}
+</style>
+
+<div class="edit-wrap">
+  <div class="panel">
+    <div class="panel-head">
+      <div class="hgroup">
+        <h2>Préstamos (paquetes)</h2>
+        <p>Administra tus paquetes y consulta sus equipos.</p>
+      </div>
+      <div class="actions-top">
+        <a href="{{ route('prestamos.create') }}" class="btn btn-primary">+ Nuevo paquete</a>
+      </div>
     </div>
 
-    <!-- Filtros -->
-    <div class="filtro-busqueda">
-    <select id="filtro-tipo" class="form-select">
-        <option value="">Todos los tipos</option>
-        <option value="activo">Activo</option>
-        <option value="devuelto">Devuelto</option>
-        <option value="retrasado">Retrasado</option>
-        <option value="vendido">Vendido</option>
-    </select>
+    {{-- Toolbar con búsqueda animada --}}
+    <div class="toolbar">
+      <div class="searchbar" id="searchbar">
+        <button type="button" class="icon-btn" id="searchToggle" aria-label="Buscar">
+          {{-- Lupa --}}
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="7"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+        </button>
+        <form method="GET" class="searchform" action="{{ route('prestamos.index') }}">
+          <input class="input" type="text" name="q" value="{{ request('q') }}" placeholder="Buscar por cliente o folio...">
+        </form>
+        @if(request('q'))
+          <a class="btn btn-ghost" href="{{ route('prestamos.index') }}">Limpiar</a>
+        @endif
+      </div>
+    </div>
 
-    <input type="text" id="buscador" class="form-control" placeholder="Buscar...">
-</div>
+    @php
+      $list = $prestamos;
+      if(request('q')){
+        $q = mb_strtolower(request('q'));
+        $list = $prestamos->filter(function($p) use ($q){
+          $cliente = optional($p->cliente)->nombre ?? '';
+          return str_contains((string)$p->id, $q) ||
+                 str_contains(mb_strtolower($cliente), $q);
+        });
+      }
+    @endphp
 
-
-    @if(session('success'))
-        <div class="alert alert-success">
-            {{ session('success') }}
-        </div>
-    @endif
-
-    <!-- Tabla -->
- <!-- Tabla -->
-<div class="table-responsive">
-    <table id="tablaPrestamos" class="table table-hover nowrap display">
-        <thead>
+    @if($list->isEmpty())
+      <div class="empty">No hay préstamos que mostrar.</div>
+    @else
+      <div style="overflow-x:auto;">
+        <table class="table">
+          <thead>
             <tr>
-                <th>ID</th>
-                <th>Estado</th>
-                <th>Recibió</th>
-                <th>Serie</th>
-                <th>F. Préstamo</th>
-                <th>F. Estimada</th>
-                <th>Responsable</th>
-                <th>Acciones</th>
+              <th>Folio</th>
+              <th>Cliente</th>
+              <th>Estado</th>
+              <th>Salida</th>
+              <th>Regreso est.</th>
+              <th>Equipos</th>
+              <th>Usuario</th>
+              <th style="text-align:right">Acciones</th>
             </tr>
-        </thead>
-        <tbody>
-        @foreach ($prestamos as $prestamo)
-    <tr class="estado-{{ $prestamo->estado }}">
-        <td>{{ $prestamo->id }}</td>
-        <td><span class="badge estado-{{ $prestamo->estado }}">{{ ucfirst($prestamo->estado) }}</span></td>
-        <td>
-    {{ $prestamo->cliente ? $prestamo->cliente->nombre . ' ' . $prestamo->cliente->apellido : '—' }}
-</td>
-
-        <td>{{ $prestamo->registro->numero_serie ?? '—' }}</td>
-        <td>{{ $prestamo->fecha_prestamo }}</td>
-        <td>{{ $prestamo->fecha_devolucion_estimada }}</td>
-        <td>{{ $prestamo->user_name }}</td>
-        <td>
-    <!-- Botón VER (azul) -->
-    <button class="btn btn-info btn-ver-detalles" data-prestamo='@json($prestamo)'>
-        <i class="fa fa-eye icono-pequeno"></i>
-    </button>
-
-    <!-- Botón EDITAR (amarillo) -->
-    <a href="{{ route('prestamos.edit', $prestamo->id) }}" class="btn btn-editar">
-        <i class="fa fa-edit icono-pequeno"></i>
-    </a>
-
-    <!-- Botón ELIMINAR (rojo) -->
-    <form action="{{ route('prestamos.destroy', $prestamo->id) }}" method="POST" class="d-inline delete-form">
-    @csrf @method('DELETE')
-    <button class="btn btn-eliminar">
-        <i class="fa fa-trash-alt icono-pequeno"></i>
-    </button>
-</form>
-
-</td>
-
-
-    </tr>
-@endforeach
-
-        </tbody>
-    </table>
+          </thead>
+          <tbody>
+            @foreach($list as $p)
+              @php
+                $pill = match($p->estado){
+                  'retrasado'=>'pill--retrasado',
+                  'devuelto'=>'pill--devuelto',
+                  'cancelado'=>'pill--cancelado',
+                  'vendido'=>'pill--vendido',
+                  default=>'pill--activo'
+                };
+              @endphp
+              <tr>
+                <td data-label="Folio">
+                  <a class="row-link" href="{{ route('prestamos.show',$p->id) }}"><strong>#{{ $p->id }}</strong></a>
+                </td>
+                <td data-label="Cliente">{{ optional($p->cliente)->nombre ?? '—' }}</td>
+                <td data-label="Estado"><span class="pill {{ $pill }}">{{ ucfirst($p->estado) }}</span></td>
+                <td data-label="Salida">{{ optional($p->fecha_prestamo)->format('Y-m-d') }}</td>
+                <td data-label="Regreso est.">{{ optional($p->fecha_devolucion_estimada)->format('Y-m-d') }}</td>
+                <td data-label="Equipos">{{ $p->relationLoaded('registros') ? $p->registros->count() : $p->registros()->count() }}</td>
+                <td data-label="Usuario">{{ $p->user_name }}</td>
+                <td data-label="Acciones" style="text-align:right">
+                  <div class="td-actions">
+                    <a class="btn-icon" title="Ver" href="{{ route('prestamos.show',$p->id) }}">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                      </svg>
+                    </a>
+                    <a class="btn-icon" title="Editar" href="{{ route('prestamos.edit',$p->id) }}">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 20h9"/>
+                        <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4 12.5-12.5z"/>
+                      </svg>
+                    </a>
+                    <form action="{{ route('prestamos.destroy',$p->id) }}" method="POST" style="display:inline" onsubmit="return confirmDelete(this);">
+                      @csrf @method('DELETE')
+                      <button type="submit" class="btn-icon" title="Eliminar">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <polyline points="3 6 5 6 21 6"/>
+                          <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                          <line x1="10" y1="11" x2="10" y2="17"/>
+                          <line x1="14" y1="11" x2="14" y2="17"/>
+                        </svg>
+                      </button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            @endforeach
+          </tbody>
+        </table>
+      </div>
+    @endif
+  </div>
 </div>
-</div>
-<!-- DataTables + Export buttons -->
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
-<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap5.min.css">
 
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-
-<!-- Botones exportar -->
-
-
-
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
 <script>
-    $(document).ready(function () {
-        const table = $('#tablaPrestamos').DataTable({
-            language: {
-                processing: "Procesando...",
-                lengthMenu: "Mostrar _MENU_ registros",
-                zeroRecords: "No se encontraron resultados",
-                emptyTable: "Ningún dato disponible en esta tabla",
-                info: "Mostrando del _START_ al _END_ de _TOTAL_ registros",
-                infoEmpty: "Mostrando del 0 al 0 de 0 registros",
-                infoFiltered: "(filtrado de _MAX_ registros)",
-                paginate: {
-                    first: "Primero",
-                    last: "Último",
-                    next: "Siguiente",
-                    previous: "Anterior"
-                }
-            },
-            dom: '<"top d-flex align-items-center justify-content-between gap-3 mb-3"lfB>rtip',
-            buttons: [
-                {
-                    extend: 'excelHtml5',
-                    text: '<span class="button-icon"><img src="{{ asset('images/excel.png') }}" alt="Excel" height="20"></span><span class="button-text">Excel</span>',
-                    className: 'btn-excel',
-                    title: 'Lista de Préstamos',
-                    exportOptions: { columns: ':not(:last-child)' }
-                },
-                {
-                    extend: 'csvHtml5',
-                    text: '<span class="button-icon"><img src="{{ asset('images/csv.png') }}" alt="CSV" height="20"></span><span class="button-text">CSV</span>',
-                    className: 'btn-csv',
-                    title: 'Lista de Préstamos',
-                    exportOptions: { columns: ':not(:last-child)' }
-                },
-                {
-                    extend: 'pdfHtml5',
-                    text: '<span class="button-icon"><img src="{{ asset('images/pdf.png') }}" alt="PDF" height="20"></span><span class="button-text">PDF</span>',
-                    className: 'btn-pdf',
-                    title: 'Lista de Préstamos',
-                    exportOptions: { columns: ':not(:last-child)' }
-                }
-            ]
-        });
-
-       // Filtro por estado (columna 2 -> Estado)
-$('#filtro-tipo').on('change', function () {
-    const valor = this.value;
-    if (valor) {
-        const valorCapitalizado = valor.charAt(0).toUpperCase() + valor.slice(1);
-        table.column(1).search('^' + valorCapitalizado + '$', true, false).draw(); // Cambié de 5 a 1
-    } else {
-        table.column(1).search('').draw(); // Cambié de 5 a 1
-    }
+// Lupa que abre/cierra
+const bar = document.getElementById('searchbar');
+const tog = document.getElementById('searchToggle');
+tog?.addEventListener('click', ()=>{
+  bar.classList.toggle('open');
+  if(bar.classList.contains('open')){
+    bar.querySelector('input')?.focus();
+  }
+});
+document.addEventListener('click', (e)=>{
+  if(!bar.contains(e.target) && window.innerWidth < 900){
+    bar.classList.remove('open');
+  }
 });
 
-
-        // Filtro general por texto
-        $('#buscador').on('keyup', function () {
-            table.search(this.value).draw();
-        });
-    });
+function confirmDelete(form){
+  return confirm('¿Eliminar este préstamo? Esta acción no se puede deshacer.');
+}
 </script>
-
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-
-
-<script>
-$(document).ready(function () {
-    $('#tablaPrestamos').on('click', '.btn-ver-detalles', function () {
-        const p = $(this).data('prestamo');
-
-        const firma = p.firmaDigital 
-    ? `<img src="${p.firmaDigital}" alt="Firma Digital" class="firma-img">`
-    : '<span class="placeholder">No disponible</span>';
-
-
-
-
-        const htmlContent = `
-        <div class="swal-prestamo-container">
-           <div class="swal-section"> 
-    <h3><i class="fas fa-user-circle"></i> Cliente</h3>
-    <p>${p.cliente ? (p.cliente.nombre + ' ' + p.cliente.apellido) : '—'}</p>
-</div>
-
-            <div class="swal-section">
-                <h3><i class="fas fa-box"></i> Número de Serie del Equipo</h3>
-                <p>${p.registro?.numero_serie ?? '—'}</p>
-            </div>
-            <div class="swal-grid">
-                <div>
-                    <h4><i class="fas fa-calendar-plus"></i> F. Préstamo</h4>
-                    <p>${p.fecha_prestamo}</p>
-                </div>
-                <div>
-                    <h4><i class="fas fa-calendar-check"></i> F. Estimada</h4>
-                    <p>${p.fecha_devolucion_estimada}</p>
-                </div>
-                <div>
-                    <h4><i class="fas fa-calendar-times"></i> F. Real</h4>
-                    <p>${p.fecha_devolucion_real ?? '—'}</p>
-                </div>
-            </div>
-            <div class="swal-section">
-                <h3><i class="fas fa-info-circle"></i> Condiciones</h3>
-                <p>${p.condiciones_prestamo ?? '<span class="placeholder">—</span>'}</p>
-            </div>
-            <div class="swal-section">
-                <h3><i class="fas fa-comment-alt"></i> Observaciones</h3>
-                <p>${p.observaciones ?? '<span class="placeholder">—</span>'}</p>
-            </div>
-            <div class="swal-section">
-                <h3><i class="fas fa-user-shield"></i> Usuario Responsable</h3>
-                <p>${p.user_name}</p>
-            </div>
-            <div class="swal-section">
-                <h3><i class="fas fa-signature"></i> Firma</h3>
-                ${firma}
-            </div>
-        </div>
-        `;
-
-        Swal.fire({
-            title: `<strong style="font-size: 20px;">Préstamo #${p.id}</strong>`,
-            html: htmlContent,
-            width: 700,
-            padding: '2rem',
-            showCloseButton: true,
-            confirmButtonText: 'Cerrar',
-            customClass: {
-                popup: 'swal-prestamo-popup',
-                confirmButton: 'swal-btn-confirm'
-            }
-        });
-    });
-});
-</script>
-
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
-        document.querySelectorAll(".delete-form").forEach(form => {
-            form.addEventListener("submit", function (event) {
-                event.preventDefault();
-                const formElement = this;
-
-                Swal.fire({
-                    title: '¿Estás seguro?',
-                    text: 'Esta acción no se puede deshacer.',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#28a745',
-                    cancelButtonColor: '#6c757d',
-                    confirmButtonText: 'Sí, eliminar!',
-                    cancelButtonText: 'Cancelar',
-                    customClass: {
-                        popup: 'border-radius-15',
-                        title: 'font-weight-bold text-dark',
-                        content: 'font-size-16',
-                        confirmButton: 'btn-custom-confirm',
-                        cancelButton: 'btn-custom-cancel',
-                    },
-                    buttonsStyling: false
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        formElement.submit();
-                    }
-                });
-            });
-        });
-    });
-</script>
-
-
-
 @endsection
