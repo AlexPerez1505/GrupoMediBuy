@@ -3,344 +3,454 @@
 
 @section('titulo', 'Promocionales')
 @section('content')
+
 <style>
-:root{ --p:#cfe2ff; --p-text:#2f5fb1; --bg:#f7f8fb; --card:#fff; --line:#e6ecf4; --ok:#1ECD97; }
-.page{max-width:1100px;margin:22px auto;padding:0 16px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 10px 30px rgba(20,40,80,.07);overflow:hidden}
-.head{padding:18px 22px;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:center}
-.head h3{margin:0;color:var(--p-text);letter-spacing:-.3px}
-.body{padding:20px}
-.grid{display:grid;gap:16px}
-.grid-2{grid-template-columns:1fr 1fr}
-@media (max-width: 900px){ .grid-2{grid-template-columns:1fr} }
-label{font-size:14px;color:#374151;font-weight:600}
-input,textarea,select{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:#fff;outline:none;transition:border .2s}
-input:focus,textarea:focus,select:focus{border-color:var(--p)}
-.small{font-size:12px;color:#6b7280}
-.badge{display:inline-block;background:#eef5ff;color:var(--p-text);border:1px solid var(--p);padding:6px 10px;border-radius:999px;font-size:12px}
-.btn{border:0;border-radius:12px;padding:12px 16px;cursor:pointer}
-.btn-primary{background:var(--p);color:var(--p-text);font-weight:700}
-.btn-ghost{background:#fff;border:1px solid var(--line);color:#374151}
-.alert{border-radius:12px;padding:12px 14px;margin-bottom:12px}
-.alert-ok{background:#ecfdf5;border:1px solid #bbf7d0;color:#065f46}
-.alert-warn{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412}
-.tools{display:flex;gap:10px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
-.clients-wrap{border:1px solid var(--line);border-radius:12px;padding:10px;max-height:360px;overflow:auto;background:#fff}
-.row{display:flex;gap:10px;align-items:center;border-bottom:1px dashed var(--line);padding:8px 4px}
-.row:last-child{border-bottom:0}
-.name{font-weight:600}
+  :root{
+    --bg:#f7f9fb; --card:#fff; --line:#e6ebf1;
+    --brand:#bfe3ff; --brand-ink:#0a0f1f;
+    --ink:#0f172a; --muted:#64748b;
+    --ok:#16a34a; --err:#dc2626;
+  }
+  .wrap{max-width:1200px;margin:24px auto;padding:0 16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:0 12px 32px rgba(2,8,23,.06);overflow:hidden}
+  .card-head{padding:18px 22px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .dot{width:10px;height:10px;border-radius:999px;background:var(--brand);animation:pulse 1.6s infinite}
+  @keyframes pulse{0%{transform:scale(.9);opacity:.8}50%{transform:scale(1);opacity:1}100%{transform:scale(.9);opacity:.8}}
+  h3{margin:0;font-size:20px;letter-spacing:-.3px;color:var(--ink)}
+  .tag{background:#eff7ff;border:1px solid #dbeafe;color:#1e3a8a;padding:6px 10px;border-radius:10px;font-weight:700;font-size:12px}
+  .muted{color:var(--muted);font-size:13px}
+  .grid{display:grid;gap:16px}
+  @media (min-width:1000px){ .grid-2{grid-template-columns:1.1fr .9fr} }
 
-.preview{display:flex;gap:12px;align-items:flex-start;border:1px dashed var(--line);border-radius:12px;padding:12px;background:#fbfcff}
-.preview .ph{width:56px;height:56px;border-radius:12px;background:#e9eefb;display:flex;align-items:center;justify-content:center;font-weight:700;color:#4763c4}
-.preview .bubble{flex:1;background:#fff;border:1px solid #e9eefb;border-radius:12px;padding:12px}
-.preview h4{margin:0 0 6px 0;font-size:15px;color:#0b1f66}
-.preview pre{margin:0;white-space:pre-wrap;font-size:14px;color:#222;line-height:1.45}
-.preview .foot{margin-top:8px;font-size:12px;color:#64748b;border-top:1px dashed #e6ecf4;padding-top:6px}
+  /* Hero desvanecido superior */
+  .hero{
+    background:
+      radial-gradient(1200px 160px at 10% -20%, #e8f3ff 0%, transparent 60%),
+      radial-gradient(1200px 160px at 90% -20%, #e6f5ff 0%, transparent 60%),
+      linear-gradient(180deg, #ffffff 0%, #ffffff 100%);
+  }
 
-.switcher{display:flex;gap:8px;margin-top:12px}
-.switcher .tab{padding:8px 12px;border:1px solid var(--line);border-radius:999px;background:#fff;cursor:pointer}
-.switcher .tab.active{background:#eef5ff;border-color:var(--p);color:var(--p-text)}
+  /* Inputs & botones */
+  .inp, textarea, input[type=file], select{
+    width:100%;border:1px solid var(--line);background:#fff;border-radius:12px;
+    padding:12px 14px;font-size:14px;outline:none; transition:.15s border, .15s box-shadow;
+  }
+  .inp:focus, textarea:focus, select:focus{box-shadow:0 0 0 4px rgba(191,227,255,.35);border-color:#cfe9ff}
+  .btn{
+    display:inline-flex;align-items:center;gap:10px;border:0;border-radius:14px;
+    padding:12px 18px;font-weight:700;cursor:pointer;background:var(--brand);color:var(--brand-ink);
+    transition:transform .05s ease, box-shadow .15s ease;
+  }
+  .btn:hover{transform:translateY(-1px); box-shadow:0 6px 14px rgba(2,8,23,.08)}
+  .btn-ghost{background:#fff;border:1px solid var(--line);color:var(--ink);border-radius:14px;padding:10px 14px;font-weight:600}
+  .btn-lite{background:#eff7ff;border:1px solid #dbeafe;color:#1e3a8a;border-radius:12px;padding:8px 12px;font-weight:600;font-size:13px}
+  .alert{margin:14px 0;padding:12px 14px;border-radius:12px;background:#f7fffb;border:1px solid #d1fae5;color:#065f46}
 
-.counter{font-size:12px;color:#475569}
-.hint{font-size:12px;color:#6b7280}
+  /* Dropzone imagen */
+  .dropzone{
+    position:relative;border:2px dashed #dbeafe;border-radius:14px;background:linear-gradient(180deg,#fcfeff, #f7fbff);
+    padding:14px; display:grid; grid-template-columns:120px 1fr; gap:14px; align-items:center;
+    transition:border-color .15s ease, transform .15s ease, box-shadow .2s ease;
+  }
+  .dropzone.dragover{ border-color:#93c5fd; transform:scale(1.01); box-shadow:0 8px 28px rgba(2,8,23,.06) }
+  .dz-thumb{
+    width:120px;height:120px;border-radius:12px;border:1px solid var(--line);background:#f1f5f9;overflow:hidden;
+    display:flex;align-items:center;justify-content:center; position:relative;
+  }
+  .dz-thumb img{width:100%;height:100%;object-fit:cover; animation:fadein .2s ease}
+  .dz-info .title{font-weight:700;color:#0b1220}
+  .dz-actions{display:flex;gap:8px;margin-top:8px}
+  .dz-remove{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:6px 10px;cursor:pointer}
+  @keyframes fadein{from{opacity:.6;transform:scale(.98)}to{opacity:1;transform:scale(1)}}
 
-.inline{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.kpi{display:inline-flex;gap:6px;align-items:center;background:#f7fafc;border:1px solid #e6ecf4;border-radius:999px;padding:6px 10px;font-size:12px;color:#334155}
-.kpi i{width:8px;height:8px;background:var(--ok);border-radius:50%}
+  /* Tabla */
+  .table-wrap{overflow:auto;border:1px solid var(--line);border-radius:14px}
+  table{width:100%;border-collapse:separate;border-spacing:0}
+  th,td{padding:10px 12px;border-bottom:1px solid var(--line);font-size:14px}
+  th{font-weight:700;color:var(--ink);text-align:left;background:#fbfcff}
+  tr:hover td{background:#fafcff}
+  tr.picked td{background:#f4f9ff}
+  .rowcheck{transform:scale(1.1);cursor:pointer}
+
+  /* Chips */
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .chip{display:inline-flex;align-items:center;gap:8px;background:#eef6ff;border:1px solid #dbeafe;color:#1e3a8a;border-radius:999px;padding:6px 10px;font-size:12px;font-weight:700;animation:pop .15s ease}
+  .chip .x{cursor:pointer;opacity:.7}
+  @keyframes pop{from{transform:scale(.95);opacity:.6}to{transform:scale(1);opacity:1}}
+
+  /* Panel lateral derecho */
+  .side-card{border:1px solid var(--line);border-radius:18px;background:#fff;box-shadow:0 12px 32px rgba(2,8,23,.06)}
+  .side-head{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+  .side-body{padding:16px 18px}
+  @media (min-width:1000px){ .side-sticky{position:sticky; top:18px} }
+
+  /* Drawer flotante móvil */
+  .drawer{position:fixed; right:16px; bottom:16px; width:clamp(280px, 90vw, 420px);
+    background:var(--card); border:1px solid var(--line); border-radius:18px; box-shadow:0 20px 60px rgba(2,8,23,.16);
+    transform:translateY(calc(100% + 16px)); transition:transform .25s ease; z-index:1200}
+  .drawer.open{ transform:translateY(0) }
+  .drawer-head{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--line)}
+  .drawer-body{padding:12px 14px; max-height:40vh; overflow:auto}
+  .drawer-foot{padding:12px 14px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end}
+
+  /* Sticky actions bajo tabla */
+  .sticky-actions{position:sticky;bottom:-1px;background:linear-gradient(180deg, transparent, #fff 20%);padding-top:8px;margin-top:8px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+
+  /* Paginación Tailwind (fix visual) */
+  .pagination-fx nav[aria-label="Pagination Navigation"]{display:block;margin:6px 0;font-size:14px}
+  .pagination-fx nav[aria-label="Pagination Navigation"] > div:first-child{display:none}
+  .pagination-fx nav[aria-label="Pagination Navigation"] > div:last-child{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  .pagination-fx nav a, .pagination-fx nav span{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid #e6ebf1;border-radius:10px;text-decoration:none;color:#0f172a;background:#fff;margin:2px}
+  .pagination-fx nav span[aria-current="page"]{background:#eff7ff;border-color:#dbeafe;font-weight:700}
+  .pagination-fx nav a:hover{background:#fbfcff;box-shadow:0 2px 8px rgba(2,8,23,.06)}
+  .kbd{background:#eef2ff;border:1px solid #e5e7eb;padding:2px 6px;border-radius:6px;font-size:12px}
 </style>
 
-<div class="page">
+<div class="wrap" style="margin-top:110px;">
   <div class="card">
-    <div class="head">
-      <span class="badge">WhatsApp Marketing</span>
-      <h3>Enviar promoción SIN plantilla (imagen desde archivo)</h3>
+    <div class="card-head hero">
+      <div style="display:flex;align-items:center;gap:12px">
+        <span class="dot"></span>
+        <h3>Plantilla WhatsApp: <span class="tag">promo_img_sin_boton_v1 (es_MX)</span></h3>
+      </div>
+      <div class="muted">UI limpia • Responsive</div>
     </div>
 
-    <div class="body">
-
-      @if(session('wa_success'))
-        <div class="alert alert-ok">{{ session('wa_success') }}</div>
-      @endif
-      @if(session('wa_info'))
-        <div class="alert alert-warn">{{ session('wa_info') }}</div>
-        @if(session('wa_fail'))
-          <details style="margin-bottom:12px">
-            <summary>Ver detalles de fallos</summary>
-            <pre style="white-space:pre-wrap;background:#f8fafc;border:1px dashed var(--line);border-radius:10px;padding:10px;font-size:12px">{{ json_encode(session('wa_fail'), JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE) }}</pre>
-          </details>
-        @endif
-      @endif
-
-      {{-- Filtros de clientes --}}
-      <form method="GET" action="{{ route('promos.whatsapp.direct.create') }}" style="margin-bottom:8px">
-        <div class="tools">
-          <div>
-            <label class="small">Buscar</label>
-            <input type="text" name="q" value="{{ $q ?? '' }}" placeholder="Nombre, teléfono, email, asesor">
-          </div>
-          @if($categorias->count())
-          <div>
-            <label class="small">Categoría</label>
-            <select name="categoria">
-              <option value="">Todas</option>
-              @foreach($categorias as $cat)
-                <option value="{{ $cat->id }}" {{ ($categoria ?? null)==$cat->id?'selected':'' }}>{{ $cat->nombre }}</option>
-              @endforeach
-            </select>
-          </div>
+    <div class="card-body grid grid-2">
+      {{-- IZQUIERDA --}}
+      <div class="grid">
+        {{-- Flash --}}
+        @if(session('wa_success')) <div class="alert">{{ session('wa_success') }}</div> @endif
+        @if(session('wa_info'))
+          <div class="alert" style="background:#fff7ed;border-color:#fed7aa;color:#9a3412">{{ session('wa_info') }}</div>
+          @if(session('wa_fail'))
+            <details style="margin-bottom:12px"><summary>Ver detalles de fallos</summary>
+              <pre style="white-space:pre-wrap;background:#f8fafc;border:1px dashed var(--line);border-radius:10px;padding:10px;font-size:12px">{{ json_encode(session('wa_fail'), JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE) }}</pre>
+            </details>
           @endif
-          <button class="btn btn-primary" type="submit">Filtrar</button>
-          <span class="counter">{{ $clientes->count() }} cliente(s) listados</span>
+        @endif
+
+        {{-- Buscar rápido --}}
+        <div>
+          <label>Buscar (rápido)</label>
+          <input class="inp" id="quickSearch" placeholder="Filtra por nombre o teléfono sin recargar">
+          <div class="muted">Tip: <b>Ctrl/Cmd</b> + <b>K</b> para enfocar.</div>
         </div>
-      </form>
 
-      {{-- Form principal --}}
-      <form method="POST" action="{{ route('promos.whatsapp.direct.send') }}" enctype="multipart/form-data" id="formPromo">
-        @csrf
+        {{-- FORM PRINCIPAL --}}
+        <form method="POST" action="{{ route('promos.whatsapp.direct.send') }}" enctype="multipart/form-data" id="sendForm" class="grid">
+          @csrf
 
-        <div class="grid grid-2">
-          <div>
-            <label>Título</label>
-            <input type="text" name="titulo" maxlength="60" value="{{ old('titulo','¡Promoción especial de Grupo MediBuy! 🎉') }}" placeholder="Ej. ¡Promoción de fin de semana!">
-            @error('titulo')<div class="small">{{ $message }}</div>@enderror>
-
-            <div style="margin-top:12px">
-              <div class="inline">
-                <span class="kpi"><i></i> Mensaje rápido (auto)</span>
-                <span class="hint">Completa los campos y generamos el texto por ti.</span>
+          {{-- Dropzone --}}
+          <div class="dropzone" id="dropzone">
+            <div class="dz-thumb" id="dzThumb"><span class="muted" id="dzPlaceholder">IMG</span></div>
+            <div class="dz-info">
+              <div class="title">Imagen de encabezado</div>
+              <div class="muted">Arrastra una imagen o <label for="headerInput" style="text-decoration:underline;cursor:pointer">búscala</label> (JPG/PNG máx. 5MB).</div>
+              <input type="file" name="imagen_file" id="headerInput" accept="image/png,image/jpeg" class="inp" style="display:none" required>
+              @error('imagen_file')<div class="muted" style="color:var(--err)">{{ $message }}</div>@enderror
+              <div class="dz-actions">
+                <button class="dz-remove" type="button" id="btnRemoveImg" style="display:none">Quitar imagen</button>
               </div>
 
-              <div style="margin-top:8px">
-                <label>Producto / Oferta ({{ '{' }}{2}})</label>
-                <input type="text" id="f_producto" placeholder="Ej. Colonoscopio FUJINON" value="">
-              </div>
-              <div class="grid" style="grid-template-columns:1fr 1fr">
-                <div>
-                  <label>Descuento ({{ '{' }}{3}})</label>
-                  <input type="text" id="f_descuento" placeholder="Ej. 25%">
-                </div>
-                <div>
-                  <label>Vigencia ({{ '{' }}{4}})</label>
-                  <input type="text" id="f_vigencia" placeholder="Ej. Solo este fin de semana">
-                </div>
-              </div>
-              <div style="margin-top:8px">
-                <label>Pie de página (opcional)</label>
-                <input type="text" id="f_footer" placeholder="Ej. ⚡ Oferta válida hasta agotar existencias.">
-                <div class="small">Se agrega al final si lo completas.</div>
-              </div>
-
-              <div class="switcher">
-                <div class="tab active" id="tab-auto">Usar mensaje automático</div>
-                <div class="tab" id="tab-libre">Escribir texto libre</div>
-              </div>
-
-              {{-- Preview tipo WhatsApp --}}
-              <div class="preview" style="margin-top:10px">
-                <div class="ph">WA</div>
-                <div class="bubble">
-                  <h4 id="pv_titulo">¡Promoción especial de Grupo MediBuy! 🎉</h4>
-                  <pre id="pv_texto">Hola 👋,
-Tenemos para ti una gran oportunidad en equipo médico 🏥.
-
-👉 …
-📉 Descuento: …
-⏳ Vigencia: …
-
-No dejes pasar esta promoción exclusiva 💙.
-En Grupo MediBuy estamos para apoyarte con la mejor calidad y servicio.</pre>
-                  <div class="foot" id="pv_footer" style="display:none"></div>
-                </div>
+              {{-- Campo de texto {{2}} --}}
+              <div style="margin-top:12px">
+                <label>Texto &#123;&#123;2&#125;&#125; (frase)</label>
+                <input class="inp" name="producto" id="phrase" maxlength="500" placeholder="En promoción videocolonoscopio fujinon" required>
+                @error('producto')<div class="muted" style="color:var(--err)">{{ $message }}</div>@enderror
+                <div class="muted"><span id="fraseCounter">0</span>/500 • <span id="phrasePreview">Tu frase aparecerá aquí…</span></div>
               </div>
             </div>
+          </div>
 
-            {{-- Campo oculto que siempre viaja al servidor --}}
-            <input type="hidden" name="descripcion" id="descripcion_hidden" value="">
-            {{-- Textarea libre (solo si el usuario elige modo libre) --}}
-            <div id="box_libre" style="display:none;margin-top:8px">
-              <label>Descripción (texto libre)</label>
-              <textarea rows="6" id="descripcion_libre" placeholder="Escribe tu texto…"></textarea>
-              <div class="small">Este texto sustituirá al mensaje automático.</div>
+          {{-- Más variables del template --}}
+          <div class="grid" style="grid-template-columns:1fr 1fr;gap:12px">
+            <div>
+              <label>Descuento (&#123;&#123;3&#125;&#125;)</label>
+              <input class="inp" name="descuento" placeholder="Ej. 25%" required>
+              @error('descuento')<div class="muted" style="color:var(--err)">{{ $message }}</div>@enderror
+            </div>
+            <div>
+              <label>Vigencia (&#123;&#123;4&#125;&#125;)</label>
+              <input class="inp" name="vigencia" placeholder="Ej. Vigente hasta 30/09" required>
+              @error('vigencia')<div class="muted" style="color:var(--err)">{{ $message }}</div>@enderror
             </div>
           </div>
 
-          <div>
-            <label>Imagen (JPG/PNG, máx. 5 MB)</label>
-            <input type="file" name="imagen_file" accept=".jpg,.jpeg,.png" id="imagenInput">
-            @error('imagen_file')<div class="small">{{ $message }}</div>@enderror
-            <div class="preview" id="previewBox" style="display:none;margin-top:8px">
-              <div class="ph">IMG</div>
-              <img id="previewImg" alt="Preview" style="max-width:180px;border-radius:12px;display:block">
+          {{-- Herramientas de selección --}}
+          <div class="grid" style="grid-template-columns:1fr auto auto auto;align-items:center">
+            <div class="muted">Selecciona destinatarios (se guarda en tu navegador).</div>
+            <button class="btn-lite" type="button" id="checkPage">Seleccionar visibles</button>
+            <button class="btn-lite" type="button" id="uncheckPage">Quitar visibles</button>
+            <button class="btn-lite" type="button" id="invertPage">Invertir visibles</button>
+          </div>
+
+          {{-- Tabla --}}
+          <div class="table-wrap">
+            <table id="clientsTable">
+              <thead>
+                <tr>
+                  <th style="width:42px"><input type="checkbox" id="checkAllPage"></th>
+                  <th>Nombre</th>
+                  <th>Teléfono</th>
+                </tr>
+              </thead>
+              <tbody>
+                @forelse ($clientes as $c)
+                  @php $nombre = trim(($c->nombre ?? '').' '.($c->apellido ?? '')); @endphp
+                  <tr data-name="{{ $nombre }}" data-phone="{{ $c->telefono ?? '' }}">
+                    <td><input type="checkbox" value="{{ $c->id }}" class="rowcheck"></td>
+                    <td>{{ $nombre ?: '—' }}</td>
+                    <td>{{ $c->telefono ?? '—' }}</td>
+                  </tr>
+                @empty
+                  <tr><td colspan="3" class="muted">Sin resultados</td></tr>
+                @endforelse
+              </tbody>
+            </table>
+          </div>
+
+          {{-- Chips debajo --}}
+          <div class="chips" id="chipsInline"></div>
+
+          {{-- Acciones sticky --}}
+          <div class="sticky-actions">
+            <button class="btn-ghost" type="button" id="toggleDrawer">Mostrar panel</button>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+              <span class="tag" id="selCounterBadge">0</span>
+              <input type="hidden" name="mode" id="mode" value="selected">
+              <button class="btn" type="submit" id="btnSelected">📣 Enviar a seleccionados (<span id="selCountBtn">0</span>)</button>
             </div>
           </div>
-        </div>
+        </form>
 
-        <div class="tabbar" role="tablist" aria-label="Origen de destinatarios" style="margin-top:8px">
-          <div class="tab active" data-tab="bd">Seleccionar desde clientes</div>
-          <div class="tab" data-tab="manual">Pegar números manualmente</div>
-        </div>
-
-        {{-- Tab: desde BD --}}
-        <div id="tab-bd">
-          <div class="tools" style="margin-top:8px">
-            <button type="button" class="btn btn-ghost" id="btnSelTodos">Seleccionar visibles</button>
-            <button type="button" class="btn btn-ghost" id="btnQuitarTodos">Quitar selección</button>
-            <span class="counter" id="countSel">0 seleccionados</span>
+        {{-- Resultados opcionales --}}
+        @if (session('results'))
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Teléfono</th><th>Nombre</th><th>Estado</th><th>WAMID</th></tr></thead>
+              <tbody>
+              @foreach (session('results') as $r)
+                <tr>
+                  <td>{{ $r['to'] }}</td>
+                  <td>{{ $r['nombre'] }}</td>
+                  <td>@if ($r['ok'])<span class="tag" style="background:#ecfdf5;border-color:#bbf7d0;color:#065f46">OK {{ $r['status'] }}</span>@else<span class="tag" style="background:#fef2f2;border-color:#fecaca;color:#991b1b">ERR {{ $r['status'] }}</span>@endif</td>
+                  <td>{{ $r['wamid'] ?? '-' }}</td>
+                </tr>
+              @endforeach
+              </tbody>
+            </table>
           </div>
-          <div class="clients-wrap" id="clientsList">
-            @forelse($clientes as $c)
-              @php $nombre = trim(($c->nombre ?? '').' '.($c->apellido ?? '')); @endphp
-              <label class="row">
-                <input type="checkbox" name="clientes_ids[]" value="{{ $c->id }}">
-                <div>
-                  <div class="name">{{ $nombre ?: 'Sin nombre' }}</div>
-                  <div class="small">{{ $c->telefono ?: '—' }} · {{ $c->email ?: '—' }} @if($c->asesor) · Asesor: {{ $c->asesor }} @endif</div>
-                </div>
-              </label>
-            @empty
-              <div class="small">No hay clientes que coincidan con el filtro.</div>
-            @endforelse
-          </div>
-        </div>
-
-        {{-- Tab: manual --}}
-        <div id="tab-manual" style="display:none">
-          <label style="margin-top:10px">Números (uno por línea o separados por coma)</label>
-          <textarea name="clientes_manual" rows="4" placeholder="52155xxxxxxx&#10;52156xxxxxxx">{{ old('clientes_manual') }}</textarea>
-          <div class="small">Para MX también acepto 10 dígitos; convierto a <b>521</b> automáticamente.</div>
-        </div>
-
-        <div style="margin-top:12px;display:flex;justify-content:flex-end;gap:10px">
-          <button class="btn btn-primary" type="submit" id="btnSend">Enviar promoción</button>
-        </div>
-      </form>
-
-      <div class="small" style="margin-top:12px">
-        Nota: los mensajes sin plantilla solo se entregan dentro de la ventana de 24 h desde el último mensaje del cliente.
-        Fuera de ese periodo, WhatsApp devuelve error de “re-engagement” (cód. <code>131047</code>).
+        @endif
       </div>
 
+      {{-- DERECHA: Panel lateral --}}
+      <div class="side-card side-sticky">
+        <div class="side-head">
+          <div style="display:flex;gap:8px;align-items:center">
+            <strong>Seleccionados</strong>
+            <span class="tag" id="selCounterBadgeSide">0</span>
+          </div>
+          <button class="btn-ghost" type="button" id="clearAll">Limpiar</button>
+        </div>
+        <div class="side-body">
+          <div class="muted" style="margin-bottom:8px">Acciones rápidas sobre los visibles:</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+            <button class="btn-lite" type="button" id="sideCheckPage">Seleccionar</button>
+            <button class="btn-lite" type="button" id="sideUncheckPage">Quitar</button>
+            <button class="btn-lite" type="button" id="sideInvertPage">Invertir</button>
+          </div>
+          <div class="chips" id="chipsSide"></div>
+          <div style="display:flex;justify-content:flex-end;margin-top:12px">
+            <button class="btn" type="button" id="sideSend">Enviar a seleccionados</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
 
+{{-- Drawer móvil --}}
+<div class="drawer" id="drawer">
+  <div class="drawer-head">
+    <strong>Seleccionados (<span id="selCounterDrawer">0</span>)</strong>
+    <button class="btn-ghost" id="closeDrawer" type="button">Cerrar</button>
+  </div>
+  <div class="drawer-body"><div class="chips" id="chipsDrawer"></div></div>
+  <div class="drawer-foot">
+    <button class="btn-ghost" id="drawerClear" type="button">Limpiar</button>
+    <button class="btn" id="drawerSend" type="button">Enviar a seleccionados</button>
+  </div>
+</div>
+
 <script>
-// ---------- Preview de imagen ----------
-const input = document.getElementById('imagenInput');
-const box   = document.getElementById('previewBox');
-const img   = document.getElementById('previewImg');
-input?.addEventListener('change', ()=>{
-  const f = input.files?.[0];
-  if (!f) { box.style.display='none'; return; }
-  img.src = URL.createObjectURL(f);
-  box.style.display = 'flex';
-});
+(() => {
+  /* ========= Selección persistente ========= */
+  const STORAGE_KEY = 'promoSelectedIds_v4';
+  let selected = new Map();
+  const saveSel = () => localStorage.setItem(STORAGE_KEY, JSON.stringify([...selected.values()]));
+  const loadSel = () => {
+    try { selected = new Map((JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]')).map(o=>[String(o.id), o])); }
+    catch { selected = new Map(); }
+  };
 
-// ---------- Generador de mensaje automático ----------
-const titulo       = document.querySelector('input[name="titulo"]');
-const pvTitulo     = document.getElementById('pv_titulo');
-const pvTexto      = document.getElementById('pv_texto');
-const pvFooter     = document.getElementById('pv_footer');
-const fProd        = document.getElementById('f_producto');
-const fDesc        = document.getElementById('f_descuento');
-const fVig         = document.getElementById('f_vigencia');
-const fFooter      = document.getElementById('f_footer');
+  /* Refs */
+  const table = document.getElementById('clientsTable');
+  const quickSearch = document.getElementById('quickSearch');
+  const checkAll = document.getElementById('checkAllPage');
 
-const hiddenDesc   = document.getElementById('descripcion_hidden');
-const boxLibre     = document.getElementById('box_libre');
-const txtLibre     = document.getElementById('descripcion_libre');
-const tabAuto      = document.getElementById('tab-auto');
-const tabLibre     = document.getElementById('tab-libre');
+  const chipsInline = document.getElementById('chipsInline');
+  const chipsSide   = document.getElementById('chipsSide');
+  const chipsDrawer = document.getElementById('chipsDrawer');
 
-let modo = 'auto'; // 'auto' | 'libre'
+  const selCountBtn = document.getElementById('selCountBtn');
+  const selBadge    = document.getElementById('selCounterBadge');
+  const selBadgeSide= document.getElementById('selCounterBadgeSide');
+  const selDrawer   = document.getElementById('selCounterDrawer');
 
-function buildAutoMessage(){
-  const p  = fProd.value?.trim() || '…';
-  const d  = fDesc.value?.trim() || '…';
-  const v  = fVig.value?.trim()  || '…';
-  const body =
-`Hola 👋,
-Tenemos para ti una gran oportunidad en equipo médico 🏥.
+  const btnSelected = document.getElementById('btnSelected');
+  const sideSend = document.getElementById('sideSend');
+  const form = document.getElementById('sendForm');
+  const mode = document.getElementById('mode');
 
-👉 ${p}
-📉 Descuento: ${d}
-⏳ Vigencia: ${v}
+  const checkPage = document.getElementById('checkPage');
+  const uncheckPage = document.getElementById('uncheckPage');
+  const invertPage = document.getElementById('invertPage');
 
-No dejes pasar esta promoción exclusiva 💙.
-En Grupo MediBuy estamos para apoyarte con la mejor calidad y servicio.`;
-  pvTexto.textContent = body;
-  pvTitulo.textContent = titulo.value || '¡Promoción especial de Grupo MediBuy! 🎉';
+  const sideCheckPage = document.getElementById('sideCheckPage');
+  const sideUncheckPage = document.getElementById('sideUncheckPage');
+  const sideInvertPage = document.getElementById('sideInvertPage');
 
-  const foot = fFooter.value.trim();
-  if (foot) { pvFooter.style.display='block'; pvFooter.textContent = foot; }
-  else { pvFooter.style.display='none'; pvFooter.textContent=''; }
+  const drawer = document.getElementById('drawer');
+  const toggleDrawer = document.getElementById('toggleDrawer');
+  const closeDrawer  = document.getElementById('closeDrawer');
+  const drawerClear  = document.getElementById('drawerClear');
+  const drawerSend   = document.getElementById('drawerSend');
+  const clearAllBtn  = document.getElementById('clearAll');
 
-  // Llevar al input oculto que leerá el servidor:
-  hiddenDesc.value = foot ? (body + '\n\n' + foot) : body;
-}
+  /* Utils */
+  const checks = () => [...table.querySelectorAll('.rowcheck')];
+  const rowInfo = (tr) => ({ id:String(tr.querySelector('.rowcheck').value), name:tr.dataset.name||'Cliente', phone:tr.dataset.phone||'' });
 
-// inputs que refrescan el preview
-['input','change'].forEach(evt=>{
-  titulo.addEventListener(evt, buildAutoMessage);
-  fProd.addEventListener(evt, buildAutoMessage);
-  fDesc.addEventListener(evt, buildAutoMessage);
-  fVig.addEventListener(evt, buildAutoMessage);
-  fFooter.addEventListener(evt, buildAutoMessage);
-});
+  function renderChips(container, max){
+    container.innerHTML = '';
+    const arr = [...selected.values()];
+    arr.slice(0, max).forEach(o=>{
+      const el = document.createElement('span');
+      el.className='chip';
+      el.innerHTML=`👤 ${o.name} <span class="muted">• ${o.phone || 's/tel'}</span> <span class="x" data-id="${o.id}">✕</span>`;
+      el.querySelector('.x').onclick = () => { selected.delete(String(o.id)); saveSel(); refresh(); }
+      container.appendChild(el);
+    });
+    if(arr.length>max){ const more=document.createElement('span'); more.className='chip'; more.textContent = `+${arr.length-max} más…`; container.appendChild(more); }
+  }
 
-// modo auto / libre
-tabAuto.addEventListener('click', ()=>{
-  modo='auto';
-  tabAuto.classList.add('active'); tabLibre.classList.remove('active');
-  boxLibre.style.display='none';
-  buildAutoMessage();
-});
-tabLibre.addEventListener('click', ()=>{
-  modo='libre';
-  tabLibre.classList.add('active'); tabAuto.classList.remove('active');
-  boxLibre.style.display='block';
-});
+  const visibleRows = () => {
+    const q = (quickSearch.value||'').trim().toLowerCase();
+    const rows = [...table.querySelectorAll('tbody tr')];
+    if(!q) return rows;
+    return rows.filter(tr => ((tr.dataset.name||'')+' '+(tr.dataset.phone||'')).toLowerCase().includes(q));
+  };
 
-// al escribir libre, copiar a hidden
-txtLibre.addEventListener('input', ()=>{
-  if (modo==='libre') hiddenDesc.value = txtLibre.value;
-});
+  function refresh(){
+    checks().forEach(cb=>{
+      const on = selected.has(String(cb.value));
+      cb.checked = on;
+      cb.closest('tr').classList.toggle('picked', on);
+    });
+    const n = selected.size;
+    [selCountBtn, selBadge, selBadgeSide, selDrawer].forEach(el=> el && (el.textContent = n));
+    renderChips(chipsInline, 20);
+    renderChips(chipsSide, 40);
+    renderChips(chipsDrawer, 999);
+    const vis = visibleRows();
+    checkAll.checked = vis.length && vis.every(tr => selected.has(rowInfo(tr).id));
+    if(n>0 && !drawer.classList.contains('open')) drawer.classList.add('open');
+  }
 
-// inicial
-buildAutoMessage();
+  function selectVis(){ visibleRows().forEach(tr => selected.set(rowInfo(tr).id, rowInfo(tr))); saveSel(); refresh(); }
+  function unselectVis(){ visibleRows().forEach(tr => selected.delete(rowInfo(tr).id)); saveSel(); refresh(); }
+  function invertVis(){ visibleRows().forEach(tr => { const {id} = rowInfo(tr); selected.has(id)? selected.delete(id): selected.set(id,rowInfo(tr)); }); saveSel(); refresh(); }
 
-// ---------- Tabs (destinatarios) ----------
-document.querySelectorAll('.tabbar .tab').forEach(t=>{
-  t.addEventListener('click', ()=>{
-    document.querySelectorAll('.tabbar .tab').forEach(x=>x.classList.remove('active'));
-    t.classList.add('active');
-    const tab = t.dataset.tab;
-    document.getElementById('tab-bd').style.display     = (tab==='bd')?'block':'none';
-    document.getElementById('tab-manual').style.display = (tab==='manual')?'block':'none';
+  /* Eventos */
+  loadSel(); refresh();
+
+  table.addEventListener('change', e=>{
+    const cb = e.target.closest('.rowcheck'); if(!cb) return;
+    const info = rowInfo(cb.closest('tr'));
+    cb.checked ? selected.set(info.id, info) : selected.delete(info.id);
+    saveSel(); refresh();
   });
-});
 
-// ---------- Selección y contador ----------
-const list = document.getElementById('clientsList');
-const countSel = document.getElementById('countSel');
-function updateCount(){
-  const n = list?.querySelectorAll('input[type=checkbox]:checked').length || 0;
-  countSel.textContent = n + ' seleccionados';
-}
-list?.addEventListener('change', (e)=>{ if(e.target.type==='checkbox') updateCount(); });
-document.getElementById('btnSelTodos')?.addEventListener('click', ()=>{
-  list?.querySelectorAll('input[type=checkbox]').forEach(cb=>cb.checked = true);
-  updateCount();
-});
-document.getElementById('btnQuitarTodos')?.addEventListener('click', ()=>{
-  list?.querySelectorAll('input[type=checkbox]').forEach(cb=>cb.checked = false);
-  updateCount();
-});
-updateCount();
+  checkAll.addEventListener('change', e=>{ e.target.checked? selectVis() : unselectVis(); });
 
-// ---------- Envío: asegurar que descripción viaja correcta ----------
-document.getElementById('formPromo')?.addEventListener('submit', ()=>{
-  if (modo==='auto') buildAutoMessage();
-});
+  checkPage.addEventListener('click', selectVis);
+  uncheckPage.addEventListener('click', unselectVis);
+  invertPage.addEventListener('click', invertVis);
+
+  sideCheckPage.addEventListener('click', selectVis);
+  sideUncheckPage.addEventListener('click', unselectVis);
+  sideInvertPage.addEventListener('click', invertVis);
+
+  quickSearch.addEventListener('input', ()=>{
+    const q = quickSearch.value.trim().toLowerCase();
+    [...table.querySelectorAll('tbody tr')].forEach(tr=>{
+      const txt = ((tr.dataset.name||'')+' '+(tr.dataset.phone||'')).toLowerCase();
+      tr.style.display = !q || txt.includes(q) ? '' : 'none';
+    });
+    refresh();
+  });
+  window.addEventListener('keydown', e=>{ if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='k'){ e.preventDefault(); quickSearch.focus(); } });
+
+  function injectAndSubmit(){
+    if(selected.size===0){ alert('Selecciona al menos un cliente.'); return; }
+    mode.value = 'selected';
+    form.querySelectorAll('input[name="clientes_ids[]"]').forEach(el=>el.remove());
+    for(const {id} of selected.values()){
+      const h=document.createElement('input');
+      h.type='hidden'; h.name='clientes_ids[]'; h.value=id; form.appendChild(h);
+    }
+    form.submit();
+  }
+  btnSelected.addEventListener('click', (e)=>{ e.preventDefault(); injectAndSubmit(); });
+  sideSend   .addEventListener('click', injectAndSubmit);
+
+  toggleDrawer.addEventListener('click', ()=> drawer.classList.toggle('open'));
+  closeDrawer .addEventListener('click', ()=> drawer.classList.remove('open'));
+  drawerClear .addEventListener('click', ()=> { selected.clear(); saveSel(); refresh(); });
+  drawerSend  .addEventListener('click', injectAndSubmit);
+  clearAllBtn .addEventListener('click', ()=> { selected.clear(); saveSel(); refresh(); });
+
+  /* -------- Dropzone -------- */
+  const dz = document.getElementById('dropzone');
+  const dzThumb = document.getElementById('dzThumb');
+  const inputFile = document.getElementById('headerInput');
+  const btnRemoveImg = document.getElementById('btnRemoveImg');
+
+  function setThumb(file){
+    const reader = new FileReader();
+    reader.onload = e => { dzThumb.innerHTML = `<img src="${e.target.result}" alt="preview">`; btnRemoveImg.style.display='inline-block'; };
+    reader.readAsDataURL(file);
+  }
+  function clearThumb(){ dzThumb.innerHTML = `<span class="muted" id="dzPlaceholder">IMG</span>`; inputFile.value=''; btnRemoveImg.style.display='none'; }
+
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+  dz.addEventListener('dragleave', ()=> dz.classList.remove('dragover'));
+  dz.addEventListener('drop', e => {
+    e.preventDefault(); dz.classList.remove('dragover');
+    const f = e.dataTransfer.files?.[0]; if(!f) return;
+    if(!/image\/(png|jpeg)/.test(f.type)){ alert('Solo JPG o PNG'); return; }
+    inputFile.files = e.dataTransfer.files; setThumb(f);
+  });
+  dz.addEventListener('click', (e)=>{ if(e.target.id!=='btnRemoveImg') inputFile.click(); });
+  inputFile.addEventListener('change', ()=>{ const f = inputFile.files?.[0]; if(f) setThumb(f); });
+  btnRemoveImg.addEventListener('click', clearThumb);
+
+  /* Frase: contador + preview */
+  const phrase = document.getElementById('phrase');
+  const fraseCounter = document.getElementById('fraseCounter');
+  const phrasePreview = document.getElementById('phrasePreview');
+  phrase.addEventListener('input', ()=>{ fraseCounter.textContent = phrase.value.length; phrasePreview.textContent = phrase.value || 'Tu frase aparecerá aquí…'; });
+})();
 </script>
 @endsection

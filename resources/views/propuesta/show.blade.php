@@ -120,7 +120,7 @@
         <!-- WhatsApp (tpl fija doc_pdf_utility_v1 / es_MX) -->
         <form method="POST" action="{{ route('propuestas.whatsapp.plantilla', $propuesta) }}" id="form-wa" class="m-0">
           @csrf
-          <input type="hidden" name="template_name" value="doc_pdf_utility_v1">
+          <input type="hidden" name="template_name" value="doc_pdf_utility_v4">
           <input type="hidden" name="template_lang"  value="es_MX">
           <button type="submit"
                   id="btn-wa"

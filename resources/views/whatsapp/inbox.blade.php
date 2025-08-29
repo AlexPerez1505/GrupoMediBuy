@@ -1,5 +1,8 @@
 @extends('layouts.app')
 
+@section('title', 'whatsapp')
+@section('titulo', 'whatsapp')
+
 @section('content')
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
 
@@ -270,6 +273,12 @@
   window.addEventListener('scroll', onScroll, {passive:true});
   pinnedToTop = isNearTop();
 
+  // === NUEVO: quitar placeholder vacío cuando llegue el primer hilo ===
+  function hideEmptyPlaceholder(){
+    const el = document.querySelector('#list .empty');
+    if (el) el.remove();
+  }
+
   // Construcción de filas
   function formatMsisdnClient(msisdn){
     const d = (msisdn||'').replace(/\D+/g,'');
@@ -381,6 +390,9 @@
     let row = document.querySelector(selector);
 
     if (!row){
+      // 👇 quita "Aún no hay conversaciones." antes de insertar
+      hideEmptyPlaceholder();
+
       // Si no estás arriba, NO reordenamos: diferimos la inserción y mostramos chip
       if (!pinnedToTop){
         pending.set(peerDigits, t);
@@ -394,6 +406,7 @@
       requestAnimationFrame(()=>{
         const just = list.querySelector(selector);
         if (just) just.classList.remove('row--new'); // evitas re-animación en futuros updates
+        renderTimes();
       });
       return;
     }
@@ -409,6 +422,10 @@
 
   function flushPending(){
     if (!pending.size) return;
+
+    // 👇 por si estaba el placeholder
+    hideEmptyPlaceholder();
+
     // Evita parpadeos durante inserciones múltiples
     list.classList.add('no-anim');
 
@@ -504,6 +521,8 @@
       etag = res.headers.get('ETag') || etag;
       const data = await res.json();
       if (Array.isArray(data)){
+        if (data.length) hideEmptyPlaceholder(); // 👈 si llegaron hilos, quita el placeholder
+
         // Preservar postura de scroll global
         const prevY = window.scrollY || document.documentElement.scrollTop || 0;
 

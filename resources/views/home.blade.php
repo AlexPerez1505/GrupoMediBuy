@@ -481,12 +481,13 @@
       <i class="fas fa-user-check"></i>
       <p>Asistencias</p>
     </a>
-    <!-- Botón flotante -->
+
+    @endif
+  @endif
+      <!-- Botón flotante -->
 <a href="/inventario/buscar" target="_self" class="registro-btn" title="Ir a registro">
   <i class="bi bi-search"></i>
 </a>
-    @endif
-  @endif
 </div>
 
   <script>

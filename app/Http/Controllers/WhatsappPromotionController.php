@@ -4,14 +4,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\Cliente;
-use App\Models\Categoria; // si existe el modelo
+use App\Models\Categoria; // si existe
 use App\Services\WhatsAppService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 
 class WhatsappPromotionController extends Controller
 {
     /**
-     * Formulario de envío directo (sin plantilla): imagen + texto.
+     * Formulario (DIRECT) para enviar con PLANTILLA: promo_img_sin_boton_v1
      * GET /promos/whatsapp/direct
      */
     public function directCreate(Request $request)
@@ -19,7 +20,6 @@ class WhatsappPromotionController extends Controller
         $q         = trim((string)$request->get('q', ''));
         $categoria = $request->get('categoria');
 
-        // Listado de clientes (limit defensivo para UI)
         $clientes = Cliente::query()
             ->when($q, function ($qr) use ($q) {
                 $like = "%{$q}%";
@@ -36,125 +36,205 @@ class WhatsappPromotionController extends Controller
             ->limit(1000)
             ->get(['id','nombre','apellido','telefono','email','categoria_id','asesor']);
 
-        // Catálogo de categorías (si existe el modelo)
         $categorias = class_exists(Categoria::class)
             ? Categoria::orderBy('nombre')->get(['id','nombre'])
             : collect();
 
-        return view('promociones.whatsapp-direct', compact('clientes','categorias','q','categoria'));
+        return view('promociones.whatsapp-direct', [
+            'clientes'   => $clientes,
+            'categorias' => $categorias,
+            'q'          => $q,
+            'categoria'  => $categoria,
+        ]);
     }
 
     /**
-     * Envía imagen + texto (sin plantilla) a múltiples destinatarios.
+     * Envío (DIRECT) con PLANTILLA: promo_img_sin_boton_v1 (header imagen + body {{1..4}})
      * POST /promos/whatsapp/direct
      */
     public function directSend(Request $request, WhatsAppService $wa)
     {
-        // Validaciones de UI
+        // Validación del formulario
         $data = $request->validate([
-            'titulo'            => ['required','string','max:60'],
-            'descripcion'       => ['required','string','max:1024'],
-            'imagen_file'       => ['required','file','mimes:jpg,jpeg,png','max:5120'], // 5 MB
-            'clientes_ids'      => ['nullable','array'],
-            'clientes_ids.*'    => ['integer','exists:clientes,id'],
-            'clientes_manual'   => ['nullable','string'],
+            'producto'         => ['required','string','max:120'],   // {{2}}
+            'descuento'        => ['required','string','max:100'],   // {{3}}
+            'vigencia'         => ['required','string','max:120'],   // {{4}}
+            'imagen_file'      => ['required','file','mimes:jpg,jpeg,png','max:5120'], // header image (5MB)
+            'clientes_ids'     => ['nullable','array'],
+            'clientes_ids.*'   => ['integer','exists:clientes,id'],
+            'clientes_manual'  => ['nullable','string'],
         ]);
 
-        // 1) Construir lista de números a partir de BD
-        $numbers = [];
+        // 1) Destinatarios (desde BD + manuales)
+        $destinatarios = [];
+
         if (!empty($data['clientes_ids'])) {
-            $fromDb = Cliente::whereIn('id', $data['clientes_ids'])
-                ->pluck('telefono')
-                ->filter()
-                ->all();
-            $numbers = array_merge($numbers, $fromDb);
+            $rows = Cliente::whereIn('id', $data['clientes_ids'])
+                ->get(['id','nombre','apellido','telefono']);
+            foreach ($rows as $c) {
+                $nombre = trim(($c->nombre ?? '').' '.($c->apellido ?? '')) ?: 'Cliente';
+                $tel    = WhatsAppService::normalizeMsisdn((string) $c->telefono);
+                if ($tel) $destinatarios[] = ['to' => $tel, 'nombre' => $nombre];
+            }
         }
 
-        // 2) Agregar números pegados manualmente
+        // Manual: "521XXXXXXXXXX|Nombre" ó solo número
         if (!empty($data['clientes_manual'])) {
-            $raw = preg_split('/[\r\n,;]+/', (string)$data['clientes_manual']);
-            $numbers = array_merge($numbers, array_map('trim', $raw));
-        }
-
-        // 3) Normalizar a E.164 (MX: 10 dígitos -> 521XXXX...)
-        $numbers = array_values(array_unique(array_filter(array_map(function ($n) {
-            return WhatsAppService::normalizeMsisdn((string)$n);
-        }, $numbers), fn($n) => !empty($n))));
-
-        // 4) Evitar auto-envío al mismo número del remitente (si está configurado)
-        $senderE164 = (string) config('services.whatsapp.phone_e164', env('WHATSAPP_PHONE_NUMBER', ''));
-        $senderE164 = preg_replace('/\D+/', '', $senderE164 ?? '');
-        if ($senderE164 !== '') {
-            $numbers = array_values(array_filter($numbers, function ($n) use ($senderE164) {
-                return preg_replace('/\D+/', '', $n) !== $senderE164;
-            }));
-        }
-
-        if (empty($numbers)) {
-            return back()->with('wa_info', 'No seleccionaste destinatarios.')->withInput();
-        }
-
-        // 5) Subir imagen UNA sola vez -> obtener media_id
-        try {
-            $upload  = $wa->uploadMedia($request->file('imagen_file'));
-        } catch (\Throwable $e) {
-            \Log::error('WA_MEDIA_UPLOAD_EXCEPTION', ['e' => $e->getMessage()]);
-            return back()->with('wa_info', 'Ocurrió un error al preparar la subida de imagen.')->withInput();
-        }
-
-        $uJson   = $upload->json();
-        $mediaId = data_get($uJson, 'id');
-
-        if (!$upload->successful() || !$mediaId) {
-            \Log::warning('WA_MEDIA_UPLOAD_FAIL', ['resp' => $uJson]);
-            return back()
-                ->with('wa_info', 'No se pudo subir la imagen a WhatsApp. Revisa tamaño/tipo de archivo.')
-                ->with('wa_fail', [$uJson])
-                ->withInput();
-        }
-
-        // 6) Enviar a todos los destinatarios
-        //    Sugerencia: puedes ajustar el delay si tu WABA es sensible al rate limit.
-        $delayMs = (int) env('WA_PROMO_DELAY_MS', 0);
-
-        $ok = [];
-        $fail = [];
-
-        // Opcional: dividir en chunks para evitar timeouts muy largos
-        $chunks = array_chunk($numbers, 100); // 100 por bloque
-        foreach ($chunks as $block) {
-            foreach ($block as $n) {
-                $resp  = $wa->sendImageByIdPromotion($n, $mediaId, $data['titulo'], $data['descripcion']);
-                $json  = $resp->json();
-                $wamid = data_get($json, 'messages.0.id');
-
-                if ($resp->successful() && $wamid) {
-                    $ok[] = $n;
-                    \Log::info('WA_OK_IMG_FREE', ['to' => $n, 'wamid' => $wamid]);
+            $raws = preg_split('/[\r\n,;]+/', (string)$data['clientes_manual']);
+            foreach ($raws as $r) {
+                $r = trim($r); if ($r === '') continue;
+                if (str_contains($r, '|')) {
+                    [$num, $nom] = array_map('trim', explode('|', $r, 2));
+                    $tel = WhatsAppService::normalizeMsisdn($num);
+                    if ($tel) $destinatarios[] = ['to' => $tel, 'nombre' => $nom ?: 'Cliente'];
                 } else {
-                    $code   = data_get($json, 'error.code');
-                    $detail = data_get($json, 'error.message') ?: data_get($json, 'error.error_data.details');
-                    $fail[] = ['n' => $n, 'code' => $code, 'detail' => $detail, 'raw' => $json];
-                    \Log::warning('WA_FAIL_IMG_FREE', ['to' => $n, 'resp' => $json]);
-                }
-
-                if ($delayMs > 0) {
-                    usleep($delayMs * 1000);
+                    $tel = WhatsAppService::normalizeMsisdn($r);
+                    if ($tel) $destinatarios[] = ['to' => $tel, 'nombre' => 'Cliente'];
                 }
             }
         }
 
-        // 7) Mensaje de resultado
-        $msg = count($ok) . " enviado(s), " . count($fail) . " falló(aron).";
-        if (count($fail)) {
-            // Tip de 24h si aparece 131047 entre los fallos
-            $has131047 = collect($fail)->contains(fn($f) => (string)($f['code'] ?? '') === '131047');
-            $tip = $has131047
-                ? " Algunos destinatarios están fuera de la ventana de 24 h (código 131047). En esos casos debes usar plantilla."
-                : "";
-            return back()->with('wa_info', $msg . $tip)->with('wa_fail', $fail)->withInput();
+        // Normalizar + dedupe por teléfono
+        $seen = [];
+        $destinatarios = array_values(array_filter($destinatarios, function ($d) use (&$seen) {
+            $k = preg_replace('/\D+/', '', $d['to']);
+            if ($k === '') return false;
+            if (isset($seen[$k])) return false;
+            $seen[$k] = true; return true;
+        }));
+
+        // Evitar auto-envío al remitente
+        $senderE164 = preg_replace('/\D+/', '', (string) config('services.whatsapp.phone_e164', env('WHATSAPP_PHONE_NUMBER', '')));
+        if ($senderE164 !== '') {
+            $destinatarios = array_values(array_filter($destinatarios, function ($d) use ($senderE164) {
+                return preg_replace('/\D+/', '', $d['to']) !== $senderE164;
+            }));
         }
 
-        return back()->with('wa_success', $msg . ' (imagen desde archivo, sin plantilla)');
+        if (empty($destinatarios)) {
+            return back()->with('wa_info', 'No seleccionaste destinatarios.')->withInput();
+        }
+
+        // 2) Subir imagen 1 sola vez -> media_id
+        try {
+            $upload = $wa->uploadMedia($request->file('imagen_file'));
+        } catch (\Throwable $e) {
+            \Log::error('WA_MEDIA_UPLOAD_EXCEPTION', ['e' => $e->getMessage()]);
+            return back()->with('wa_info', 'No se pudo preparar la subida de imagen.')->withInput();
+        }
+
+        $mediaId = data_get($upload->json(), 'id');
+        if (!$upload->successful() || !$mediaId) {
+            \Log::warning('WA_MEDIA_UPLOAD_FAIL', ['resp' => $upload->json()]);
+            return back()->with('wa_info', 'No se pudo subir la imagen a WhatsApp.')->withInput();
+        }
+
+        // 3) Enviar por TEMPLATE con header IMAGEN
+        $cfg     = config('services.whatsapp');
+        $token   = (string) ($cfg['token'] ?? '');
+        $version = (string) ($cfg['version'] ?? 'v21.0');
+        $phoneId = (string) ($cfg['phone_id'] ?? '');
+        $endpoint= "https://graph.facebook.com/{$version}/{$phoneId}/messages";
+
+        // Nombre de plantilla y fallback de idiomas desde .env
+        $plantilla = (string) env('WA_PROMO_TPL_IMG', 'promo_img_sin_boton_v1');
+        $langPrefs = array_values(array_unique(array_filter(array_map('trim', explode(',', (string)
+            env('WA_PROMO_LANG', 'es_MX,es,es_ES,en_US')
+        )))));
+
+        $producto  = (string) $data['producto'];
+        $descuento = (string) $data['descuento'];
+        $vigencia  = (string) $data['vigencia'];
+
+        $delayMs = (int) env('WA_PROMO_DELAY_MS', 0);
+        $ok = []; $fail = [];
+
+        foreach (array_chunk($destinatarios, 100) as $bloque) {
+            foreach ($bloque as $d) {
+                $components = [
+                    [
+                        'type' => 'header',
+                        'parameters' => [[
+                            'type' => 'image',
+                            'image' => [ 'id' => $mediaId ],
+                        ]],
+                    ],
+                    [
+                        'type' => 'body',
+                        'parameters' => [
+                            ['type' => 'text', 'text' => $d['nombre']],   // {{1}}
+                            ['type' => 'text', 'text' => $producto],      // {{2}}
+                            ['type' => 'text', 'text' => $descuento],     // {{3}}
+                            ['type' => 'text', 'text' => $vigencia],      // {{4}}
+                        ],
+                    ],
+                ];
+
+                $sentOk = false; $lastJson = null; $lastCode = null; $usedLang = null;
+
+                foreach ($langPrefs as $langTry) {
+                    $payload = [
+                        'messaging_product' => 'whatsapp',
+                        'to'       => $d['to'],
+                        'type'     => 'template',
+                        'template' => [
+                            'name'       => $plantilla,
+                            'language'   => ['code' => $langTry],
+                            'components' => $components,
+                        ],
+                    ];
+
+                    try {
+                        $resp = Http::withToken($token)->acceptJson()->asJson()->timeout(30)->post($endpoint, $payload);
+                        $json = $resp->json();
+                    } catch (\Throwable $e) {
+                        $json = ['error' => ['message' => $e->getMessage(), 'code' => 'HTTP_EXC']];
+                    }
+
+                    $lastJson = $json;
+                    $lastCode = (string) data_get($json, 'error.code');
+                    $wamid    = data_get($json, 'messages.0.id');
+
+                    if ($resp instanceof \Illuminate\Http\Client\Response && $resp->successful() && $wamid) {
+                        $ok[] = ['to' => $d['to'], 'wamid' => $wamid, 'lang' => $langTry];
+                        \Log::info('WA_OK_TPL_IMG', ['to' => $d['to'], 'wamid' => $wamid, 'lang' => $langTry]);
+                        $usedLang = $langTry;
+                        $sentOk = true;
+                        break;
+                    }
+
+                    // Si la traducción no existe, probamos con el siguiente idioma
+                    if ($lastCode === '132001') {
+                        continue;
+                    } else {
+                        // Otros errores: salimos del ciclo de idiomas
+                        break;
+                    }
+                }
+
+                if (!$sentOk) {
+                    $fail[] = [
+                        'to'     => $d['to'],
+                        'code'   => $lastCode,
+                        'detail' => data_get($lastJson,'error.message') ?: data_get($lastJson,'error.error_data.details'),
+                        'raw'    => $lastJson,
+                    ];
+                    \Log::warning('WA_FAIL_TPL_IMG', ['to' => $d['to'], 'resp' => $lastJson]);
+                }
+
+                if ($delayMs > 0) usleep($delayMs * 1000);
+            }
+        }
+
+        $msg = count($ok) . " enviado(s), " . count($fail) . " falló(aron).";
+        if (count($fail)) {
+            return back()->with('wa_info', $msg)->with('wa_fail', $fail)->withInput();
+        }
+
+        return back()->with('wa_success', $msg . ' (plantilla: '.$plantilla.')');
     }
+
+    /* ---- Alias opcionales para compatibilidad con "promo-img" ---- */
+    public function promoImgTplCreate(Request $request){ return $this->directCreate($request); }
+    public function promoImgTplSend(Request $request, WhatsAppService $wa){ return $this->directSend($request, $wa); }
 }

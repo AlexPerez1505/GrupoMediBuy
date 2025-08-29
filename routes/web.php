@@ -30,7 +30,6 @@ use App\Http\Controllers\ValoracionController;
 use Illuminate\Support\Facades\Mail;
 use App\Http\Controllers\RemisionController;
 use App\Models\Cliente;
-
 use App\Http\Controllers\OrdenController;
 use App\Http\Controllers\VentaController;
 use App\Http\Controllers\CartaGarantiaController;
@@ -51,6 +50,9 @@ use App\Http\Controllers\WhatsappPromotionController;
 use App\Http\Controllers\WhatsappWebhookController;
 use App\Http\Controllers\WhatsappInboxController;
 use App\Http\Middleware\VerifyCsrfToken;
+use App\Http\Controllers\CashTransactionController;
+// routes/web.php
+use App\Http\Controllers\PromoController;
 
 // Rutas de autenticación (sin middleware 'auth')
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
@@ -524,13 +526,13 @@ Route::get('prestamos/wizard', fn () => redirect()->route('prestamos.create'))
 Route::get('prestamos/{id}/pdf', [PrestamoController::class, 'pdf'])->name('prestamos.pdf');
 
 Route::middleware(['auth'])->group(function () {
-    // Formulario + filtros
-    Route::get('/promos/whatsapp/direct', [WhatsappPromotionController::class, 'directCreate'])
-        ->name('promos.whatsapp.direct.create');
+// Compatibilidad con rutas viejas "direct"
+Route::get('/promos/whatsapp/direct', [WhatsappPromotionController::class, 'directCreate'])
+    ->name('promos.whatsapp.direct.create');
 
-    // Envío
-    Route::post('/promos/whatsapp/direct', [WhatsappPromotionController::class, 'directSend'])
-        ->name('promos.whatsapp.direct.send');
+Route::post('/promos/whatsapp/direct', [WhatsappPromotionController::class, 'directSend'])
+    ->name('promos.whatsapp.direct.send');
+
         // ->middleware('throttle:wa-promos'); // <- opcional si quieres limitar la tasa
 });
 
@@ -559,4 +561,41 @@ Route::middleware('auth')->group(function () {
     Route::get ('/whatsapp/chat/{msisdn}/fetch', [WhatsappInboxController::class, 'fetch'])->name('wa.chat.fetch');
     Route::get('/whatsapp/media/{mediaId}', [WhatsappMediaController::class, 'show'])
         ->name('wa.media');
+    Route::post('/whatsapp/claim/{msisdn}', [WhatsappWebhookController::class, 'claimByAgent'])
+        ->name('wa.claim');
+    Route::post('/whatsapp/close/{msisdn}', [WhatsappWebhookController::class, 'closeByAgent'])
+        ->name('wa.close');
 });
+Route::middleware(['auth'])->group(function () { 
+    Route::get('/transactions',        [CashTransactionController::class,'index'])->name('transactions.index');
+    Route::get('/transactions/create', [CashTransactionController::class,'create'])->name('transactions.create');
+
+    // Tabs (AJAX)
+    Route::post('/transactions/allocation',            [CashTransactionController::class,'storeAllocation'])->name('transactions.allocation.store');
+    Route::post('/transactions/disbursement/direct',   [CashTransactionController::class,'storeDisbursementDirect'])->name('transactions.disbursement.direct');
+    Route::post('/transactions/disbursement/qr/start', [CashTransactionController::class,'startDisbursementWithQr'])->name('transactions.disbursement.qr.start');
+    Route::post('/transactions/return',                [CashTransactionController::class,'storeReturn'])->name('transactions.return.store');
+
+    // Dashboard AJAX
+    Route::get('/transactions/data/chart',   [CashTransactionController::class,'apiChart'])->name('transactions.chart');
+    Route::get('/transactions/data/metrics', [CashTransactionController::class,'apiMetrics'])->name('transactions.metrics');
+    Route::get('/transactions/data/list',    [CashTransactionController::class,'apiTransactions'])->name('transactions.list');
+
+    // Poll QR
+    Route::get('/transactions/qr/status/{token}', [CashTransactionController::class,'qrStatus'])->name('transactions.qr.status');
+
+    // >>> Recibo PDF (lo genera si no existe y lo muestra inline)
+    Route::get('/transactions/{transaction}/receipt', [CashTransactionController::class,'receipt'])
+        ->name('transactions.receipt');
+});
+
+// Rutas públicas para el celular del usuario (sin login)
+Route::get('/qr/{token}',  [CashTransactionController::class, 'showQrForm'])->name('transactions.qr.show');
+Route::post('/qr/{token}', [CashTransactionController::class, 'ackDisbursementWithQr'])->name('transactions.qr.ack');
+Route::middleware(['auth']) // opcional
+    ->prefix('promos')
+    ->group(function () {
+        Route::get('/promo-todo', [PromoController::class,'create'])->name('promos.promo_todo.form');
+        Route::post('/promo-todo', [PromoController::class,'send'])->name('promos.promo_todo.send');
+    });
+        Route::resource('paquetes', PaqueteController::class);

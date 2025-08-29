@@ -176,7 +176,13 @@ class WhatsAppService
             'interactive' => $interactive,
         ];
 
-        return $this->httpJson()->post($this->endpoint(), $payload);
+        $res = $this->httpJson()->post($this->endpoint(), $payload);
+        if ($res->failed()) {
+            Log::error('WA_SEND_BUTTONS_FAIL', ['to'=>$to, 'status'=>$res->status(), 'resp'=>$res->json()]);
+        } else {
+            Log::info('WA_SEND_BUTTONS_OK', ['to'=>$to, 'resp'=>$res->json()]);
+        }
+        return $res;
     }
 
     /**
@@ -211,7 +217,15 @@ class WhatsAppService
             'interactive' => $interactive,
         ];
 
-        return $this->httpJson()->post($this->endpoint(), $payload);
+        $res = $this->httpJson()->post($this->endpoint(), $payload);
+        if ($res->failed()) {
+            Log::error('WA_SEND_LIST_FAIL', [
+                'to'=>$to, 'status'=>$res->status(), 'resp'=>$res->json(), 'payload'=>$payload,
+            ]);
+        } else {
+            Log::info('WA_SEND_LIST_OK', ['to'=>$to, 'resp'=>$res->json()]);
+        }
+        return $res;
     }
 
     /** Menú principal prearmado (Cotizar / Comprar / Info) + recordatorio de "asesor" por texto */
@@ -222,7 +236,6 @@ class WhatsAppService
             ['id' => 'cotizar', 'title' => '💰 Cotizar'],
             ['id' => 'comprar', 'title' => '🛒 Comprar'],
             ['id' => 'info',    'title' => 'ℹ️ Info equipo'],
-            // Para una 4ª opción, usa LIST message
         ];
         return $this->sendInteractiveButtons($to, $text."\n\nSi prefieres, responde *asesor*.", $buttons, "MediBuy");
     }
@@ -240,7 +253,7 @@ class WhatsAppService
 
         $from      = data_get($msg, 'from');
         $wamid     = data_get($msg, 'id');
-        $timestamp = data_get($msg, 'timestamp');
+               $timestamp = data_get($msg, 'timestamp');
 
         $itype = data_get($msg, 'interactive.type');
         if ($itype === 'button_reply') {
@@ -273,7 +286,7 @@ class WhatsAppService
     }
 
     /* -------------------------------------------------------------
-     |            ENVÍOS CON PLANTILLA (HEADER DOC)
+     |            ENVÍOS CON PLANTILLA (TEMPLATES)
      * ------------------------------------------------------------*/
 
     /**
@@ -347,7 +360,7 @@ class WhatsAppService
     }
 
     /**
-     * Plantilla optimizada para 1 variable en el BODY (HEADER DOCUMENT + {{1}})
+     * Plantilla optimizada para 1 variable en el BODY (HEADER DOCUMENT + {{1}}).
      */
     public function sendTemplateDoc1Var(
         string $to,
@@ -390,6 +403,141 @@ class WhatsAppService
         return $this->httpJson()->post($this->endpoint(), $payload);
     }
 
+    /**
+     * Plantilla de TEXTO (sin header) con variables en el BODY.
+     * Útil para csat_soporte_postchat ({{1}} = cliente, {{2}} = asesor) con botones de respuesta rápida.
+     *
+     * Ej:
+     *   $wa->sendTemplateText($to, 'csat_soporte_postchat', 'es_MX', [$cliente, $asesor]);
+     */
+    public function sendTemplateText(
+        string $to,
+        string $templateName,
+        string $langCode,
+        array $bodyParams = [],
+        array $buttonUrlSuffixes = []
+    ): Response {
+        $components = [];
+
+        if (!empty($bodyParams)) {
+            $params = [];
+            foreach ($bodyParams as $p) {
+                $params[] = ['type' => 'text', 'text' => (string) $p];
+            }
+            $components[] = ['type' => 'body', 'parameters' => $params];
+        }
+
+        // URL buttons con suffix dinámico (si la plantilla tiene botones URL)
+        foreach ($buttonUrlSuffixes as $index => $suffix) {
+            $components[] = [
+                'type' => 'button',
+                'sub_type' => 'url',
+                'index' => (string) $index,
+                'parameters' => [['type' => 'text', 'text' => (string) $suffix]],
+            ];
+        }
+
+        $payload = [
+            'messaging_product' => 'whatsapp',
+            'to' => $to,
+            'type' => 'template',
+            'template' => [
+                'name' => $templateName,
+                'language' => ['code' => $langCode ?: 'es_MX'],
+                'components' => $components,
+            ],
+        ];
+
+        $res = $this->httpJson()->post($this->endpoint(), $payload);
+        if ($res->failed()) {
+            Log::error('WA_TEMPLATE_SEND_FAIL', [
+                'template' => $templateName,
+                'to'       => $to,
+                'status'   => $res->status(),
+                'resp'     => $res->json(),
+            ]);
+        } else {
+            Log::info('WA_TEMPLATE_SEND_OK', [
+                'template' => $templateName,
+                'to'       => $to,
+                'resp'     => $res->json(),
+            ]);
+        }
+        return $res;
+    }
+
+    /**
+     * Atajo específico para la plantilla de CSAT:
+     * name: csat_soporte_postchat
+     * body: Hola {{1}} ... con {{2}} ...
+     */
+    public function sendCsatPostChat(string $to, string $clienteNombre, string $asesorNombre, ?string $langCode = null): Response
+    {
+        $tpl  = 'csat_soporte_postchat';
+        $lang = $langCode ?: ($this->pickTemplateLanguage($tpl) ?? 'es_MX');
+        return $this->sendTemplateText($to, $tpl, $lang, [$clienteNombre, $asesorNombre]);
+    }
+
+    /* -------------------------------------------------------------
+     |        ENVÍOS CON PLANTILLA: HEADER IMAGEN (promo_todo)
+     * ------------------------------------------------------------*/
+
+    /**
+     * Plantilla con HEADER IMAGEN + BODY (0..n params).
+     * Útil para templates como "promo_todo" que llevan imagen en el encabezado.
+     */
+    public function sendTemplateWithImage(
+        string $to,
+        string $templateName,
+        string $langCode,
+        string $mediaId,
+        ?string $var1 = null, // {{1}}
+        ?string $var2 = null  // {{2}}
+    ): Response {
+        $components = [
+            [
+                'type' => 'header',
+                'parameters' => [[
+                    'type'  => 'image',
+                    'image' => ['id' => $mediaId],
+                ]],
+            ],
+        ];
+
+        $body = [];
+        if (!is_null($var1) && $var1 !== '') $body[] = ['type' => 'text', 'text' => $var1];
+        if (!is_null($var2) && $var2 !== '') $body[] = ['type' => 'text', 'text' => $var2];
+        if (!empty($body)) $components[] = ['type' => 'body', 'parameters' => $body];
+
+        $payload = [
+            'messaging_product' => 'whatsapp',
+            'to' => $to,
+            'type' => 'template',
+            'template' => [
+                'name'      => $templateName,
+                'language'  => ['code' => $langCode ?: 'es_MX'],
+                'components'=> $components,
+            ],
+        ];
+
+        $res = $this->httpJson()->post($this->endpoint(), $payload);
+        if ($res->failed()) {
+            Log::error('WA_TPL_IMG_FAIL', ['to'=>$to,'tpl'=>$templateName,'resp'=>$res->json()]);
+        }
+        return $res;
+    }
+
+    /**
+     * Atajo específico para tu plantilla "promo_todo" (spanish mex).
+     * - {{1}} = nombre (ej. Juan Pérez)
+     * - {{2}} = frase (ej. "En promoción videocolonoscopio fujinon")
+     */
+    public function sendPromoTodo(string $to, string $mediaId, string $nombre, string $frase): Response
+    {
+        $lang = $this->pickTemplateLanguage('promo_todo') ?? 'es_MX';
+        return $this->sendTemplateWithImage($to, 'promo_todo', $lang, $mediaId, $nombre, $frase);
+    }
+
     /* -------------------------------------------------------------
      |                    UTILIDADES
      * ------------------------------------------------------------*/
@@ -406,7 +554,6 @@ class WhatsAppService
     /** Info del número (sirve para confirmar a qué WABA pertenece) */
     public function getPhoneNumberMeta(): array
     {
-        // Pedimos sólo campos existentes
         $url = "https://graph.facebook.com/{$this->version}/{$this->phoneId}?fields=id,display_phone_number,verified_name";
         $res = Http::withToken($this->token)->acceptJson()->get($url);
         return $res->json();

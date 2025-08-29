@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use App\Models\ChatMessage;
 use App\Models\Cliente;
 use App\Models\ChatFlow;
@@ -44,16 +45,13 @@ class WhatsappInboxController extends Controller
                 : null;
 
             $displayName = $cliente
-                ? trim(trim($cliente->nombre . ' ' . $cliente->apellido)) ?: $msisdn
+                ? trim(trim(($cliente->nombre ?? '') . ' ' . ($cliente->apellido ?? ''))) ?: $msisdn
                 : $msisdn;
 
             $flow = ChatFlow::where('from', $msisdn)->first();
-            $agentName = null;
-            $handover  = false;
-            if ($flow && is_array($flow->context)) {
-                $handover  = !empty($flow->context['handover']);
-                $agentName = $flow->context['agent']['name'] ?? null;
-            }
+            $ctx  = is_array($flow?->context) ? $flow->context : [];
+            $agentName = $ctx['agent']['name'] ?? null;
+            $handover  = !empty($ctx['handover']) || (($flow->step ?? '') === 'espera_asesor');
 
             $unread = ChatMessage::where(function ($q) use ($msisdn) {
                     $q->where('from', $msisdn)->orWhere('to', $msisdn);
@@ -90,7 +88,7 @@ class WhatsappInboxController extends Controller
             ->map(function ($m) {
                 if (in_array($m->type, ['image', 'document'])) {
                     $m->media_link = $m->media_id
-                        ? route('wa.media', $m->media_id)
+                        ? ( \Illuminate\Support\Facades\Route::has('wa.media') ? route('wa.media', $m->media_id) : $m->media_link )
                         : $m->media_link;
                 }
                 return $m;
@@ -103,12 +101,13 @@ class WhatsappInboxController extends Controller
             : null;
 
         $displayName = $cliente
-            ? trim(trim($cliente->nombre . ' ' . $cliente->apellido)) ?: $msisdn
+            ? trim(trim(($cliente->nombre ?? '') . ' ' . ($cliente->apellido ?? ''))) ?: $msisdn
             : $msisdn;
 
         $flow = ChatFlow::firstOrCreate(['from' => $msisdn], ['step' => 'start']);
-        $agentName = $flow->context['agent']['name'] ?? null;
-        $handover  = !empty($flow->context['handover']);
+        $ctx  = is_array($flow->context) ? $flow->context : [];
+        $agentName = $ctx['agent']['name'] ?? null;
+        $handover  = !empty($ctx['handover']);
 
         return view('whatsapp.chat', [
             'messages'     => $messages,
@@ -139,7 +138,7 @@ class WhatsappInboxController extends Controller
         $fromE164  = preg_replace('/\D+/', '', (string) config('services.whatsapp.phone_e164'));
         $token     = (string) config('services.whatsapp.token');
         $phoneId   = (string) config('services.whatsapp.phone_id');
-        $apiVer    = (string) config('services.whatsapp.api_version', 'v21.0');
+        $apiVer    = (string) (config('services.whatsapp.api_version') ?? config('services.whatsapp.version', 'v21.0'));
         $url       = "https://graph.facebook.com/{$apiVer}/{$phoneId}/messages";
         $appTz     = config('app.timezone', 'UTC'); // 👈 misma zona que webhook (MX)
 
@@ -209,8 +208,6 @@ class WhatsappInboxController extends Controller
         $flow->save();
 
         // === Guardar en BD ===
-        // 1) usa hora de la app (MX) para ser consistente con webhook
-        // 2) y la igualamos a created_at para que no haya desfaces
         $chat = ChatMessage::create([
             'wamid'          => $wamid,
             'from'           => $fromE164,
@@ -225,18 +222,22 @@ class WhatsappInboxController extends Controller
             'raw'            => $res,
         ]);
 
-        // Forzamos wa_timestamp = created_at (como pediste)
+        // Opcional: forzar wa_timestamp = created_at
         $chat->wa_timestamp = $chat->created_at;
         $chat->save();
 
         // Media proxy inmediato
         if (in_array($chat->type, ['image', 'document'])) {
-            $chat->media_link = $chat->media_id ? route('wa.media', $chat->media_id) : null;
+            $chat->media_link = $chat->media_id
+                ? ( \Illuminate\Support\Facades\Route::has('wa.media') ? route('wa.media', $chat->media_id) : $chat->media_link )
+                : $chat->media_link;
         }
 
-        // Respuesta AJAX ya normalizada como ISO UTC (igual que fetch)
+        // Respuesta AJAX ya normalizada
         if ($request->ajax()) {
-            return response()->json($this->presentMessageForFront($chat, $appTz));
+            return response()
+                ->json($this->presentMessageForFront($chat, $appTz))
+                ->header('Cache-Control','no-store, no-cache, must-revalidate');
         }
 
         return back()->with('status', 'Mensaje enviado');
@@ -246,7 +247,7 @@ class WhatsappInboxController extends Controller
     private function uploadMediaToWhatsApp($file): ?string
     {
         $phoneId = (string) config('services.whatsapp.phone_id');
-        $apiVer  = (string) config('services.whatsapp.api_version', 'v21.0');
+        $apiVer  = (string) (config('services.whatsapp.api_version') ?? config('services.whatsapp.version', 'v21.0'));
         $token   = (string) config('services.whatsapp.token');
 
         $url = "https://graph.facebook.com/{$apiVer}/{$phoneId}/media";
@@ -299,7 +300,7 @@ class WhatsappInboxController extends Controller
             ->map(function ($m) {
                 if (in_array($m->type, ['image', 'document'])) {
                     $m->media_link = $m->media_id
-                        ? route('wa.media', $m->media_id)
+                        ? ( \Illuminate\Support\Facades\Route::has('wa.media') ? route('wa.media', $m->media_id) : $m->media_link )
                         : $m->media_link;
                 }
                 try {
@@ -309,25 +310,35 @@ class WhatsappInboxController extends Controller
                 return $m;
             });
 
-        return response()->json($messages);
+        return response()
+            ->json($messages)
+            ->header('Cache-Control','no-store, no-cache, must-revalidate');
     }
 
-    /** Polling de bandeja: lista de hilos recientes */
+    /** Polling de bandeja: lista de hilos recientes (convierte since a zona app + ETag/304) */
     public function fetchThreads(Request $request)
     {
-        $ourE164 = preg_replace('/\D+/', '', (string) config('services.whatsapp.phone_e164'));
+        $ourE164  = preg_replace('/\D+/', '', (string) config('services.whatsapp.phone_e164'));
         $sinceIso = $request->query('since');
+        $appTz    = config('app.timezone', 'UTC');
+
+        // El front manda 'since' en ISO-UTC; convertimos a zona del app (MX) para comparar con wa_timestamp.
+        $sinceApp = null;
+        if ($sinceIso) {
+            try {
+                $sinceApp = Carbon::parse($sinceIso)->setTimezone($appTz);
+            } catch (\Throwable $e) {
+                $sinceApp = null;
+            }
+        }
 
         $q = ChatMessage::query()
             ->select([
                 DB::raw("CASE WHEN REPLACE(`from`, '+', '') <> '{$ourE164}' THEN `from` ELSE `to` END AS msisdn"),
                 DB::raw('MAX(wa_timestamp) as last_at'),
             ])
-            ->when($sinceIso, function ($qq) use ($sinceIso) {
-                try {
-                    $since = Carbon::parse($sinceIso)->utc();
-                    $qq->where('wa_timestamp', '>', $since);
-                } catch (\Throwable $e) {}
+            ->when($sinceApp, function ($qq) use ($sinceApp) {
+                $qq->where('wa_timestamp', '>', $sinceApp->format('Y-m-d H:i:s'));
             })
             ->groupBy('msisdn')
             ->orderByDesc('last_at')
@@ -335,7 +346,7 @@ class WhatsappInboxController extends Controller
 
         $base = $q->get();
 
-        $rows = $base->map(function ($row) {
+        $rows = $base->map(function ($row) use ($appTz) {
             $msisdn = $row->msisdn;
 
             $lastMsg = ChatMessage::where(function ($q) use ($msisdn) {
@@ -351,16 +362,13 @@ class WhatsappInboxController extends Controller
                 : null;
 
             $display = $cliente
-                ? trim(trim($cliente->nombre . ' ' . $cliente->apellido)) ?: $msisdn
+                ? trim(trim(($cliente->nombre ?? '') . ' ' . ($cliente->apellido ?? ''))) ?: $msisdn
                 : $msisdn;
 
             $flow = ChatFlow::where('from', $msisdn)->first();
-            $agentName = null;
-            $handover  = false;
-            if ($flow && is_array($flow->context)) {
-                $handover  = !empty($flow->context['handover']);
-                $agentName = $flow->context['agent']['name'] ?? null;
-            }
+            $ctx  = is_array($flow?->context) ? $flow->context : [];
+            $agentName = $ctx['agent']['name'] ?? null;
+            $handover  = !empty($ctx['handover']) || (($flow->step ?? '') === 'espera_asesor');
 
             $unread = ChatMessage::where(function ($q) use ($msisdn) {
                     $q->where('from', $msisdn)->orWhere('to', $msisdn);
@@ -375,16 +383,38 @@ class WhatsappInboxController extends Controller
                 'peer'         => $msisdn,
                 'display_name' => $display,
                 'last_text'    => $lastMsg?->text ?? null,
-                'last_at'      => $row->last_at ? Carbon::parse($row->last_at)->utc()->toIso8601String() : null,
+                // Publicamos en UTC para que el front lo pinte en MX
+                'last_at'      => $row->last_at ? Carbon::parse($row->last_at, $appTz)->utc()->toIso8601String() : null,
                 'unread_count' => $unread,
                 'agent_name'   => $agentName,
                 'handover'     => $handover,
             ];
-        });
+        })->values();
 
-        $resp = response()->json($rows);
-        try { $resp->setEtag(md5($rows->toJson(JSON_UNESCAPED_UNICODE))); } catch (\Throwable $e) {}
-        return $resp;
+        // ETag/304 sólido y tolerante a 'W/' en If-None-Match
+        $etagBase = md5($sinceIso.'|'.$rows->toJson(JSON_UNESCAPED_UNICODE));
+        $etag     = '"'.$etagBase.'"';
+
+        $normalizeIfNone = function ($v) {
+            if ($v === null) return null;
+            $v = trim($v);
+            if (str_starts_with($v, 'W/')) $v = substr($v, 2);
+            return trim($v, '"');
+        };
+
+        $clientTag = $normalizeIfNone($request->headers->get('If-None-Match'));
+        if ($clientTag !== null && $clientTag === $normalizeIfNone($etag)) {
+            return response('', 304)
+                ->header('ETag', $etag)
+                ->header('Cache-Control', 'no-store, no-cache, must-revalidate')
+                ->header('Vary', 'If-None-Match');
+        }
+
+        return response()
+            ->json($rows)
+            ->header('ETag', $etag)
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate')
+            ->header('Vary', 'If-None-Match');
     }
 
     /* ======================== Helpers ======================== */
@@ -400,7 +430,9 @@ class WhatsappInboxController extends Controller
 
         $mediaLink = null;
         if (in_array($m->type, ['image', 'document'])) {
-            $mediaLink = $m->media_id ? route('wa.media', $m->media_id) : $m->media_link;
+            $mediaLink = $m->media_id
+                ? ( \Illuminate\Support\Facades\Route::has('wa.media') ? route('wa.media', $m->media_id) : $m->media_link )
+                : $m->media_link;
         }
 
         return [

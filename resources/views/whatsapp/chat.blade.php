@@ -1,6 +1,10 @@
 @extends('layouts.app')
 
+@section('title', 'whatsapp')
+@section('titulo', 'whatsapp')
+
 @section('content')
+
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
 
 <style>
@@ -12,12 +16,16 @@
   .chat-wrap{max-width:980px;margin:16px auto;padding:0 12px;}
   .chat-convo{display:flex;flex-direction:column;height:calc(100vh - 120px);background:var(--card);
     border-radius:20px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.07);}
-  .chat-header{display:flex;gap:12px;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line);
+  .chat-header{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--line);
     background:linear-gradient(180deg,#fafbfc,#fff);}
+  .chat-header .left{display:flex;gap:12px;align-items:center;}
   .chat-header img{width:40px;height:40px;border-radius:50%;}
   .chat-header .title{font-weight:600;color:var(--text)}
   .chat-header .sub{font-size:.85rem;color:var(--muted)}
   .badge{margin-left:8px;font-size:.72rem;padding:4px 8px;border-radius:999px;background:#eef2ff;color:#334155;border:1px solid #dbeafe}
+
+  .close-btn{border:1px solid #fecaca;background:#fee2e2;color:#991b1b;border-radius:10px;padding:8px 10px;cursor:pointer}
+  .close-btn:disabled{opacity:.6;cursor:not-allowed}
 
   .chat-body{position:relative;flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:14px;
     background:linear-gradient(180deg,#fafafa,#fff)}
@@ -58,6 +66,11 @@
     background:linear-gradient(135deg,var(--out),var(--out2));box-shadow:0 6px 16px rgba(34,197,94,.25)}
   .send-btn:disabled{opacity:.5;cursor:not-allowed}
 
+  /* Input file accesible (oculto visualmente, no display:none) */
+  .sr-file{
+    position:absolute; left:-9999px; top:-9999px; width:1px; height:1px; opacity:0; pointer-events:none;
+  }
+
   @keyframes blink{0%,80%,100%{opacity:0}40%{opacity:1}}
   @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 
@@ -72,18 +85,24 @@
 <div class="chat-wrap" style="margin-top:90px;">
   <div class="chat-convo" data-user="{{ $currentUser }}">
     <div class="chat-header">
-      <img src="https://ui-avatars.com/api/?name={{ urlencode($displayName ?? $currentUser) }}&background=22c55e&color=fff" alt="">
-      <div>
-        <div class="title">Chat con {{ $displayName ?? $currentUser }}</div>
-        <div class="sub">
-          Conversación activa
-          @if(!empty($handover))
-            <span class="badge">En atención @if(!empty($agentName)) · {{ $agentName }} @endif</span>
-          @else
-            <span class="badge">Automático</span>
-          @endif
+      <div class="left">
+        <img src="https://ui-avatars.com/api/?name={{ urlencode($displayName ?? $currentUser) }}&background=22c55e&color=fff" alt="">
+        <div>
+          <div class="title">Chat con {{ $displayName ?? $currentUser }}</div>
+          <div class="sub">
+            Conversación activa
+            @if(!empty($handover))
+              <span class="badge" id="mode-badge">En atención @if(!empty($agentName)) · {{ $agentName }} @endif</span>
+            @else
+              <span class="badge" id="mode-badge">Automático</span>
+            @endif
+          </div>
         </div>
       </div>
+
+      @if(!empty($handover))
+        <button id="btn-close" type="button" class="close-btn" title="Cerrar y enviar encuesta">Cerrar y encuestar</button>
+      @endif
     </div>
 
     <div id="chat-body" class="chat-body">
@@ -155,7 +174,8 @@
       <div class="field">
         <button class="icon-btn" type="button" id="btn-attach" title="Adjuntar">📎</button>
         <input id="chat-input" type="text" name="text" placeholder="Escribe un mensaje…">
-        <input id="file-input" type="file" name="file" style="display:none" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx">
+        <!-- Importante: usar clase sr-file en lugar de display:none -->
+        <input id="file-input" type="file" name="file" class="sr-file" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx">
       </div>
       <button id="send-btn" class="send-btn" type="submit" disabled>Enviar</button>
     </form>
@@ -180,6 +200,17 @@
   const attachBar  = document.getElementById('attach-bar');
   const attachChip = document.getElementById('attach-chip');
   const attachRmBtn= document.getElementById('attach-remove');
+  const modeBadge  = document.getElementById('mode-badge');
+  const btnClose   = document.getElementById('btn-close');
+
+  /* === Picker de archivos (showPicker -> click fallback) === */
+  btnAttach.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (typeof fileInput.showPicker === 'function') {
+      try { fileInput.showPicker(); return; } catch (err) { /* fallback */ }
+    }
+    fileInput.click();
+  });
 
   /* === Forzar MX siempre === */
   const MX_TZ = 'America/Mexico_City';
@@ -201,43 +232,28 @@
   chatBody.addEventListener('scroll', ()=> pinnedToBottom = isNearBottom());
   scrollToBottom();
 
-  /* ======== PARSEO DE TIEMPOS – FIX: asumir UTC si no hay zona ======== */
-  const RE_NO_TZ = /^\d{4}-\d{2}-\d{2}(?:[ T]\d{2}:\d{2}:\d{2})$/; // 'YYYY-MM-DD HH:MM:SS' o 'YYYY-MM-DDTHH:MM:SS'
+  /* ======== PARSEO DE TIEMPOS – asumir UTC si no hay zona ======== */
+  const RE_NO_TZ = /^\d{4}-\d{2}-\d{2}(?:[ T]\d{2}:\d{2}:\d{2})$/;
 
   function toDate(ts){
     if (!ts) return null;
     if (typeof ts === 'number') return (ts > 1e12) ? new Date(ts) : new Date(ts*1000);
     if (/^\d{10}$/.test(ts)) return new Date(Number(ts)*1000);
     if (/^\d{13}$/.test(ts)) return new Date(Number(ts));
-    if (typeof ts === 'string' && RE_NO_TZ.test(ts)) {
-      // ⬅️ El backend a veces manda sin zona: interprétalo como UTC
-      return new Date(ts.replace(' ', 'T') + 'Z');
-    }
+    if (typeof ts === 'string' && RE_NO_TZ.test(ts)) return new Date(ts.replace(' ', 'T') + 'Z');
     const d = new Date(ts);
     return isNaN(d.getTime()) ? null : d;
   }
-
   function normalizeTsIso(ts){
     if (!ts) return '';
-    if (typeof ts === 'string' && RE_NO_TZ.test(ts)) {
-      // ⬅️ Fuerza ISO-UTC si venía sin zona
-      return new Date(ts.replace(' ', 'T') + 'Z').toISOString();
-    }
-    if (typeof ts === 'number') {
-      const ms = ts > 1e12 ? ts : ts*1000;
-      return new Date(ms).toISOString();
-    }
+    if (typeof ts === 'string' && RE_NO_TZ.test(ts)) return new Date(ts.replace(' ', 'T') + 'Z').toISOString();
+    if (typeof ts === 'number') { const ms = ts > 1e12 ? ts : ts*1000; return new Date(ms).toISOString(); }
     if (/^\d{10}$/.test(ts)) return new Date(Number(ts)*1000).toISOString();
     if (/^\d{13}$/.test(ts)) return new Date(Number(ts)).toISOString();
     const d = new Date(ts);
     return isNaN(d.getTime()) ? '' : d.toISOString();
   }
-
-  function tsToSec(ts){
-    const d = toDate(ts);
-    return d ? Math.floor(d.getTime()/1000) : 0;
-  }
-
+  function tsToSec(ts){ const d = toDate(ts); return d ? Math.floor(d.getTime()/1000) : 0; }
   function renderTimes(){
     document.querySelectorAll('.time[data-ts]').forEach(el=>{
       const d = toDate(el.dataset.ts);
@@ -259,7 +275,7 @@
   function ensureDaySeparator(d){
     const key = dayKeyFor(d);
     if (chatBody.querySelector(`.day-sep[data-day="${key}"]`)) return;
-    const label = (()=> {
+    const label = (()=>{
       const today = dayKeyFor(new Date());
       const yd    = dayKeyFor(new Date(Date.now()-86400000));
       if (key===today) return 'Hoy';
@@ -317,7 +333,7 @@
   bindFileListener();
   function hideAttachmentPreview(){ if(previewUrl){URL.revokeObjectURL(previewUrl); previewUrl=null;} attachChip.innerHTML=''; attachBar.style.display='none'; }
   function clearFileInputHard(){
-    const clone=fileInput.cloneNode(); clone.id=fileInput.id; clone.name=fileInput.name; clone.style.display=fileInput.style.display;
+    const clone=fileInput.cloneNode(); clone.id=fileInput.id; clone.name=fileInput.name; clone.className=fileInput.className;
     fileInput.replaceWith(clone); fileInput=clone; bindFileListener();
   }
   function clearAttachmentAll(){ hideAttachmentPreview(); clearFileInputHard(); updateSendEnabled(); }
@@ -435,5 +451,32 @@
     }catch(e){ console.error('poll error', e); }
   }
   setInterval(tick, 2500);
+
+  /* ===== Cerrar conversación => CSAT + volver a automático ===== */
+  if (btnClose){
+    btnClose.addEventListener('click', async ()=>{
+      btnClose.disabled = true;
+      try{
+        const token = document.querySelector('input[name=_token]').value;
+        const res = await fetch(@json(route('wa.chat.close', $currentUser)), {
+          method: 'POST',
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': token
+          }
+        });
+        // UI feedback: cambia badge a Automático y oculta botón
+        if (modeBadge) modeBadge.textContent = 'Automático';
+        btnClose.remove();
+      }catch(e){
+        console.error('close error', e);
+        btnClose.disabled = false;
+      }
+    });
+  }
+
+  // Inicializa estado de "Enviar"
+  updateSendEnabled();
 </script>
 @endsection

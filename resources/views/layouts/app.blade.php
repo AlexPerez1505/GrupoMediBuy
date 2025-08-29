@@ -49,7 +49,6 @@
                         <li><a href="{{ url('/publicaciones/crear') }}">+ Agregar</a></li>
                     </ul>
                 </li>
-
                 <!-- Inventario -->
                 <li>
                     <a href="#" onclick="toggleSubmenu(event, 'submenu-inventario')">
@@ -76,7 +75,6 @@
                             <li><a href="{{ url('/clientes/vista') }}">Clientes</a></li>
                         </ul>
                     </li>
-
                     <!-- Mantenimiento -->
                     <li>
                         <a href="#" onclick="toggleSubmenu(event, 'submenu-orden')">
@@ -109,7 +107,20 @@
                             Productos
                         </a>
                     </li>
+                    <li>
+                    <a href="{{ url('/promos/whatsapp/direct') }}">
+                        <img src="{{ asset('images/cupon.png') }}" alt="Icono de viaticos" class="menu-icon-image">
+                        Promocionales
+                    </a>
+                    </li>
+                    <li>
+                        <a href="{{ url('/whatsapp/inbox') }}">
+                            <img src="{{ asset('images/whatsapp.png') }}" alt="Icono de viaticos" class="menu-icon-image">
+                            WhatsApp Help Desk
+                        </a>
+                    </li>
                 @endif
+
                 <!-- Ítems generales -->
                 <li>
                     <a href="{{ url('/agenda') }}">
@@ -135,7 +146,6 @@
                         Gastos Viáticos
                     </a>
                 </li>
-
                 @auth
                     <!-- Guías -->
                     <li>
@@ -202,7 +212,12 @@
                 @endauth
 
                 @if(Auth::user()->hasRole('admin'))
-
+                    <li>
+                        <a href="{{ url('/transactions') }}">
+                            <img src="{{ asset('images/presupuesto.png') }}" alt="Icono de gastos" class="menu-icon-image">
+                            Movimientos de caja
+                        </a>
+                    </li>
                     <!-- Usuarios -->
                     <li>
                         <a href="#" onclick="toggleSubmenu(event, 'submenu-usuarios')">

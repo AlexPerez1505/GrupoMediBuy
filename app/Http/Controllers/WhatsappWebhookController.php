@@ -62,7 +62,7 @@ class WhatsappWebhookController extends Controller
                     $to    = $ourE164;
                     $wamid = $msg['id'] ?? null;
 
-                    // WhatsApp manda epoch segundos (UTC). Guárdalo en la zona del app (MX).
+                    // WhatsApp manda epoch segundos (UTC). Guardamos en la zona del app (MX).
                     $ts = isset($msg['timestamp'])
                         ? Carbon::createFromTimestamp((int) $msg['timestamp'], 'UTC')->setTimezone($appTz)
                         : now($appTz);
@@ -101,6 +101,13 @@ class WhatsappWebhookController extends Controller
                             $textRaw = 'interactive';
                         }
                         $storedType = 'text';
+                    } elseif ($type === 'button') {
+                        // Respuesta rápida (Quick Reply) de PLANTILLA
+                        $btnText    = (string) data_get($msg, 'button.text', '');
+                        $btnPayload = (string) data_get($msg, 'button.payload', $btnText);
+                        $textRaw    = $btnText ?: $btnPayload;
+                        $textNorm   = mb_strtolower(trim($btnPayload ?: $btnText));
+                        $storedType = 'text';
                     }
 
                     // Guardar mensaje entrante
@@ -127,6 +134,30 @@ class WhatsappWebhookController extends Controller
                         // Conversación bajo control de asesor → no responder automáticamente.
                         Log::info('BOT_SKIPPED_HANDOVER', ['from' => $from]);
                         continue;
+                    }
+
+                    /* —— CSAT capturado desde QUICK REPLY (type: button) —— */
+                    if (($msg['type'] ?? '') === 'button') {
+                        $t = mb_strtolower(trim((string) data_get($msg, 'button.payload', data_get($msg, 'button.text', ''))));
+                        $score = null;
+                        if (str_contains($t, 'excelente') || $t === '5') $score = 5;
+                        elseif (str_contains($t, 'buena') || $t === '3') $score = 3;
+                        elseif (str_contains($t, 'mala') || $t === '1') $score = 1;
+
+                        if (!is_null($score)) {
+                            $ctx = $flow->context ?? [];
+                            $ctx['csat'] = [
+                                'pending' => false,
+                                'score'   => $score,
+                                'at'      => now($appTz)->toIso8601String(),
+                            ];
+                            // Reactiva modo automático
+                            $this->flowSet($flow, 'menu', array_merge($ctx, ['handover' => false]));
+
+                            $wa->sendText($from, "¡Gracias por tu calificación ({$score}/5)! 💚\nSi necesitas algo más, escribe *hola* para ver el menú.");
+                            $this->storeOut($cliente->id, $to, $from, 'text', "Agradecimiento CSAT ({$score})", $appTz);
+                            continue;
+                        }
                     }
 
                     /* ——— Entradas para mostrar menú ——— */
@@ -255,12 +286,48 @@ class WhatsappWebhookController extends Controller
     }
 
     /**
-     * Botones principales + botones de formulario
-     * - Si el usuario pide “asesor”, pasamos a espera_asesor (bot deja de responder).
+     * Botones principales + botones de formulario + CSAT (interactivos)
      */
-    private function handleInteractiveSelection(ChatFlow $flow, string $id, string $toUser, string $fromOur, WhatsAppService $wa, int $clienteId, string $appTz): bool
-    {
+    private function handleInteractiveSelection(
+        ChatFlow $flow,
+        string $id,
+        string $toUser,
+        string $fromOur,
+        WhatsAppService $wa,
+        int $clienteId,
+        string $appTz
+    ): bool {
         $id = trim($id);
+
+        // —— CSAT (desde lista/botones interactivos) —— //
+        if (preg_match('/^csat_(\d)$/', $id, $m)) {
+            $score = max(1, min(5, (int)$m[1]));
+            $ctx   = $flow->context ?? [];
+            $ctx['csat'] = [
+                'pending' => false,
+                'score'   => $score,
+                'at'      => now($appTz)->toIso8601String(),
+            ];
+            // Reinicia al modo automático (menu)
+            $this->flowSet($flow, 'menu', $ctx);
+
+            $wa->sendText($toUser, "¡Gracias por tu calificación de {$score}/5! 💚\n\nSi necesitas algo más, escribe *hola* para ver el menú.");
+            $this->storeOut($clienteId, $fromOur, $toUser, 'text', "Gracias por CSAT {$score}/5", $appTz);
+            return true;
+        }
+        if ($id === 'csat_skip') {
+            $ctx = $flow->context ?? [];
+            $ctx['csat'] = [
+                'pending' => false,
+                'score'   => null,
+                'at'      => now($appTz)->toIso8601String(),
+            ];
+            $this->flowSet($flow, 'menu', $ctx);
+
+            $wa->sendText($toUser, "¡Gracias! Si necesitas algo más, escribe *hola* para ver el menú.");
+            $this->storeOut($clienteId, $fromOur, $toUser, 'text', "CSAT omitido por el usuario", $appTz);
+            return true;
+        }
 
         // —— Botones del menú principal —— //
         if (in_array($id, ['cotizar','comprar','info','asesor'])) {
@@ -374,10 +441,17 @@ class WhatsappWebhookController extends Controller
     }
 
     /**
-     * Flujo general + formulario de cotización (texto libre)
+     * Flujo general + formulario de cotización (texto libre) + CSAT
      */
-    private function formFlow(ChatFlow $flow, string $text, WhatsAppService $wa, string $toUser, string $fromOur, int $clienteId, string $appTz): ?string
-    {
+    private function formFlow(
+        ChatFlow $flow,
+        string $text,
+        WhatsAppService $wa,
+        string $toUser,
+        string $fromOur,
+        int $clienteId,
+        string $appTz
+    ): ?string {
         // atajos comunes
         if ($text === 'cancelar') {
             $this->flowSet($flow, 'menu', ['handover' => false]); // por si estaba marcado
@@ -573,6 +647,40 @@ class WhatsappWebhookController extends Controller
             case 'espera_asesor':
                 // Ya está en mano de asesor → no contestamos más
                 return null;
+
+            /* ====== CSAT en espera (texto libre) ====== */
+            case 'csat_wait':
+                // Acepta 1..5 u 'omitir' por texto
+                if (in_array($text, ['1','2','3','4','5'])) {
+                    $score = (int)$text;
+                    $ctx = $flow->context ?? [];
+                    $ctx['csat'] = [
+                        'pending' => false,
+                        'score'   => $score,
+                        'at'      => now($appTz)->toIso8601String(),
+                    ];
+                    $this->flowSet($flow, 'menu', $ctx);
+                    return "¡Gracias por tu calificación de {$score}/5! 💚\n\nEscribe *hola* para ver el menú.";
+                }
+                if (in_array($text, ['omitir','omit','skip','excelente','buena','mala'])) {
+                    // Permite responder con palabras
+                    $score = null;
+                    if ($text === 'excelente') $score = 5;
+                    elseif ($text === 'buena') $score = 3;
+                    elseif ($text === 'mala') $score = 1;
+                    $ctx = $flow->context ?? [];
+                    $ctx['csat'] = [
+                        'pending' => false,
+                        'score'   => $score,
+                        'at'      => now($appTz)->toIso8601String(),
+                    ];
+                    $this->flowSet($flow, 'menu', $ctx);
+                    return $score === null
+                        ? "¡Gracias! Escribe *hola* para ver el menú."
+                        : "¡Gracias por tu calificación de {$score}/5! 💚\n\nEscribe *hola* para ver el menú.";
+                }
+                // Si manda otra cosa, reenvía instrucción
+                return "Por favor responde con un número del *1* al *5*, o escribe *omitir*.";
         }
 
         return "🤖 No entendí tu mensaje. Escribe *hola* para ver el menú.";
@@ -605,10 +713,7 @@ class WhatsappWebhookController extends Controller
     }
 
     /* ============================================================
-     * OPCIONAL: endpoint práctico para “reclamar” una conversación
-     * Llama esto desde tu UI cuando un agente envíe su primer mensaje:
-     *   POST /whatsapp/claim/{msisdn}?agent_id=123&agent_name=Ana
-     * Así el bot se apaga y se registra el agente a cargo.
+     * Reclamar una conversación por un agente (handover ON)
      * ============================================================ */
     public function claimByAgent(Request $request, string $msisdn)
     {
@@ -626,5 +731,49 @@ class WhatsappWebhookController extends Controller
         $flow->save();
 
         return response()->json(['ok' => true, 'flow' => $flow]);
+    }
+
+    /* ============================================================
+     * Cerrar conversación (handover OFF) + enviar CSAT (plantilla) + reiniciar
+     * ============================================================ */
+    public function closeByAgent(Request $request, string $msisdn)
+    {
+        $appTz = config('app.timezone', 'UTC');
+        $wa    = app(WhatsAppService::class);
+
+        // Normaliza número y carga/crea flujo
+        $toUser = WhatsAppService::normalizeMsisdn($msisdn);
+        $flow   = ChatFlow::firstOrCreate(['from' => $toUser], ['step' => 'start']);
+        $ctx    = is_array($flow->context) ? $flow->context : [];
+
+        // Apaga handover y deja estado de csat_wait (el bot vuelve a responder)
+        $ctx['handover'] = false;
+        $ctx['csat'] = ['pending' => true];
+
+        $flow->step    = 'csat_wait';
+        $flow->context = $ctx;
+        $flow->save();
+
+        // Datos para variables de la PLANTILLA csat_soporte_postchat
+        $cliente = Cliente::where('telefono', $toUser)->first();
+        $clienteNombre = trim(($cliente->nombre ?? '') . ' ' . ($cliente->apellido ?? '')) ?: 'Cliente';
+        $agentNameReq  = trim((string)$request->input('agent_name'));
+        $agentNameCtx  = (string) data_get($ctx, 'agent.name', '');
+        $asesorNombre  = $agentNameReq !== '' ? $agentNameReq : ($agentNameCtx !== '' ? $agentNameCtx : 'nuestro equipo');
+
+        // Enviar plantilla de CSAT (Quick Reply buttons)
+        $lang = $wa->pickTemplateLanguage('csat_soporte_postchat') ?? 'es_MX';
+        $res  = $wa->sendTemplateText($toUser, 'csat_soporte_postchat', $lang, [$clienteNombre, $asesorNombre]);
+
+        Log::info('WA_CSAT_TEMPLATE_SENT', ['to'=>$toUser, 'lang'=>$lang, 'resp'=>$res->json()]);
+
+        // Registrar el mensaje saliente en DB (marcamos como texto informativo)
+        $our   = (string) config('services.whatsapp.phone_e164');
+        $cid   = optional($cliente)->id;
+        if ($cid) {
+            $this->storeOut($cid, preg_replace('/\D+/', '', $our), $toUser, 'text', 'Solicitud de CSAT (plantilla)', $appTz);
+        }
+
+        return response()->json(['ok' => true]);
     }
 }

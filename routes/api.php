@@ -10,6 +10,7 @@ Route::get('/webhooks/whatsapp', [WhatsappWebhookController::class, 'verify']);
 Route::post('/webhooks/whatsapp', [WhatsappWebhookController::class, 'receive']);
 
 
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/camionetas', [CamionetaApiController::class, 'index']);
     Route::get('/camionetas/{id}', [CamionetaApiController::class, 'show']);
