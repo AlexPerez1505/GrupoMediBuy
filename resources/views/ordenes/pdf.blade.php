@@ -2,405 +2,761 @@
 <html lang="es">
 <head>
   <meta charset="utf-8">
-<style>
-  /* ========== Global ========== */
-  @page { margin: 1.5cm; }
-  body {
-    margin: 0;
-    font-family: "Arial MT", Arial, sans-serif;
-    color: #0056b3;
-    font-size: 10px;
-    line-height: 1.5;
-  }
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    table-layout: fixed;
-  }
-  th, td {
-    padding: 6px 8px;
-    vertical-align: top;
-    word-wrap: break-word;
-  }
-  th {
-    text-align: left;
-    font-weight: 600;
-    font-size: 9px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: #333;
-    background: #ecf0f1;
-    border-bottom: 1px solid #ddd;
-  }
-  td {
-    font-size: 9px;
-    color: #34495e;
-    border-bottom: 1px solid #eee;
-  }
-  tr:last-child td {
-    border-bottom: none;
-  }
+  <title>OS #{{ $orden->id }}</title>
 
-  /* ========== Header ========== */
-  .header {
-    margin-bottom: 16px;
-  }
-  .header td {
-    border: none;
-    padding: 0;
-  }
-  .logo-cell {
-    width: 20%;
-  }
-  .logo-cell img {
-    max-width: 120px;
-    display: block;
-  }
-  .title-cell {
-    width: 60%;
-    text-align: center;
-    font-size: 22px;
-    font-weight: 700;
-    color: #2c3e50;
-    letter-spacing: 1px;
-  }
-  .no-cell {
-    width: 20%;
-    text-align: right;
-    font-size: 11px;
-    font-weight: 600;
-    color: #2c3e50;
-  }
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
 
-  /* ========== Section Titles ========== */
-  .section {
-    margin-bottom: 14px;
-  }
-  .section-title {
-    background: #0056b3;
-    color: #fff;
-    font-size: 12px;
-    font-weight: 600;
-    padding: 8px 10px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 6px;
-  }
+  <style>
+    @page {
+      size: letter;
+      margin: 12mm 15mm 22mm 15mm;
+    }
 
-  /* ========== Inspection Layout ========== */
-  .insp-layout {
-    width: 100%;
-    margin-bottom: 12px;
-  }
-  .insp-layout td {
-    border: none;
-    padding: 0;
-    vertical-align: top;
-  }
-  .insp-left-cell {
-    width: 58%;
-    padding-right: 10px;
-  }
-  .insp-right-cell {
-    width: 40%;
-  }
+    :root {
+      --bg: #f9fafb;
+      --card: #ffffff;
+      --ink: #333333;
+      --ink-dark: #111111;
+      --muted: #888888;
+      --line: #ebebeb;
+      --blue: #007aff;
+      --blue-soft: #e6f0ff;
 
-  .insp-table {
-    width: 100%;
-  }
-  .insp-table + .insp-table {
-    margin-top: 8px;
-  }
-  .insp-table th {
-    background: #e9f0fb;
-    color: #0056b3;
-    border: 1px solid #e9f0fb;
-  }
-  .insp-table td {
-    padding: 6px 8px;
-  }
+      --fs: 8.5px;
+      --lh: 1.35;
+    }
 
-  /* ========== Photo + Label ========== */
-  .foto-table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-  .foto-cell {
-    border: 1px solid #ddd;
-    border-bottom: none;
-    padding: 6px;
-    text-align: center;
-    background: #fff;
-  }
-  .foto-cell img {
-    max-width: 100%;
-    height: auto;
-  }
-  .label-cell {
-    border: 1px solid #ddd;
-    border-top: none;
-    background: #ecf0f1;
-    color: #2c3e50;
-    font-size: 9px;
-    font-weight: 600;
-    text-transform: uppercase;
-    padding: 6px 8px;
-    letter-spacing: 0.5px;
-  }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Quicksand', sans-serif;
+    }
 
-  /* ========== Señal de Imagen ========== */
-  .senial-table th {
-    background: #ecf0f1;
-    color: #2c3e50;
-    font-size: 9px;
-  }
-  .senial-table td {
-    padding: 6px 8px;
-  }
+    body {
+      font-size: var(--fs);
+      line-height: var(--lh);
+      color: var(--ink);
+      background: var(--bg);
+    }
 
-  /* ========== Signatures ========== */
-  .signatures {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 24px;
-  }
-  .signatures td {
-    border: none;
-    width: 50%;
-    text-align: center;
-    padding: 0;
-    font-size: 9px;
-    color: #34495e;
-  }
-  .signatures .line {
-    border-top: 1px solid #2c3e50;
-    width: 60%;
-    margin: 0 auto 6px;
-  }
-</style>
+    .w-100 { width: 100%; }
+    .t-right { text-align: right; }
+    .t-center { text-align: center; }
+    .bold { font-weight: 700; }
+    .upper { text-transform: uppercase; }
+    .small { font-size: 7.5px; }
+    .mb-3 { margin-bottom: 8px; }
+    .muted { color: var(--muted); }
+    .avoid-break { page-break-inside: avoid; }
 
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      table-layout: fixed;
+    }
 
+    th,
+    td {
+      vertical-align: top;
+    }
+
+    .card {
+      border-radius: 8px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      margin-bottom: 10px;
+      overflow: hidden;
+    }
+
+    .card-header {
+      background: var(--card);
+      border-bottom: 1px solid var(--line);
+      padding: 8px 12px;
+      font-weight: 700;
+      font-size: 9.5px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--ink-dark);
+    }
+
+    .card-body {
+      padding: 8px 12px;
+    }
+
+    .brand-shell {
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 16px;
+    }
+
+    .brand-row td {
+      padding: 0;
+      vertical-align: middle;
+    }
+
+    .logo {
+      max-height: 38px;
+      width: auto;
+      display: block;
+    }
+
+    .doc-title {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      color: var(--ink-dark);
+    }
+
+    .doc-sub {
+      font-size: 8px;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+      margin-top: 2px;
+    }
+
+    .os-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      background: var(--blue-soft);
+      font-weight: 700;
+      font-size: 10px;
+      color: var(--blue);
+      border-radius: 999px;
+    }
+
+    .kv-table td {
+      padding: 2px 4px;
+    }
+
+    .kv-table tr:not(:last-child) td {
+      border-bottom: 1px solid #fcfcfc;
+    }
+
+    .k {
+      width: 40%;
+      font-weight: 700;
+      color: var(--muted);
+      font-size: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .v {
+      width: auto;
+      color: var(--ink-dark);
+      font-weight: 600;
+    }
+
+    .inspection-table {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .inspection-table th {
+      font-weight: 700;
+      background: var(--bg);
+      border-bottom: 1px solid var(--line);
+      color: var(--muted);
+      text-align: left;
+      padding: 5px 8px;
+      font-size: 8px;
+    }
+
+    .inspection-table td {
+      padding: 5px 8px;
+      border-bottom: 1px solid var(--line);
+      color: var(--ink);
+      font-size: 8px;
+    }
+
+    .inspection-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .note-box {
+      border: 1px solid var(--line);
+      background: var(--bg);
+      border-radius: 6px;
+      padding: 8px 10px;
+      min-height: 28px;
+      color: var(--ink);
+    }
+
+    .photo-grid-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 8px;
+      margin-top: -8px;
+    }
+
+    .photo-cell {
+      border: 1px solid var(--line);
+      background: var(--card);
+      border-radius: 8px;
+      padding: 6px;
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    .photo-cell img {
+      max-width: 100%;
+      max-height: 85px;
+      display: block;
+      margin: 0 auto;
+      border-radius: 4px;
+    }
+
+    .photo-caption {
+      font-size: 7.5px;
+      color: var(--muted);
+      margin-top: 4px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .legend .row {
+      margin-bottom: 4px;
+      color: var(--ink-dark);
+      font-weight: 600;
+      font-size: 8.5px;
+    }
+
+    .box {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      border: 1px solid var(--muted);
+      display: inline-block;
+      vertical-align: middle;
+      margin-right: 4px;
+    }
+
+    .box.fill {
+      background: var(--blue);
+      border-color: var(--blue);
+    }
+
+    .split td.col-left {
+      width: 55%;
+      padding-right: 6px;
+      padding-left: 0;
+    }
+
+    .split td.col-right {
+      width: 45%;
+      padding-left: 6px;
+      padding-right: 0;
+    }
+
+    .sign-table {
+      margin-top: 15px;
+    }
+
+    .sign-table td {
+      text-align: center;
+      padding-top: 15px;
+      border: none;
+    }
+
+    .line {
+      width: 80%;
+      margin: 0 auto 6px;
+      border-top: 1px solid var(--line);
+    }
+
+    .sig-role {
+      color: var(--muted);
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+
+    .footer-container {
+      position: fixed;
+      bottom: 10px;
+      left: 15mm;
+      width: calc(100% - 30mm);
+    }
+
+    .footer {
+      padding-top: 8px;
+      border-top: 1px solid var(--line);
+    }
+
+    .footer-table td {
+      padding: 0 4px;
+      vertical-align: middle;
+    }
+
+    .footer-name {
+      font-weight: 700;
+      font-size: 9.5px;
+      color: var(--ink-dark);
+    }
+
+    .footer-role {
+      color: var(--muted);
+      font-size: 8px;
+      font-weight: 600;
+    }
+
+    .footer-label {
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .sig-img {
+      max-height: 35px;
+      width: auto;
+      display: block;
+    }
+  </style>
 </head>
+
 <body>
 
-  <!-- CABECERA -->
-  <div class="header">
-    <table>
+@php
+  use Carbon\Carbon;
+
+  $tecBase     = isset($tecnicoName) && $tecnicoName ? $tecnicoName : (optional($orden->user)->name ?? 'N/A');
+  $tecnicoUP   = mb_strtoupper($tecBase, 'UTF-8');
+
+  $clienteFull  = trim((optional($orden->cliente)->nombre ?? '').' '.(optional($orden->cliente)->apellido ?? ''));
+  $telefonoCli  = $orden->cliente->telefono   ?? 'N/A';
+  $direccionCli = $orden->cliente->direccion  ?? ($orden->cliente->comentarios ?? 'N/A');
+
+  $fEntrada = $orden->fecha_entrada ? Carbon::parse($orden->fecha_entrada)->format('d/m/Y') : 'N/A';
+  $fMtoDate = $orden->fecha_mantenimiento ? Carbon::parse($orden->fecha_mantenimiento) : null;
+  $fMto     = $fMtoDate ? $fMtoDate->format('d/m/Y') : 'N/A';
+
+  $proxRaw     = $orden->getRawOriginal('proximo_mantenimiento');
+  $proxFecha   = null;
+  $proxMeses   = null;
+
+  if ($proxRaw !== null && $proxRaw !== '') {
+      if (is_numeric($proxRaw)) {
+          $proxMeses = (int) $proxRaw;
+
+          if ($fMtoDate) {
+              $proxFecha = (clone $fMtoDate)->addMonths($proxMeses);
+          }
+      } else {
+          try {
+              $proxFecha = Carbon::parse($proxRaw);
+          } catch (\Throwable $e) {
+              $proxFecha = null;
+          }
+
+          if ($proxFecha && $fMtoDate) {
+              $proxMeses = $fMtoDate->diffInMonths($proxFecha);
+          }
+      }
+  }
+
+  $proxTexto = 'N/A';
+
+  if ($proxFecha instanceof \Carbon\Carbon) {
+      $proxTexto = $proxFecha->format('d/m/Y') . ($proxMeses ? ' ('.$proxMeses.' meses)' : '');
+  } elseif (is_numeric($proxRaw) && $fMtoDate) {
+      $proxTexto = $proxMeses.' meses';
+  }
+
+  $hasDataUri1 = !empty($fotoDataUri);
+  $hasDataUri2 = !empty($fotoDataUri2);
+  $hasDataUri3 = !empty($fotoDataUri3);
+  $hasAbsPath1 = !empty($fotoAbs) && file_exists($fotoAbs);
+
+  /*
+  |--------------------------------------------------------------------------
+  | CHECKLIST DE INSPECCIÓN
+  |--------------------------------------------------------------------------
+  | Si no hay parámetros reales, no se imprime la tarjeta.
+  */
+
+  $raw = $orden->mto_preventivo ?? [];
+  $grouped = [];
+
+  foreach ($raw as $key => $val) {
+      if (is_array($val) && isset($val['seccion'], $val['item'])) {
+          $sec = trim((string) $val['seccion']);
+          $item = trim((string) ($val['item'] ?? ''));
+
+          if ($sec !== '' && $item !== '') {
+              $grouped[$sec][] = [
+                  'item' => $item,
+                  'estatus' => $val['estatus'] ?? 'Revisado',
+              ];
+          }
+      } elseif (is_array($val)) {
+          foreach ($val as $v) {
+              if (is_array($v) && isset($v['item'])) {
+                  $sec = is_string($key) ? $key : ($v['seccion'] ?? 'Sección');
+                  $sec = trim((string) $sec);
+                  $item = trim((string) ($v['item'] ?? ''));
+
+                  if ($sec !== '' && $item !== '') {
+                      $grouped[$sec][] = [
+                          'item' => $item,
+                          'estatus' => $v['estatus'] ?? 'Revisado',
+                      ];
+                  }
+              }
+          }
+      }
+  }
+
+  $grouped = array_filter($grouped, function ($items) {
+      return is_array($items) && count($items) > 0;
+  });
+
+  ksort($grouped);
+
+  $mostrarChecklistInspeccion = count($grouped) > 0;
+
+  $acciones = collect($orden->mto_realizado ?? [])->filter(function ($item) {
+      return trim((string) $item) !== '';
+  })->values()->all();
+
+  $mostrarAccionesRealizadas = count($acciones) > 0;
+
+  $obsRaw = $orden->observaciones ?? $orden->observacion ?? $orden->comentarios ?? '';
+
+  if (is_array($obsRaw)) {
+      $obsRaw = implode("\n", array_filter($obsRaw));
+  }
+
+  $observacionesTexto = trim((string) $obsRaw);
+
+  $logoDataUri = $logoDataUri ?? null;
+
+  if (!$logoDataUri) {
+      $logoFile = public_path('images/logomedy.png');
+
+      if (is_readable($logoFile)) {
+          $mime = function_exists('mime_content_type') ? mime_content_type($logoFile) : 'image/png';
+          $logoDataUri = 'data:'.$mime.';base64,'.base64_encode(file_get_contents($logoFile));
+      }
+  }
+
+  $firmaDataUri = $firmaDataUri ?? null;
+
+  if (!$firmaDataUri) {
+      $firmaFile = public_path('images/firma.png');
+
+      if (is_readable($firmaFile)) {
+          $mimeF = function_exists('mime_content_type') ? mime_content_type($firmaFile) : 'image/png';
+          $firmaDataUri = 'data:'.$mimeF.';base64,'.base64_encode(file_get_contents($firmaFile));
+      }
+  }
+
+  $tipoMantenimiento = mb_strtolower(trim((string)(
+      $orden->tipo_mantenimiento ?? $orden->tipo_servicio ?? $orden->servicio ?? 'preventivo'
+  )), 'UTF-8');
+
+  if (!in_array($tipoMantenimiento, ['preventivo', 'correctivo', 'mixto'], true)) {
+      $tipoMantenimiento = 'preventivo';
+  }
+
+  $isPreventivo = in_array($tipoMantenimiento, ['preventivo', 'mixto'], true);
+  $isCorrectivo = in_array($tipoMantenimiento, ['correctivo', 'mixto'], true);
+
+  $tipoMantenimientoLabel = match ($tipoMantenimiento) {
+      'correctivo' => 'Correctivo',
+      'mixto' => 'Mixto',
+      default => 'Preventivo',
+  };
+@endphp
+
+<div class="page">
+
+  <div class="brand-shell">
+    <table class="w-100 brand-row">
       <tr>
-        <td class="logo-cell">
-          @if(file_exists(public_path('images/logomedy.png')))
-            <img src="{{ public_path('images/logomedy.png') }}" alt="Logo">
+        <td style="width:30%">
+          @if($logoDataUri)
+            <img src="{{ $logoDataUri }}" alt="Grupo MediBuy" class="logo">
           @endif
         </td>
-        <td class="title-cell">ORDEN DE SERVICIO</td>
-        <td class="no-cell">NO. {{ $orden->id ?? 'N/A' }}</td>
+
+        <td class="t-center" style="width:40%">
+          <div class="doc-title upper">Orden de Servicio</div>
+          <div class="doc-sub">GRUPO MEDIBUY · DEPARTAMENTO TÉCNICO</div>
+        </td>
+
+        <td class="t-right" style="width:30%">
+          <span class="os-badge">OS # <span>{{ $orden->id }}</span></span>
+        </td>
       </tr>
     </table>
   </div>
 
-  <!-- DATOS DEL CLIENTE / ORDEN -->
-  <div class="section">
-    <table>
-      <tr>
-        <th colspan="2">DATOS DEL CLIENTE</th>
-        <th colspan="2">DATOS DE LA ORDEN</th>
-      </tr>
-      <tr>
-      <tr>
-  <th>Cliente</th>
-  <td>
-    @php
-      // Construimos el nombre completo y quitamos espacios sobrantes
-      $fullName = trim(
-        optional($orden->cliente)->nombre . ' ' .
-        optional($orden->cliente)->apellido
-      );
-    @endphp
+  <div class="card avoid-break">
+    <div class="card-header">Información General</div>
 
-    {{-- Si no hay datos, mostramos “N/A” --}}
-    {{ $fullName ?: 'N/A' }}
-  </td>
-
-
-        <th>Fecha Entrada</th>
-        <td>
-          {{ optional(\Carbon\Carbon::parse($orden->fecha_entrada))->format('d/m/Y') 
-             ?? 'N/A' }}
-        </td>
-      </tr>
-      <tr>
-        <th>Responsable</th>
-        <td>ING. JOEL DÍAZ</td>
-        <th>Fecha Mantto.</th>
-        <td>
-          {{ optional(\Carbon\Carbon::parse($orden->fecha_mantenimiento))->format('d/m/Y') 
-             ?? 'N/A' }}
-        </td>
-      </tr>
-      <tr>
-        <th>Teléfono</th>
-        <td>{{ $orden->cliente->telefono ?? 'N/A' }}</td>
-        <th>Próximo Mantto.</th>
-        <td>
-          {{ optional(\Carbon\Carbon::parse($orden->proximo_mantenimiento))->format('d/m/Y') 
-             ?? 'N/A' }}
-        </td>
-      </tr>
-      <tr>
-        <th>Dirección</th>
-        <td colspan="3">{{ $orden->cliente->comentarios ?? 'N/A' }}</td>
-      </tr>
-    </table>
-  </div>
-
-  <!-- DESCRIPCIÓN DEL EQUIPO -->
-  <div class="section">
-    <table>
-      <tr>
-        <th colspan="4" style="text-align:center;">DESCRIPCIÓN DEL EQUIPO</th>
-      </tr>
-      <tr>
-        <th style="width:20%;">Nombre del equipo:</th>
-        <td style="width:30%;">{{ $orden->aparato->nombre ?? 'N/A' }}</td>
-        <th style="width:20%;">Marca / Modelo:</th>
-        <td style="width:30%;">
-          {{ $orden->aparato->marca  ?? 'N/A' }}
-          /
-          {{ $orden->aparato->modelo ?? 'N/A' }}
-        </td>
-      </tr>
-      <tr>
-        <th>Serie:</th>
-        <td colspan="3">{{ $orden->aparato->serie ?? 'N/A' }}</td>
-      </tr>
-    </table>
-  </div>
-
-  <!-- INSPECCIÓN PREVENTIVA -->
-  {{-- Aquí dejas tu HTML tal cual, pero si quieres inyectar dinámicamente resultados desde
-      tu checklist, podrías decodificarlo así:
-      @php
-        $insp = json_decode($orden->checklist, true) ?? [];
-      @endphp
-      y luego hacer @foreach sobre cada sección. --}}
-
-  <div class="section-title"> <strong>INSPECCIÓN PREVENTIVA DE MANTENIMIENTO</strong></div>
-  <table class="insp-layout">
-    <tr>
-      <!-- Columna IZQUIERDA -->
-      <td class="insp-left-cell">
-        <table class="insp-table">
-          <thead>
-            <tr><th>Conexiones y Estructura</th><th>Resultado</th></tr>
-          </thead>
-          <tbody>
-            @foreach($insp['conexiones'] ?? [] as $item)
-              <tr>
-                <td>{{ $item['nombre'] ?? '' }}</td>
-                <td>{{ $item['resultado'] ?? '' }}</td>
-              </tr>
-            @endforeach
-            @if(empty($insp['conexiones']))
-              <tr><td colspan="2">— No hay datos —</td></tr>
-            @endif
-          </tbody>
-        </table>
-
-        <table class="insp-table">
-          <thead>
-            <tr><th>Botones y Controles</th><th>Resultado</th></tr>
-          </thead>
-          <tbody>
-            @foreach($insp['botones'] ?? [] as $item)
-              <tr>
-                <td>{{ $item['nombre'] ?? '' }}</td>
-                <td>{{ $item['resultado'] ?? '' }}</td>
-              </tr>
-            @endforeach
-            @if(empty($insp['botones']))
-              <tr><td colspan="2">— No hay datos —</td></tr>
-            @endif
-          </tbody>
-        </table>
-
-        <table class="insp-table">
-          <thead>
-            <tr><th>Componentes Internos</th><th>Mantto. Realizado</th></tr>
-          </thead>
-          <tbody>
-            @foreach($insp['componentes'] ?? [] as $item)
-              <tr>
-                <td>{{ $item['nombre'] ?? '' }}</td>
-                <td>{{ $item['resultado'] ?? '' }}</td>
-              </tr>
-            @endforeach
-            @if(empty($insp['componentes']))
-              <tr><td colspan="2">— No hay datos —</td></tr>
-            @endif
-          </tbody>
-        </table>
-      </td>
-
-      <!-- Columna DERECHA -->
-      <td class="insp-right-cell">
-        <table class="foto-table">
-          <tr>
-            <td class="foto-cell">
-              @if(file_exists(public_path('images/mantenimiento.png')))
-                <img src="{{ public_path('images/mantenimiento.png') }}" alt="Equipo">
-              @endif
-            </td>
-          </tr>
-          <tr>
-            <td class="label-cell">Equipo</td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-
-  <!-- SEÑAL DE IMAGEN -->
-  <div class="section">
-    <table class="senial-table">
-      <tr><th>Señal de Imagen</th><th>Resultado</th></tr>
-      @foreach($insp['senial'] ?? [] as $item)
+    <div class="card-body">
+      <table>
         <tr>
-          <td>{{ $item['nombre'] ?? '' }}</td>
-          <td>{{ $item['resultado'] ?? '' }}</td>
+          <td style="width:50%; padding-right:8px;">
+            <table class="kv-table">
+              <tr>
+                <td class="k">Cliente</td>
+                <td class="v">{{ $clienteFull ?: 'N/A' }}</td>
+              </tr>
+
+              <tr>
+                <td class="k">Representante</td>
+                <td class="v">{{ $tecnicoUP }}</td>
+              </tr>
+
+              <tr>
+                <td class="k">Teléfono</td>
+                <td class="v">{{ $telefonoCli }}</td>
+              </tr>
+
+              <tr>
+                <td class="k">Dirección</td>
+                <td class="v">{{ $direccionCli }}</td>
+              </tr>
+            </table>
+          </td>
+
+          <td style="width:50%; padding-left:8px;">
+            <table class="kv-table">
+              <tr>
+                <td class="k">Fecha de Ingreso</td>
+                <td class="v">{{ $fEntrada }}</td>
+              </tr>
+
+              <tr>
+                <td class="k">Fecha Servicio</td>
+                <td class="v">{{ $fMto }}</td>
+              </tr>
+
+              <tr>
+                <td class="k">Próximo Serv.</td>
+                <td class="v">{{ $proxTexto }}</td>
+              </tr>
+
+              <tr>
+                <td class="k">Clasificación</td>
+                <td class="v">{{ $tipoMantenimientoLabel }}</td>
+              </tr>
+            </table>
+          </td>
         </tr>
-      @endforeach
-      @if(empty($insp['senial']))
-        <tr><td colspan="2">— No hay datos —</td></tr>
-      @endif
-    </table>
+      </table>
+    </div>
   </div>
 
-  <!-- FIRMAS -->
-  <table class="signatures">
-    <tr>
-      <td>
-        <div class="line"></div>
-        <div><strong>ING. JOEL DÍAZ GARCIA</strong></div>
-        <div>RESPONSABLE DEL MANTENIMIENTO</div>
-      </td>
-        <td>
-          <div class="line"></div>
-          <div>
-            <strong>
-              @php
-                // Construimos el nombre completo del cliente
-                $clienteFull = trim(
-                  optional($orden->cliente)->nombre . ' ' .
-                  optional($orden->cliente)->apellido
-                );
-              @endphp
+  <div class="card avoid-break">
+    <div class="card-header">Especificaciones del Equipo</div>
 
-              {{ $clienteFull ?: 'N/A' }}
-            </strong>
+    <div class="card-body">
+      <table>
+        <tr>
+          <td class="k" style="width:15%">Equipo</td>
+          <td class="v" style="width:35%">{{ $orden->equipo ?? 'N/A' }}</td>
+          <td class="k" style="width:15%">Marca</td>
+          <td class="v" style="width:35%">{{ $orden->marca ?? 'N/A' }}</td>
+        </tr>
+
+        <tr>
+          <td class="k">Modelo</td>
+          <td class="v">{{ $orden->modelo ?? 'N/A' }}</td>
+          <td class="k">No. de Serie</td>
+          <td class="v">{{ $orden->numero_serie ?? 'N/A' }}</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <table class="w-100 split">
+    <tr>
+      <td class="col-left">
+
+        @if($mostrarChecklistInspeccion)
+          <div class="card avoid-break">
+            <div class="card-header">Checklist de Inspección</div>
+
+            <div class="card-body">
+              @foreach($grouped as $sec => $items)
+                <table class="inspection-table mb-3">
+                  <thead>
+                    <tr>
+                      <th style="width:70%">{{ strtoupper($sec) }}</th>
+                      <th style="width:30%">RESULTADO</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    @foreach($items as $it)
+                      <tr>
+                        <td style="font-weight: 500;">{{ $it['item'] }}</td>
+                        <td class="bold" style="color: var(--ink-dark);">{{ $it['estatus'] }}</td>
+                      </tr>
+                    @endforeach
+                  </tbody>
+                </table>
+              @endforeach
+            </div>
           </div>
-          <div>RECEPCIÓN DE EQUIPO</div>
-        </td>
+        @endif
+
+        @if($mostrarAccionesRealizadas)
+          <div class="card avoid-break">
+            <div class="card-header">Acciones Realizadas</div>
+
+            <div class="card-body">
+              <div class="note-box">
+                <ul style="margin:0; padding-left:12px; line-height: 1.4; font-weight: 500;">
+                  @foreach($acciones as $a)
+                    <li>{{ $a }}</li>
+                  @endforeach
+                </ul>
+              </div>
+            </div>
+          </div>
+        @endif
+
+      </td>
+
+      <td class="col-right">
+
+        <div class="card avoid-break">
+          <div class="card-header">Registro Fotográfico</div>
+
+          <div class="card-body">
+            @if($hasDataUri1 || $hasDataUri2 || $hasDataUri3 || $hasAbsPath1)
+              <table class="photo-grid-table">
+                @if($hasDataUri1 || $hasAbsPath1 || $hasDataUri2)
+                  <tr>
+                    @if($hasDataUri1 || $hasAbsPath1)
+                      <td class="photo-cell"
+                          @if(!$hasDataUri2) colspan="2" @endif
+                          style="width: {{ $hasDataUri2 ? '50%' : '100%' }};">
+                        <img src="{{ $hasDataUri1 ? $fotoDataUri : $fotoAbs }}" alt="Foto 1">
+
+                        <div class="photo-caption">
+                          Perspectiva 1 @if($orden->numero_serie) (SN: {{ $orden->numero_serie }}) @endif
+                        </div>
+                      </td>
+                    @endif
+
+                    @if($hasDataUri2)
+                      <td class="photo-cell" style="width: 50%;">
+                        <img src="{{ $fotoDataUri2 }}" alt="Foto 2">
+                        <div class="photo-caption">Perspectiva 2</div>
+                      </td>
+                    @endif
+                  </tr>
+                @endif
+
+                @if($hasDataUri3)
+                  <tr>
+                    <td class="photo-cell" colspan="2">
+                      <img src="{{ $fotoDataUri3 }}" alt="Foto 3" style="max-height: 90px;">
+                      <div class="photo-caption">Perspectiva 3</div>
+                    </td>
+                  </tr>
+                @endif
+              </table>
+            @else
+              <div class="note-box t-center muted small" style="min-height: 80px; display:flex; align-items:center; justify-content:center;">
+                — Sin evidencia fotográfica adjunta —
+              </div>
+            @endif
+          </div>
+        </div>
+
+        <div class="card avoid-break">
+          <div class="card-header">Dictamen / Observaciones</div>
+
+          <div class="card-body">
+            <div class="legend mb-3">
+              <span class="row" style="margin-right: 12px;">
+                <span class="box {{ $isPreventivo ? 'fill' : '' }}"></span> Preventivo
+              </span>
+
+              <span class="row">
+                <span class="box {{ $isCorrectivo ? 'fill' : '' }}"></span> Correctivo
+              </span>
+            </div>
+
+            @if($observacionesTexto !== '')
+              <div class="note-box" style="line-height: 1.4; font-weight: 500;">
+                {!! nl2br(e($observacionesTexto)) !!}
+              </div>
+            @else
+              <div class="note-box t-center muted small">
+                — Sin observaciones —
+              </div>
+            @endif
+          </div>
+        </div>
+
+      </td>
     </tr>
   </table>
+
+  <table class="w-100 sign-table avoid-break">
+    <tr>
+      <td style="width:50%">
+        <div class="line"></div>
+        <div class="bold" style="color: var(--ink-dark); font-size: 9px;">{{ $tecnicoUP }}</div>
+        <div class="upper sig-role">Ingeniero / Técnico Responsable</div>
+      </td>
+
+      <td style="width:50%">
+        <div class="line"></div>
+        <div class="bold" style="color: var(--ink-dark); font-size: 9px;">{{ $clienteFull ?: 'N/A' }}</div>
+        <div class="upper sig-role">Conformidad del Cliente</div>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<div class="footer-container">
+  <div class="footer">
+    <table class="footer-table" cellpadding="0" cellspacing="0">
+      <tr>
+        <td style="width: 50%;" valign="middle">
+          <table cellpadding="0" cellspacing="0">
+            <tr>
+              <td valign="middle" style="padding-right:12px;">
+                @if($firmaDataUri)
+                  <img src="{{ $firmaDataUri }}" alt="Firma Autorizada" class="sig-img">
+                @endif
+              </td>
+
+              <td valign="middle">
+                <div class="footer-name">ANAHÍ TÉLLEZ</div>
+                <div class="footer-role upper">Dirección Operativa</div>
+              </td>
+            </tr>
+          </table>
+        </td>
+
+        <td style="width: 50%; text-align:right;" valign="middle">
+          <div style="font-size: 8px; margin-bottom: 2px; color: var(--ink-dark);">
+            <span class="footer-label">TELÉFONO:</span> +52 722 448 5191
+          </div>
+
+          <div style="font-size: 8px; margin-bottom: 2px; color: var(--ink-dark);">
+            <span class="footer-label">CORREO:</span> ventas@grupomedibuy.com
+          </div>
+
+          <div style="font-size: 8px; color: var(--ink-dark);">
+            <span class="footer-label">PORTAL:</span> grupomedibuy.com
+          </div>
+        </td>
+      </tr>
+    </table>
+  </div>
+</div>
+
 </body>
 </html>

@@ -1,76 +1,163 @@
 <?php
+
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
-use App\Models\User;
 
 class PerfilController extends Controller
 {
-    // Mostrar el perfil del usuario
+    /**
+     * Mostrar el perfil del usuario autenticado.
+     */
     public function index()
     {
-        $user = Auth::user(); // Obtener el usuario autenticado
+        $user = Auth::user();
+
         return view('perfil', compact('user'));
     }
 
-    // Actualizar datos personales (nombre, teléfono, correo, etc.)
+    /**
+     * Actualizar datos personales (nombre, teléfono, correo, cargo, puesto).
+     */
     public function update(Request $request)
     {
         $user = Auth::user();
 
-        // Validación de los campos
         $request->validate([
-            'name' => 'nullable|string|max:255',
-            'phone' => 'nullable|string|max:20',
-            'email' => 'nullable|email|unique:users,email,' . $user->id,
-            'cargo' => 'nullable|string|max:255',
+            'name'   => 'nullable|string|max:255',
+            'phone'  => 'nullable|string|max:20',
+            'email'  => 'nullable|email|unique:users,email,' . $user->id,
+            'cargo'  => 'nullable|string|max:255',
             'puesto' => 'nullable|string|max:255',
         ]);
 
-        // Actualizar los datos del usuario
         $user->update($request->only(['name', 'phone', 'email', 'cargo', 'puesto']));
 
-        return back()->with('success', 'Perfil actualizado correctamente.');
+        return back()
+            ->with('ok', 'Perfil actualizado correctamente.')
+            ->with('success', 'Perfil actualizado correctamente.');
     }
 
-    // Actualizar la foto de perfil
+    /**
+     * Actualizar la foto de perfil.
+     * Soporta:
+     *  - avatar_cropped (base64 desde el cropper)
+     *  - imagen (archivo normal como fallback)
+     */
     public function updatePhoto(Request $request)
     {
         $user = Auth::user();
 
-        // Validar la imagen
         $request->validate([
-            'imagen' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
+            'avatar_cropped' => 'nullable|string',
+            'imagen'         => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:3072',
         ]);
 
-        // Si el usuario sube una nueva imagen
-        if ($request->hasFile('imagen')) {
-            // Eliminar imagen anterior si existe
-            if ($user->imagen) {
-                Storage::delete('public/' . $user->imagen);
+        // 1) Si viene imagen recortada desde el cropper (base64)
+        if ($request->filled('avatar_cropped')) {
+            $data = $request->input('avatar_cropped');
+
+            // Formato esperado: data:image/png;base64,xxxx
+            if (preg_match('/^data:image\/(\w+);base64,/', $data, $matches)) {
+                $data = substr($data, strpos($data, ',') + 1);
+                $type = strtolower($matches[1]); // png, jpg, jpeg, gif, webp...
+
+                if (! in_array($type, ['jpg', 'jpeg', 'png', 'gif', 'webp'])) {
+                    $type = 'png';
+                }
+            } else {
+                return back()->withErrors(['photo' => 'Formato de imagen inválido.']);
             }
 
-            // Guardar la nueva imagen en la carpeta `storage/app/public/perfiles`
+            $data = base64_decode($data);
+
+            if ($data === false) {
+                return back()->withErrors(['photo' => 'No se pudo procesar la imagen recortada.']);
+            }
+
+            // Borrar imagen anterior si existe
+            if ($user->imagen) {
+                Storage::disk('public')->delete($user->imagen);
+            }
+
+            // Guardar nueva imagen
+            $fileName = 'perfiles/' . uniqid('avatar_') . '.' . $type;
+            Storage::disk('public')->put($fileName, $data);
+
+            $user->imagen = $fileName;
+            $user->save();
+
+            return back()
+                ->with('ok', 'Foto de perfil actualizada correctamente.')
+                ->with('success', 'Foto de perfil actualizada correctamente.');
+        }
+
+        // 2) Fallback: archivo normal (por si llega de otra parte sin cropper)
+        if ($request->hasFile('imagen')) {
+            if ($user->imagen) {
+                Storage::disk('public')->delete($user->imagen);
+            }
+
             $path = $request->file('imagen')->store('perfiles', 'public');
             $user->imagen = $path;
             $user->save();
+
+            return back()
+                ->with('ok', 'Foto de perfil actualizada correctamente.')
+                ->with('success', 'Foto de perfil actualizada correctamente.');
         }
 
-        return back()->with('success', 'Foto de perfil actualizada correctamente.');
+        return back()
+            ->with('ok', 'No se envió ninguna imagen.')
+            ->with('success', 'No se envió ninguna imagen.');
     }
+
+    /**
+     * Cambiar contraseña del usuario autenticado.
+     */
+    public function updatePassword(Request $request)
+    {
+        $user = Auth::user();
+
+        $request->validate([
+            'current_password' => 'required',
+            'password'         => 'required|min:8|confirmed',
+        ], [
+            'current_password.required' => 'La contraseña actual es obligatoria.',
+            'password.required'         => 'La nueva contraseña es obligatoria.',
+            'password.min'              => 'La nueva contraseña debe tener al menos 8 caracteres.',
+            'password.confirmed'        => 'La confirmación no coincide con la nueva contraseña.',
+        ]);
+
+        if (! Hash::check($request->current_password, $user->password)) {
+            return back()->withErrors([
+                'current_password' => 'La contraseña actual no es correcta.',
+            ]);
+        }
+
+        $user->password = Hash::make($request->password);
+        $user->save();
+
+        return back()
+            ->with('ok', 'Contraseña actualizada correctamente.')
+            ->with('success', 'Contraseña actualizada correctamente.');
+    }
+
+    /**
+     * Listado de todos los usuarios (solo admin).
+     */
     public function allUsers()
     {
-        // Verifica si el usuario autenticado es "admin"
         if (Auth::user()->role !== 'admin') {
             abort(403, 'Acceso no autorizado.');
         }
-    
+
         $usuarios = User::all();
+
         return view('usuarios', compact('usuarios'));
-
     }
-    
-
 }

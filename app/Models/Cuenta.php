@@ -11,6 +11,7 @@ class Cuenta extends Model
 
     protected $fillable = [
         'lugar',
+        'camioneta',   // 👈 nuevo
         'casetas',
         'gasolina',
         'viaticos',

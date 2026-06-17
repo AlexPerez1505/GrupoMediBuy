@@ -1,19 +1,20 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
   <title>Cotización</title>
 
-  <!-- Bootstrap + Iconos -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
 
-  <!-- Tu hoja de estilos -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
   <link rel="stylesheet" href="{{ asset('css/remisiones.css') }}?v={{ time() }}">
 
   <style>
-    /* ====== estilos de la página (resumidos) ====== */
     .pastel-progress-bar{height:100%;border-radius:18px;font-weight:bold;color:#555;display:flex;align-items:center;justify-content:center;transition:width .8s ease-in-out,background .4s ease-in-out}
     .table th,.table td{vertical-align:middle;padding:.75rem}
     .table-borderless th,.table-borderless td{border:none}
@@ -21,373 +22,760 @@
     .card{background-color:#fefefe;border-radius:1rem}
     .card-header{background-color:transparent;border-bottom:none}
 
-    /* ====== barra de acciones: chips minimalistas unificados ====== */
     :root{
       --line:#e6ecf4;
-      --text:#334155;
+      --text:#0f172a;
       --bg:#ffffff;
+      --muted:#64748b;
 
-      --brand:#2f5fb1;     /* azul */
-      --brand-50:#eef5ff;
-      --brand-100:#cfe2ff;
+      --brand:#2563eb;
+      --brand-50:#eff6ff;
+      --brand-100:#bfdbfe;
 
-      --success:#1ECD97;   /* verde WA */
-      --success-50:#effaf6;
+      --success:#16a34a;
+      --success-50:#ecfdf3;
+      --success-100:#86efac;
 
-      --danger:#dc2626;    /* rojo PDF */
+      --danger:#dc2626;
       --danger-50:#fee2e2;
       --danger-100:#fecaca;
     }
 
-    .page-header{display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap}
-    .action-bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    html,body{
+      height:100%;
+      font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont,
+                   "SF Pro Text", "Segoe UI", "Roboto", "Helvetica Neue", sans-serif;
+    }
+
+    body{
+      color:var(--text);
+      background:
+        radial-gradient(1200px 520px at 50% -10%, rgba(207,231,255,.95), transparent 60%),
+        radial-gradient(900px 420px at 50% 110%, rgba(255,220,190,.65), transparent 65%),
+        linear-gradient(180deg,#eef5ff 0%, #f6f7fb 58%, #fff3e6 100%);
+      background-attachment: fixed;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: geometricPrecision;
+    }
+
+    .page-header{
+      display:flex; gap:16px; align-items:center; justify-content:space-between; flex-wrap:wrap;
+    }
+
+    .action-bar{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
 
     .btn-chip{
-      --bd: var(--line); --bg: var(--bg); --fg: var(--text);
-      display:inline-flex; align-items:center; gap:.55rem;
-      padding:.6rem 1rem; border-radius:999px;
-      border:1px solid var(--bd); background:var(--bg); color:var(--fg);
-      font-weight:700; line-height:1; text-decoration:none; cursor:pointer;
-      transition: background .2s ease, color .2s ease, border-color .2s ease, box-shadow .2s ease, transform .02s ease;
-      height:44px; min-width:220px; justify-content:center;
+      --chip-h: 42px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:.55rem;
+      height:var(--chip-h);
+      min-width:170px;
+      padding:.62rem 1.05rem;
+      border-radius:999px;
+      border:1px solid rgba(15,23,42,.10);
+      background:rgba(255,255,255,.92);
+      color:#0f172a;
+      font-weight:600;
+      font-size:14px;
+      line-height:1;
+      text-decoration:none;
+      cursor:pointer;
+      white-space:nowrap;
+      box-shadow:0 6px 18px rgba(15,23,42,.06);
+      backdrop-filter: blur(6px);
+      transition:
+        background .18s ease,
+        border-color .18s ease,
+        box-shadow .18s ease,
+        transform .08s ease,
+        color .18s ease;
+      flex:0 0 auto;
     }
-    .btn-chip i{font-size:14px}
-    .btn-chip:hover{ box-shadow:0 6px 16px rgba(20,40,80,.08) }
-    .btn-chip:active{ transform:translateY(1px) }
-    .btn-chip:disabled{ opacity:.7; cursor:not-allowed }
 
-    /* Variantes */
-    .btn-chip.-danger { --bd: var(--danger-100); --bg: var(--danger-50); --fg:#991b1b; }
-    .btn-chip.-danger:hover{ background:#fecaca }
-    .btn-chip.-success{ --bd: var(--success); --bg: var(--success-50); --fg: var(--success); }
-    .btn-chip.-success:hover{ background: var(--success); color:#fff }
-    .btn-chip.-primary{ --bd: var(--brand-100); --bg: var(--brand-50); --fg: var(--brand); }
-    .btn-chip.-ghost  { --bd: var(--line); --bg:#fff; --fg: var(--text); }
+    .btn-chip i{font-size:15px}
+    .btn-chip:hover{
+      background:rgba(255,255,255,1);
+      border-color: rgba(15,23,42,.18);
+      box-shadow:0 10px 24px rgba(15,23,42,.10);
+      transform: translateY(-1px);
+    }
+    .btn-chip:active{ transform: translateY(0) }
+    .btn-chip:focus-visible{
+      outline:2px solid var(--brand-100);
+      outline-offset:2px;
+    }
 
-    /* spinner + estados */
+    .btn-chip.-danger{
+      background: rgba(254,226,226,.70);
+      border-color: var(--danger-100);
+      color:#991b1b;
+    }
+    .btn-chip.-danger:hover{
+      background: rgba(254,226,226,1);
+      border-color: #fca5a5;
+    }
+
+    .btn-chip.-success{
+      background: rgba(220,252,231,.65);
+      border-color: var(--success-100);
+      color:#15803d;
+    }
+    .btn-chip.-success:hover{
+      background: rgba(220,252,231,1);
+      border-color:#4ade80;
+    }
+
+    .btn-chip.-primary{
+      background: rgba(219,234,254,.70);
+      border-color: var(--brand-100);
+      color:#1d4ed8;
+    }
+    .btn-chip.-primary:hover{
+      background: rgba(219,234,254,1);
+      border-color:#93c5fd;
+    }
+
+    .btn-chip.-ghost{
+      background: rgba(255,255,255,.92);
+      border-color: rgba(15,23,42,.10);
+      color:#0f172a;
+    }
+    .btn-chip.-ghost:hover{
+      background:#fff;
+    }
+
     .btn-chip .spinner{
-      width:16px;height:16px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;
-      display:none; animation:spin .6s linear infinite;
+      width:16px; height:16px; border:2px solid currentColor; border-right-color:transparent;
+      border-radius:50%; display:none; animation: spin .6s linear infinite;
     }
+    .btn-chip.is-loading .label{ visibility:hidden }
     .btn-chip.is-loading .spinner{ display:inline-block }
-    .btn-chip .label{white-space:nowrap}
     @keyframes spin{ to{ transform:rotate(360deg) } }
 
-    /* Responsivo */
-    @media (max-width:576px){
-      .action-bar{ width:100% }
-      .btn-chip{ flex:1 1 100%; min-width:unset }
+    @media (max-width: 576px){
+      .action-bar{
+        width:100%;
+        display:grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap:8px;
+        align-items:stretch;
+      }
+      .btn-chip{
+        width:100%;
+        min-width:0;
+        height:38px;
+        font-size:13px;
+        padding:.5rem .7rem;
+        box-shadow:0 4px 12px rgba(15,23,42,.06);
+      }
+      .btn-chip i{font-size:14px}
+    }
+    @media (max-width: 360px){
+      .action-bar{ grid-template-columns: 1fr; }
+    }
+
+    .fin-card{
+      border:1px solid #e3e9f5;border-radius:20px;
+      box-shadow:0 14px 35px rgba(15,23,42,.10);
+      background:rgba(255,255,255,.96);
+      backdrop-filter: blur(8px);
+    }
+    .fin-head{
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
+      padding:16px 18px;border-bottom:1px dashed #e5e9f3;background:transparent;
+      border-radius:20px 20px 0 0
+    }
+    .fin-title{display:flex;align-items:center;gap:12px}
+    .fin-icon{
+      width:42px;height:42px;border-radius:14px;display:grid;place-items:center;
+      background:linear-gradient(135deg,#f3f6ff,#e0f2ff);
+      color:#1e3a8a;font-size:18px; flex:0 0 auto;
+    }
+    .fin-sub{font-size:12px;color:#64748b;margin-top:-2px}
+    .fin-chip{
+      display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:999px;
+      font-weight:700;font-size:11px;letter-spacing:.3px;text-transform:uppercase;
+      border:1px solid transparent; white-space:nowrap;
+    }
+    .fin-chip.ok{background:#ecfdf3;color:#047857;border-color:#bbf7d0}
+    .fin-chip.warn{background:#fff7ed;color:#9a3412;border-color:#fed7aa}
+    .fin-chip.neutral{background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe}
+
+    .fin-metrics{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+      gap:10px;padding:12px 16px;
+    }
+    .fin-metric{
+      background:#f8fafc;border:1px solid #e9eef6;border-radius:14px;padding:12px;
+      display:flex;flex-direction:column;gap:4px;min-height:80px; min-width:0;
+    }
+    .fin-metric .label{
+      font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.4px
+    }
+    .fin-metric .value{
+      font-size:18px;font-weight:700;color:#0f172a;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    .fin-metric .hint{font-size:11px;color:#94a3b8}
+
+    .fin-section{padding:10px 16px 16px}
+    .fin-section-card{
+      background:#f9fafb;border:1px solid #e9eef6;border-radius:16px;padding:12px
+    }
+
+    .fin-section-card + .fin-section-card{margin-top:10px;}
+
+    .fin-table{width:100%;font-size:13px;background:#fff;border-radius:12px;overflow:hidden}
+    .fin-table th{
+      background:#f1f5f9;color:#0f172a;font-weight:700;text-transform:uppercase;font-size:11px;letter-spacing:.5px
+    }
+    .fin-table td,.fin-table th{padding:9px 10px;border-bottom:1px solid #eef2f7}
+    .fin-table tr:last-child td{border-bottom:none}
+
+    .fin-money{font-weight:700}
+    .fin-money.neg{color:#b91c1c}
+
+    .fin-kv{
+      display:grid; grid-template-columns: 1fr 1fr; gap:8px 12px; font-size:14px;
+    }
+    .fin-kv .k{color:#64748b; font-weight:600;}
+    .fin-kv .v{font-weight:500; color:#0f172a;}
+    @media (max-width: 576px){
+      .fin-kv{ grid-template-columns: 1fr; }
+    }
+
+    .header-container{
+      position:relative;
+      padding:1.5rem 1.25rem 1.25rem;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:1rem;
+      overflow:hidden;
+      border-radius:0 0 1.5rem 1.5rem;
+      background:radial-gradient(circle at top left,#4f46e5 0,#38bdf8 40%,#ecfeff 100%);
+      color:#fff;
+    }
+    .header-container .titulos{
+      margin:0;
+      font-weight:700;
+      letter-spacing:.03em;
+    }
+    .gradient-bg-animation{
+      position:absolute;
+      inset:0;
+      background:radial-gradient(circle at 20% 0%,rgba(255,255,255,.25),transparent 55%);
+      pointer-events:none;
+      opacity:.7;
+    }
+    .header-container > *{ position:relative; z-index:2; }
+
+    .back-button .menu-icon{
+      border:none;
+      background:rgba(15,23,42,.2);
+      border-radius:999px;
+      padding:.4rem .7rem;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .back-button img{ width:22px;height:22px;filter:invert(1); }
+
+    .empty-subtotal{
+      color:#94a3b8;
+      font-weight:600;
     }
   </style>
 </head>
-<body>
-  <div class="header-container">
-    @auth
-      <div class="back-button">
-        <button onclick="window.history.back()" class="menu-icon" aria-label="Regresar">
-          <img src="{{ asset('images/atras.png') }}" alt="Regresar">
-        </button>
-      </div>
-    @endauth
-    <h1 class="titulos">Cotización</h1>
-    <div class="gradient-bg-animation"></div>
-  </div>
 
-  <div class="container mt-5">
-    {{-- Ocultamos banners y usamos el texto en el propio botón --}}
+<body>
+
+  <div class="container mt-5 mb-5">
     @php
-      $wa_ok   = session('wa_success');
-      $wa_info = session('wa_info'); // por si quieres manejar error/advertencia
+      $totalCotizacion = (float)($propuesta->total ?? 0);
+
+      $tradeins      = $propuesta->tradeins ?? collect();
+      $tradeinTotal  = (float)$tradeins->sum('valor_a_cuenta');
+
+      $totalContrato = max($totalCotizacion - $tradeinTotal, 0);
+
+      $pagosPlan = $propuesta->pagosFinanciamiento ?? collect();
+      $pagoInicial = $pagosPlan->first(fn($p) => strtolower(trim($p->descripcion ?? '')) === 'pago inicial');
+      $montoInicial = (float)($pagoInicial->monto ?? 0);
+      $pagosResto = $pagosPlan->filter(fn($p) => strtolower(trim($p->descripcion ?? '')) !== 'pago inicial');
+      $plazoMeses = $pagosResto->count();
+      $montoTotalPlan = (float)$pagosPlan->sum('monto');
+
+      $labelsMes = \Illuminate\Support\Str::plural('mes', $plazoMeses);
+
+      $anio = optional($propuesta->created_at)->format('Y') ?? date('Y');
+
+      $vigencia = optional($propuesta->created_at)->copy()?->addDays(30);
+
+      $EPS = 0.00001;
     @endphp
 
-    <div class="page-header mb-4">
-      <h2 class="mb-0">Resumen de Cotización N.2025{{ $propuesta->id }}</h2>
+    @if(session('wa_success'))
+      <div class="alert alert-success border-0" style="border-radius:12px">{{ session('wa_success') }}</div>
+    @endif
+    @if(session('wa_info'))
+      <div class="alert alert-warning border-0" style="border-radius:12px">
+        {{ session('wa_info') }}
+      </div>
+    @endif
 
-      <!-- Acciones -->
-      <div class="action-bar" role="toolbar" aria-label="Acciones">
-        <!-- PDF -->
+    <div class="page-header mb-4">
+      <h2 class="mb-0">
+        Resumen de Cotización N.{{ $anio }}{{ str_pad($propuesta->id,4,'0',STR_PAD_LEFT) }}
+      </h2>
+
+      <div class="action-bar" role="toolbar" aria-label="Acciones de la cotización">
+        @auth
+        <button type="button"
+        onclick="history.back()"
+        class="btn-chip -ghost"
+        title="Regresar al index">
+        <i class="fa-solid fa-arrow-left"></i>
+        <span class="label">Regresar</span>
+      </button>
+        @endauth
+
         <a href="{{ route('propuestas.pdf', $propuesta->id) }}"
-           class="btn-chip -danger js-async-btn"
-           target="_blank" rel="noopener"
-           data-default-label="Descargar PDF"
-           data-busy-label="Abriendo…"
-           data-done-label="Listo ✓">
+           class="btn-chip -danger"
+           target="_blank"
+           rel="noopener"
+           title="Descargar PDF">
           <i class="fa-solid fa-file-pdf"></i>
           <span class="label">Descargar PDF</span>
           <span class="spinner" aria-hidden="true"></span>
         </a>
 
-        <!-- WhatsApp (tpl fija doc_pdf_utility_v1 / es_MX) -->
+        @auth
         <form method="POST" action="{{ route('propuestas.whatsapp.plantilla', $propuesta) }}" id="form-wa" class="m-0">
           @csrf
           <input type="hidden" name="template_name" value="doc_pdf_utility_v4">
           <input type="hidden" name="template_lang"  value="es_MX">
-          <button type="submit"
-                  id="btn-wa"
-                  class="btn-chip -success js-async-submit"
-                  data-default-label="Enviar por WhatsApp"
-                  data-busy-label="Enviando…"
-                  data-done-label="Enviado ✓">
+          <button type="submit" id="btn-wa" class="btn-chip -success" title="Enviar por WhatsApp">
             <i class="fa-brands fa-whatsapp"></i>
             <span class="label">
-              {{-- Si vienes de éxito, mostramos “Enviado ✓” de una vez --}}
-              @if($wa_ok) Enviado ✓ @else Enviar por WhatsApp @endif
+              @if(session('wa_success')) Enviado ✓ @else Enviar por WhatsApp @endif
             </span>
             <span class="spinner" aria-hidden="true"></span>
           </button>
         </form>
-
-        {{-- EJEMPLOS (si los necesitas en esta vista)
-        <a href="{{ route('ventas.etiqueta', $propuesta->id) }}"
-           class="btn-chip -ghost js-async-btn" target="_blank" rel="noopener"
-           data-default-label="Etiqueta 4×8 (QR)"
-           data-busy-label="Abriendo…"
-           data-done-label="Listo ✓">
-          <i class="fa-solid fa-tag"></i><span class="label">Etiqueta 4×8 (QR)</span><span class="spinner"></span>
-        </a>
-
-        <a href="{{ route('checklists.wizard', $propuesta->id) }}"
-           class="btn-chip -primary js-async-btn" target="_blank" rel="noopener"
-           data-default-label="Abrir checklist"
-           data-busy-label="Abriendo…"
-           data-done-label="Listo ✓">
-          <i class="fa-solid fa-clipboard-check"></i><span class="label">Abrir checklist</span><span class="spinner"></span>
-        </a>
-        --}}
+        @endauth
       </div>
     </div>
 
-    {{-- ====== CONTENIDO (tu contenido original) ====== --}}
     <div class="row g-4">
       <div class="col-md-6 d-flex">
-        <div class="card shadow-sm w-100 border-0 rounded-4">
-          <div class="card-header bg-white border-bottom-0 py-3">
-            <h6 class="mb-0 text-primary-emphasis fw-semibold">📋 Información General</h6>
+        <div class="fin-card w-100 border-0">
+          <div class="fin-head">
+            <div class="fin-title">
+              <div class="fin-icon"><i class="fa-solid fa-file-signature"></i></div>
+              <div>
+                <div class="fw-bold">Datos de la cotización</div>
+                <div class="fin-sub">Información general</div>
+              </div>
+            </div>
+            <span class="fin-chip neutral">
+              {{ mb_strtoupper($propuesta->plan ?? 'N/A','UTF-8') }}
+            </span>
           </div>
-          <div class="card-body">
-            <p><strong>Cliente:</strong> {{ $propuesta->cliente->nombre }} {{ $propuesta->cliente->apellido }}</p>
-            <p><strong>Teléfono:</strong> {{ $propuesta->cliente->telefono ?? 'No proporcionado' }}</p>
-            <p><strong>Correo:</strong> {{ $propuesta->cliente->email ?? 'No proporcionado' }}</p>
-            <p><strong>Dirección / Comentarios:</strong> {{ $propuesta->cliente->comentarios ?? 'Sin comentarios' }}</p>
-            <p><strong>Lugar de Cotización:</strong> {{ $propuesta->lugar }}</p>
-            <p><strong>Nota:</strong> {{ $propuesta->nota ?? 'Sin nota' }}</p>
-            <p><strong>Realizada por:</strong> {{ $propuesta->usuario->name }}</p>
-            <p><strong>Plan:</strong> {{ ucfirst($propuesta->plan) }}</p>
+
+          <div class="fin-section">
+            <div class="fin-section-card">
+              <div class="fin-kv">
+                <div class="k">Cliente</div>
+                <div class="v">
+                  {{ mb_strtoupper($propuesta->cliente->nombre.' '.$propuesta->cliente->apellido,'UTF-8') }}
+                </div>
+
+                <div class="k">Teléfono cliente</div>
+                <div class="v">{{ $propuesta->cliente->telefono ?? 'NO REGISTRADO' }}</div>
+
+                <div class="k">Correo</div>
+                <div class="v">{{ $propuesta->cliente->email ?? 'NO REGISTRADO' }}</div>
+
+                <div class="k">Dirección / Comentarios</div>
+                <div class="v">{{ $propuesta->cliente->comentarios ?? 'SIN COMENTARIOS' }}</div>
+
+                <div class="k">Lugar de cotización</div>
+                <div class="v">{{ $propuesta->lugar ?? 'N/A' }}</div>
+
+                <div class="k">Nota interna</div>
+                <div class="v">{{ $propuesta->nota ?? 'SIN NOTA' }}</div>
+
+                <div class="k">Asesor</div>
+                <div class="v">{{ mb_strtoupper($propuesta->usuario->name,'UTF-8') }}</div>
+
+                <div class="k">Fecha</div>
+                <div class="v">{{ $propuesta->created_at?->format('d/m/Y H:i') }}</div>
+              </div>
+            </div>
+
+            <div class="fin-metrics mt-2">
+              <div class="fin-metric">
+                <div class="label">Total cotización</div>
+                <div class="value">${{ number_format($totalCotizacion,2) }}</div>
+                <div class="hint">Antes de equipos a cuenta</div>
+              </div>
+              <div class="fin-metric">
+                <div class="label">Equipos a cuenta</div>
+                <div class="value fin-money neg">
+                  - ${{ number_format($tradeinTotal,2) }}
+                </div>
+                <div class="hint">propuesta_tradeins</div>
+              </div>
+              <div class="fin-metric" style="background:#fefce8;">
+                <div class="label">Total del contrato</div>
+                <div class="value text-success">
+                  ${{ number_format($totalContrato,2) }}
+                </div>
+                <div class="hint">Después de tomar a cuenta</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {{-- Productos --}}
       <div class="col-md-6 d-flex">
-        <div class="card shadow-sm w-100 border-0 rounded-4">
-          <div class="card-header bg-white border-bottom-0 py-3">
-            <h6 class="mb-0 text-primary-emphasis fw-semibold">🛒 Productos Seleccionados</h6>
+        <div class="fin-card w-100 border-0">
+          <div class="fin-head">
+            <div class="fin-title">
+              <div class="fin-icon"><i class="fa-solid fa-cart-shopping"></i></div>
+              <div>
+                <div class="fw-bold">Productos seleccionados</div>
+                <div class="fin-sub">Detalle del equipo cotizado</div>
+              </div>
+            </div>
+            <span class="fin-chip neutral">
+              {{ $propuesta->productos->count() }} items
+            </span>
           </div>
-          <div class="card-body">
-            <div class="table-responsive">
-              <table class="table align-middle table-borderless mb-0">
-                <thead class="border-bottom">
-                  <tr class="text-muted small text-uppercase">
-                    <th>Equipo</th>
-                    <th>Descripción</th>
-                    <th class="text-center">Cantidad</th>
-                    <th class="text-end">Subtotal</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @foreach ($propuesta->productos as $item)
-                    <tr class="border-bottom">
-                      <td>
-                        @php
-                          $img = $item->producto?->imagen ? asset('storage/'.$item->producto->imagen) : asset('images/imagen-no-disponible.png');
-                        @endphp
-                        <img src="{{ $img }}" alt="{{ $item->producto->nombre ?? 'Producto eliminado' }}"
-                             class="rounded shadow-sm" style="width:48px;height:48px;object-fit:cover;">
-                      </td>
-                      <td>
-                        @if ($item->producto)
-                          <span class="fw-semibold d-block">{{ mb_strtoupper($item->producto->tipo_equipo ?? '—', 'UTF-8') }}</span>
-                          <small class="text-muted">
-                            {{ mb_strtoupper($item->producto->modelo ?? '', 'UTF-8') }} |
-                            {{ mb_strtoupper($item->producto->marca ?? '', 'UTF-8') }}
-                          </small>
-                        @else
-                          <span class="text-danger fst-italic">Producto eliminado</span>
-                        @endif
-                      </td>
-                      <td class="text-center">{{ $item->cantidad }}</td>
-                      <td class="text-end">${{ number_format((float)$item->subtotal, 2) }}</td>
+
+          <div class="fin-section">
+            <div class="fin-section-card">
+              <div class="table-responsive">
+                <table class="table fin-table mb-2">
+                  <thead>
+                    <tr>
+                      <th style="width:60px">Equipo</th>
+                      <th>Descripción</th>
+                      <th class="text-center" style="width:90px">Cantidad</th>
+                      <th>Precio Unitario</th>
+                      <th class="text-end" style="width:120px">Subtotal</th>
                     </tr>
-                  @endforeach
-                </tbody>
-              </table>
-
-              <hr class="my-3">
-              <div class="d-flex flex-column gap-1 text-end small">
-                <div><strong>Subtotal:</strong> ${{ number_format((float)$propuesta->subtotal, 2) }}</div>
-                @if(($propuesta->descuento ?? 0) > 0)
-                  <div><strong>Descuento:</strong> <span class="text-warning">${{ number_format((float)$propuesta->descuento, 2) }}</span></div>
-                @endif
-                @if(($propuesta->envio ?? 0) > 0)
-                  <div><strong>Envío:</strong> ${{ number_format((float)$propuesta->envio, 2) }}</div>
-                @endif
-                <div><strong>IVA:</strong> ${{ number_format((float)$propuesta->iva, 2) }}</div>
-                <div class="fw-bold fs-5 mt-2 text-success-emphasis"><strong>Total:</strong> ${{ number_format((float)$propuesta->total, 2) }}</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    {{-- ===== gráfico (igual que tenías) ===== --}}
-    @php $pagosCol = $propuesta->pagosFinanciamiento ?? collect(); @endphp
-    @if($pagosCol->count() > 0)
-      <div class="row mt-4">
-        <div class="col-md-6 d-flex">
-          <div class="card shadow-sm w-100 border-0 rounded-4">
-            <div class="card-header bg-white border-bottom-0 py-3">
-              <h6 class="mb-0 text-primary-emphasis fw-semibold">💳 Plan de Pagos (Presupuesto)</h6>
-            </div>
-            <div class="card-body d-flex gap-4 flex-wrap">
-              @php
-                $pagoInicial = $pagosCol->first(fn($p) => strtolower(trim($p->descripcion))==='pago inicial');
-                $montoInicial = $pagoInicial->monto ?? 0;
-                $pagosMensuales = $pagosCol->filter(fn($p)=> strtolower(trim($p->descripcion))!=='pago inicial');
-                $plazoMeses = $pagosMensuales->count();
-                $total = (float)($propuesta->total ?? 0);
-                $montoFinanciadoBase = max(0, $total - (float)$montoInicial);
-                $tasaInteresMensual = 0.05;
-                $montoConIntereses = (float)$pagosMensuales->sum('monto');
-                $cuotaMensual = $plazoMeses>0 ? $montoConIntereses/$plazoMeses : 0;
-                $pluralMes = \Illuminate\Support\Str::plural('mes', $plazoMeses);
-                $mon = fn($n)=>'$'.number_format((float)$n,2,'.',',');
-              @endphp
-
-              <div style="flex:1 1 35%;min-width:280px;max-width:320px">
-                <h3 style="color:#1e73be;font-weight:bold;border-bottom:2px solid #1e73be;padding-bottom:4px;margin-bottom:12px">
-                  Resumen del Financiamiento
-                </h3>
-                <table class="table table-sm mb-0">
-                  <tr><td><strong>Total de la Cotización:</strong></td><td>{{ $mon($total) }}</td></tr>
-                  @if(($propuesta->plan ?? '') !== 'contado')
-                    <tr><td><strong>Pago inicial estimado:</strong></td><td>{{ $mon($montoInicial) }}</td></tr>
-                    <tr><td><strong>Monto financiado (sin intereses):</strong></td><td>{{ $mon($montoFinanciadoBase) }}</td></tr>
-                    <tr><td><strong>Plazo estimado:</strong></td><td>{{ $plazoMeses }} {{ $pluralMes }}</td></tr>
-                  @endif
-                  @if(($propuesta->plan ?? '') === 'credito' && $plazoMeses > 0)
-                    <tr><td><strong>Tasa de interés mensual:</strong></td><td>{{ $tasaInteresMensual*100 }}%</td></tr>
-                    <tr><td><strong>Total con intereses:</strong></td><td class="text-primary fw-bold">{{ $mon($montoConIntereses) }}</td></tr>
-                    <tr><td><strong>Cuota mensual:</strong></td><td>{{ $mon($cuotaMensual) }}</td></tr>
-                  @endif
-                </table>
-              </div>
-
-              <div style="flex:1 1 60%;min-width:320px">
-                <table class="table align-middle table-borderless mb-0">
-                  <thead class="border-bottom text-muted small text-uppercase">
-                    <tr><th>Descripción</th><th>Fecha Estimada</th><th>Monto</th></tr>
                   </thead>
                   <tbody>
-                    @foreach($pagosCol as $pago)
-                      <tr class="border-bottom">
-                        <td>{{ mb_strtoupper($pago->descripcion,'UTF-8') }}</td>
-                        <td>{{ \Carbon\Carbon::parse($pago->fecha_pago)->format('d/m/Y') }}</td>
-                        <td>${{ number_format((float)$pago->monto, 2) }}</td>
+                    @foreach ($propuesta->productos as $item)
+                      @php
+                        $img = $item->producto?->imagen
+                          ? asset('storage/'.$item->producto->imagen)
+                          : asset('images/imagen-no-disponible.png');
+
+                        $sub = (float)($item->subtotal ?? 0);
+                        $mostrarSubtotal = $sub > $EPS;
+                      @endphp
+
+                      <tr>
+                        <td>
+                          <img src="{{ $img }}"
+                               alt="{{ $item->producto->nombre ?? 'Producto eliminado' }}"
+                               class="rounded shadow-sm"
+                               style="width:48px;height:48px;object-fit:cover;">
+                        </td>
+
+                        <td>
+                          @if ($item->producto)
+                            <span class="fw-semibold d-block">
+                              {{ mb_strtoupper($item->producto->tipo_equipo ?? '—','UTF-8') }}
+                            </span>
+                            <small class="text-muted d-block">
+                              {{ mb_strtoupper($item->producto->modelo ?? '', 'UTF-8') }} |
+                              {{ mb_strtoupper($item->producto->marca ?? '', 'UTF-8') }}
+                            </small>
+                          @else
+                            <span class="text-danger fst-italic">Producto eliminado</span>
+                          @endif
+                        </td>
+
+                        <td class="text-center">{{ $item->cantidad }}</td>
+                        <td>
+                          @php
+                          $precioUnit = ($item->cantidad > 1)
+                          ? $sub / $item->cantidad
+                          : (float)($item->precio_unitario ?? 0);
+                          @endphp
+                          @if($precioUnit > 0)
+                          ${{ number_format($precioUnit, 2) }}
+                          @endif
+                        </td>
+
+                        <td class="text-end fin-money">
+                          @if($mostrarSubtotal)
+                            ${{ number_format($sub, 2) }}
+                          @else
+                            <span class="empty-subtotal"></span>
+                          @endif
+                        </td>
                       </tr>
                     @endforeach
                   </tbody>
                 </table>
-              </div>
 
+                <div class="d-flex flex-column gap-1 text-end small mt-2">
+                  <div><strong>Subtotal:</strong> ${{ number_format((float)$propuesta->subtotal, 2) }}</div>
+                  @if(($propuesta->descuento ?? 0) > 0)
+                    <div>
+                      <strong>Descuento:</strong>
+                      <span class="text-warning">
+                        ${{ number_format((float)$propuesta->descuento, 2) }}
+                      </span>
+                    </div>
+                  @endif
+                  @if(($propuesta->envio ?? 0) > 0)
+                    <div><strong>Envío:</strong> ${{ number_format((float)$propuesta->envio, 2) }}</div>
+                  @endif
+                  <div><strong>IVA:</strong> ${{ number_format((float)$propuesta->iva, 2) }}</div>
+                  <div class="fw-bold fs-5 mt-2 text-success-emphasis">
+                    <strong>Total:</strong> ${{ number_format((float)$propuesta->total, 2) }}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div class="col-md-6 d-flex">
-          <div class="card shadow-sm w-100 border-0 rounded-4">
-            <div class="card-header bg-white border-bottom-0 py-3">
-              <h6 class="mb-0 text-primary-emphasis fw-semibold">🍩 Distribución por Subtotal</h6>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-4 mt-4">
+      <div class="col-md-6 d-flex">
+        <div class="fin-card w-100 border-0">
+          <div class="fin-head">
+            <div class="fin-title">
+              <div class="fin-icon"><i class="fa-solid fa-rotate"></i></div>
+              <div>
+                <div class="fw-bold">Equipos a cuenta (Trade-in)</div>
+                <div class="fin-sub">Tabla propuesta_tradeins</div>
+              </div>
             </div>
-            <div class="card-body d-flex justify-content-center align-items-center">
-              <canvas id="graficoSubtotales" height="220" style="max-width:100%"></canvas>
+            <span class="fin-chip {{ $tradeinTotal > 0 ? 'ok' : 'neutral' }}">
+              {{ $tradeinTotal > 0 ? 'CON TRADE-IN' : 'SIN TRADE-IN' }}
+            </span>
+          </div>
+
+          <div class="fin-section">
+            <div class="fin-section-card">
+              @if($tradeins->count() > 0)
+                <div class="table-responsive">
+                  <table class="table fin-table mb-2">
+                    <thead>
+                      <tr>
+                        <th>Tipo de equipo</th>
+                        <th>Marca / Modelo</th>
+                        <th>No. serie</th>
+                        <th class="text-end">Valor a cuenta</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @foreach($tradeins as $ti)
+                        <tr>
+                          <td>{{ mb_strtoupper($ti->tipo_equipo ?? '—','UTF-8') }}</td>
+                          <td>
+                            {{ mb_strtoupper($ti->marca ?? '—','UTF-8') }}
+                            @if($ti->modelo)
+                              / {{ mb_strtoupper($ti->modelo,'UTF-8') }}
+                            @endif
+                          </td>
+                          <td>{{ mb_strtoupper($ti->numero_serie ?? '—','UTF-8') }}</td>
+                          <td class="text-end fin-money">
+                            ${{ number_format((float)$ti->valor_a_cuenta, 2) }}
+                          </td>
+                        </tr>
+                      @endforeach
+                      <tr>
+                        <td colspan="3" class="text-end fw-semibold">Total equipos a cuenta</td>
+                        <td class="text-end fw-semibold fin-money neg">
+                          - ${{ number_format($tradeinTotal, 2) }}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              @else
+
+              @endif
+            </div>
+
+            <div class="fin-metrics mt-2">
+              <div class="fin-metric">
+                <div class="label">Total cotización</div>
+                <div class="value">${{ number_format($totalCotizacion,2) }}</div>
+                <div class="hint">
+                  {{ $tradeinTotal > 0 ? 'Sin aplicar trade-in' : 'Monto original de la propuesta' }}
+                </div>
+              </div>
+              <div class="fin-metric" style="background:#fefce8;">
+                <div class="label">Total del contrato</div>
+                <div class="value text-success">
+                  ${{ number_format($totalContrato,2) }}
+                </div>
+                <div class="hint">
+                  {{ $tradeinTotal > 0 ? 'Después de tomar a cuenta los equipos' : 'Igual al total de la cotización (sin trade-in)' }}
+                </div>
+              </div>
+            </div>
+
+            <div class="fin-section-card mt-2">
+              <div class="fw-semibold mb-2">
+                <i class="fa-regular fa-clock me-1"></i>
+                Notas de la cotización
+              </div>
+              <ul class="small text-muted mb-0 ps-3">
+                @if($vigencia)
+                  <li>
+                    <strong>Vigencia estimada:</strong>
+                    {{ $vigencia->format('d/m/Y') }}.
+                  </li>
+                @endif
+                <li>
+                  Los montos aquí mostrados son informativos y pueden ajustarse al momento de formalizar la venta.
+                </li>
+                <li>
+                  {{ $tradeinTotal > 0
+                      ? 'El valor del trade-in está sujeto a inspección física y validación técnica del equipo entregado.'
+                      : 'En caso de aplicar equipos a cuenta (trade-in), el valor se determinará tras la revisión física del equipo.' }}
+                </li>
+              </ul>
             </div>
           </div>
         </div>
       </div>
-    @endif
+      <div class="col-md-6 d-flex">
+        <div class="fin-card w-100 border-0">
+          <div class="fin-head">
+            <div class="fin-title">
+              <div class="fin-icon"><i class="fa-solid fa-calendar-check"></i></div>
+              <div>
+                <div class="fw-bold">Plan de pagos estimado</div>
+                <div class="fin-sub">
+                  {{ mb_strtoupper($propuesta->cliente->nombre.' '.$propuesta->cliente->apellido,'UTF-8') }}
+                </div>
+              </div>
+            </div>
+            <span class="fin-chip neutral">
+              {{ mb_strtoupper($propuesta->plan ?? 'N/A','UTF-8') }}
+            </span>
+          </div>
 
-  </div> <!-- /.container -->
+          <div class="fin-section">
+            <div class="fin-section-card mb-3">
+              <div class="fw-bold mb-2" style="color:#1e73be">
+                Resumen del financiamiento
+              </div>
+              <table class="table table-sm mb-0">
+                <tr>
+                  <td><strong>Total del contrato:</strong></td>
+                  <td>${{ number_format($totalContrato, 2, '.', ',') }}</td>
+                </tr>
+                <tr>
+                  <td><strong>Total plan estimado:</strong></td>
+                  <td>${{ number_format($montoTotalPlan, 2, '.', ',') }}</td>
+                </tr>
+                @if($montoInicial > 0)
+                  <tr>
+                    <td><strong>Pago inicial estimado:</strong></td>
+                    <td>${{ number_format($montoInicial, 2, '.', ',') }}</td>
+                  </tr>
+                @endif
+                @if($plazoMeses > 0)
+                  <tr>
+                    <td><strong>Plazo estimado:</strong></td>
+                    <td>{{ $plazoMeses }} {{ $labelsMes }}</td>
+                  </tr>
+                @endif
+              </table>
+            </div>
 
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', function(){
-      const ctx = document.getElementById('graficoSubtotales');
-      if(!ctx) return;
-      const dataSubtotales = {
-        labels: @json($labels),
-        datasets:[{ data:@json($valores),
-          backgroundColor:['#AEC6CF','#FFDAB9','#CBAACB','#B5EAD7','#FFDAC1','#FFB7B2','#E2F0CB','#FDCBFF','#B0E0E6','#D8BFD8'],
-          borderColor:'#fff', borderWidth:2 }]
-      };
-      new Chart(ctx, {
-        type:'doughnut', data:dataSubtotales,
-        options:{ responsive:true, cutout:'60%',
-          plugins:{ legend:{ position:'bottom', labels:{ color:'#6c757d', font:{ size:12 } }},
-            tooltip:{ callbacks:{ label:(c)=>`${c.label||''}: $${Number(c.raw??0).toLocaleString()}` }}}}
-      });
-    });
-  </script>
+            <div class="fin-section-card">
+              <div class="fw-bold mb-2">Detalle de pagos (presupuesto)</div>
+              <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Descripción</th>
+                      <th>Fecha estimada</th>
+                      <th class="text-end">Monto</th>
+                      <th class="text-center">Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @forelse($pagosPlan as $pago)
+                      <tr>
+                        <td>{{ $pago->descripcion ?? 'N/A' }}</td>
+                        <td>
+                          @if($pago->fecha_pago)
+                            {{ \Carbon\Carbon::parse($pago->fecha_pago)->format('d/m/Y') }}
+                          @else
+                            —
+                          @endif
+                        </td>
+                        <td class="text-end">
+                          ${{ number_format((float)$pago->monto, 2) }}
+                        </td>
+                        <td class="text-center">
+                          <span class="badge bg-secondary-subtle text-secondary-emphasis">
+                            Estimado
+                          </span>
+                        </td>
+                      </tr>
+                    @empty
+                      <tr>
+                        <td colspan="4" class="text-center text-muted">
+                          No se definió un plan de pagos para esta cotización.
+                        </td>
+                      </tr>
+                    @endforelse
+                  </tbody>
+                </table>
+              </div>
+            </div>
 
-  <!-- Bootstrap -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <hr class="mt-5">
+    <p class="fw-semibold small text-center text-secondary-emphasis mt-3">
+      Esta cotización es informativa y puede ajustarse al momento de generar la venta y la remisión final.
+    </p>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-  <!-- UX: estados en el propio botón -->
   <script>
-    // anchors (PDF, etc.)
-    document.querySelectorAll('.js-async-btn').forEach(btn=>{
-      const label = btn.querySelector('.label');
-      const def   = btn.dataset.defaultLabel || label?.textContent || '';
-      const busy  = btn.dataset.busyLabel || 'Abriendo…';
-      const done  = btn.dataset.doneLabel || 'Listo ✓';
+    document.addEventListener('DOMContentLoaded', function(){
+      const formWa = document.getElementById('form-wa');
+      const btnWa  = document.getElementById('btn-wa');
 
-      btn.addEventListener('click', ()=>{
-        // no evitamos navegación (target="_blank")
-        if(label){ label.textContent = busy; }
-        btn.classList.add('is-loading');
-        setTimeout(()=>{ // feedback “Listo ✓”
-          btn.classList.remove('is-loading');
-          if(label){ label.textContent = done; }
-          // volver al texto normal después
-          setTimeout(()=>{ if(label){ label.textContent = def; } }, 2000);
-        }, 900);
-      }, {once:false});
-    });
-
-    // submit (WhatsApp)
-    (function(){
-      const form  = document.getElementById('form-wa');
-      const btn   = document.getElementById('btn-wa');
-      if(!form || !btn) return;
-
-      const label = btn.querySelector('.label');
-      const def   = btn.dataset.defaultLabel || label?.textContent || '';
-      const busy  = btn.dataset.busyLabel || 'Enviando…';
-      const done  = btn.dataset.doneLabel || 'Enviado ✓';
-
-      // Si venimos de una respuesta OK del servidor, ya mostramos "Enviado ✓"
-      @if($wa_ok)
-        btn.classList.remove('is-loading');
-        if(label){ label.textContent = done; }
-      @endif
-
-      form.addEventListener('submit', ()=>{
-        btn.disabled = true;
-        btn.classList.add('is-loading');
-        if(label){ label.textContent = busy; }
+      formWa?.addEventListener('submit', function(){
+        if (!btnWa) return;
+        btnWa.classList.add('is-loading');
+        btnWa.setAttribute('aria-busy','true');
+        btnWa.disabled = true;
       });
-    })();
+    });
   </script>
 </body>
 </html>

@@ -6,11 +6,15 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Cache;
+
 use App\Models\ChatMessage;
 use App\Models\Cliente;
 use App\Models\ChatFlow;
+
 use App\Services\WhatsAppService;
+use App\Services\OpenAIWhatsAppAgentService;
+
 use Carbon\Carbon;
 
 class WhatsappInboxController extends Controller
@@ -29,7 +33,7 @@ class WhatsappInboxController extends Controller
             ->orderByDesc('last_at')
             ->get();
 
-        $threads = $base->map(function ($row) {
+        $threads = $base->map(function ($row) use ($ourE164) {
             $msisdn = $row->msisdn;
 
             $lastMsg = ChatMessage::where(function ($q) use ($msisdn) {
@@ -45,13 +49,16 @@ class WhatsappInboxController extends Controller
                 : null;
 
             $displayName = $cliente
-                ? trim(trim(($cliente->nombre ?? '') . ' ' . ($cliente->apellido ?? ''))) ?: $msisdn
+                ? (trim(($cliente->nombre ?? '') . ' ' . ($cliente->apellido ?? '')) ?: $msisdn)
                 : $msisdn;
 
             $flow = ChatFlow::where('from', $msisdn)->first();
             $ctx  = is_array($flow?->context) ? $flow->context : [];
-            $agentName = $ctx['agent']['name'] ?? null;
+
+            $agentName = data_get($ctx, 'agent.name');
             $handover  = !empty($ctx['handover']) || (($flow->step ?? '') === 'espera_asesor');
+            $handoverReason  = (string) ($ctx['handover_reason'] ?? '');
+            $handoverSummary = (string) ($ctx['handover_summary'] ?? '');
 
             $unread = ChatMessage::where(function ($q) use ($msisdn) {
                     $q->where('from', $msisdn)->orWhere('to', $msisdn);
@@ -63,14 +70,16 @@ class WhatsappInboxController extends Controller
                 ->count();
 
             return (object) [
-                'msisdn'       => $msisdn,
-                'display_name' => $displayName,
-                'last_text'    => $lastMsg?->text ?? null,
-                'last_type'    => $lastMsg?->type ?? null,
-                'last_at'      => $row->last_at,
-                'agent_name'   => $agentName,
-                'handover'     => $handover,
-                'unread_count' => $unread,
+                'msisdn'          => $msisdn,
+                'display_name'    => $displayName,
+                'last_text'       => $lastMsg?->text ?? null,
+                'last_type'       => $lastMsg?->type ?? null,
+                'last_at'         => $row->last_at,
+                'agent_name'      => $agentName,
+                'handover'        => $handover,
+                'handover_reason' => $handoverReason,
+                'handover_summary'=> $handoverSummary,
+                'unread_count'    => $unread,
             ];
         });
 
@@ -80,6 +89,8 @@ class WhatsappInboxController extends Controller
     /** Mostrar el chat con un número específico */
     public function show($msisdn)
     {
+        $appTz = config('app.timezone', 'UTC');
+
         $messages = ChatMessage::where(function ($q) use ($msisdn) {
                 $q->where('from', $msisdn)->orWhere('to', $msisdn);
             })
@@ -88,11 +99,14 @@ class WhatsappInboxController extends Controller
             ->map(function ($m) {
                 if (in_array($m->type, ['image', 'document'])) {
                     $m->media_link = $m->media_id
-                        ? ( \Illuminate\Support\Facades\Route::has('wa.media') ? route('wa.media', $m->media_id) : $m->media_link )
+                        ? (\Illuminate\Support\Facades\Route::has('wa.media') ? route('wa.media', $m->media_id) : $m->media_link)
                         : $m->media_link;
                 }
                 return $m;
             });
+
+        // Marcar como leídos localmente (cuando abren el chat)
+        $this->markThreadRead($msisdn);
 
         $digits = preg_replace('/\D+/', '', (string) $msisdn);
         $last10 = substr($digits, -10);
@@ -101,21 +115,193 @@ class WhatsappInboxController extends Controller
             : null;
 
         $displayName = $cliente
-            ? trim(trim(($cliente->nombre ?? '') . ' ' . ($cliente->apellido ?? ''))) ?: $msisdn
+            ? (trim(($cliente->nombre ?? '') . ' ' . ($cliente->apellido ?? '')) ?: $msisdn)
             : $msisdn;
 
         $flow = ChatFlow::firstOrCreate(['from' => $msisdn], ['step' => 'start']);
         $ctx  = is_array($flow->context) ? $flow->context : [];
-        $agentName = $ctx['agent']['name'] ?? null;
-        $handover  = !empty($ctx['handover']);
+
+        $agentName = data_get($ctx, 'agent.name');
+        $handover  = !empty($ctx['handover']) || (($flow->step ?? '') === 'espera_asesor');
 
         return view('whatsapp.chat', [
-            'messages'     => $messages,
-            'currentUser'  => $msisdn,
-            'displayName'  => $displayName,
-            'agentName'    => $agentName,
-            'handover'     => $handover,
+            'messages'        => $messages,
+            'currentUser'     => $msisdn,
+            'displayName'     => $displayName,
+            'agentName'       => $agentName,
+            'handover'        => $handover,
+            'handoverReason'  => (string)($ctx['handover_reason'] ?? ''),
+            'handoverSummary' => (string)($ctx['handover_summary'] ?? ''),
+            'flowStep'        => (string)($flow->step ?? 'start'),
         ]);
+    }
+
+    /**
+     * TOMAR conversación por agente (handover ON) sin necesidad de enviar mensaje
+     * POST /whatsapp/inbox/{msisdn}/claim
+     */
+    public function claim(Request $request, $msisdn)
+    {
+        $to = WhatsAppService::normalizeMsisdn((string)$msisdn);
+
+        $flow = ChatFlow::firstOrCreate(['from' => $to], ['step' => 'start']);
+        $ctx  = is_array($flow->context) ? $flow->context : [];
+
+        $ctx['handover'] = true;
+        $ctx['handover_reason']  = 'Agente tomó la conversación';
+        $ctx['handover_summary'] = $ctx['handover_summary'] ?? '';
+
+        if ($user = Auth::user()) {
+            $ctx['agent'] = [
+                'id'   => $user->id,
+                'name' => $user->name ?? ('Agente #' . $user->id),
+            ];
+        }
+
+        $flow->step    = 'espera_asesor';
+        $flow->context = $ctx;
+        $flow->save();
+
+        return response()->json(['ok' => true, 'handover' => true, 'agent' => $ctx['agent'] ?? null]);
+    }
+
+    /**
+     * LIBERAR conversación a IA (handover OFF)
+     * POST /whatsapp/inbox/{msisdn}/release
+     */
+    public function release(Request $request, $msisdn)
+    {
+        $to = WhatsAppService::normalizeMsisdn((string)$msisdn);
+
+        $flow = ChatFlow::firstOrCreate(['from' => $to], ['step' => 'start']);
+        $ctx  = is_array($flow->context) ? $flow->context : [];
+
+        $ctx['handover'] = false;
+        $ctx['handover_reason']  = null;
+        $ctx['handover_summary'] = null;
+        // opcional: limpiar agente
+        // unset($ctx['agent']);
+
+        $flow->step    = 'ai';
+        $flow->context = $ctx;
+        $flow->save();
+
+        return response()->json(['ok' => true, 'handover' => false]);
+    }
+
+    /**
+     * SUGERENCIA IA (NO envía, solo devuelve texto para que el asesor lo vea/copypaste)
+     * POST /whatsapp/inbox/{msisdn}/ai-suggest
+     */
+    public function aiSuggest(Request $request, $msisdn, OpenAIWhatsAppAgentService $agent)
+    {
+        $to = WhatsAppService::normalizeMsisdn((string)$msisdn);
+
+        $history = ChatMessage::where(function ($q) use ($to) {
+                $q->where('from', $to)->orWhere('to', $to);
+            })
+            ->orderBy('wa_timestamp', 'desc')
+            ->limit((int) env('WA_AI_HISTORY_LIMIT', 20))
+            ->get()
+            ->reverse()
+            ->values();
+
+        $prompt = $this->buildHistoryPrompt($history, $to);
+
+        $decision = $agent->decide($to, $prompt);
+
+        return response()->json([
+            'ok'       => true,
+            'handover' => (bool)($decision['handover'] ?? false),
+            'reason'   => (string)($decision['handover_reason'] ?? ''),
+            'summary'  => (string)($decision['handover_summary'] ?? ''),
+            'reply'    => trim((string)($decision['reply_text'] ?? '')),
+        ]);
+    }
+
+    /**
+     * ENVIAR con IA (envía directo al cliente y guarda en BD). No toma handover.
+     * POST /whatsapp/inbox/{msisdn}/ai-send
+     */
+    public function aiSend(Request $request, $msisdn, OpenAIWhatsAppAgentService $agent, WhatsAppService $wa)
+    {
+        $request->validate([
+            'message' => ['nullable','string'],
+        ]);
+
+        $to = WhatsAppService::normalizeMsisdn((string)$msisdn);
+        $appTz = config('app.timezone', 'UTC');
+        $fromE164 = preg_replace('/\D+/', '', (string) config('services.whatsapp.phone_e164'));
+
+        // Si mandan "message", lo usamos como último input; si no, usamos historial.
+        $seed = trim((string)$request->input('message', ''));
+        if ($seed === '') {
+            $history = ChatMessage::where(function ($q) use ($to) {
+                    $q->where('from', $to)->orWhere('to', $to);
+                })
+                ->orderBy('wa_timestamp', 'desc')
+                ->limit((int) env('WA_AI_HISTORY_LIMIT', 20))
+                ->get()
+                ->reverse()
+                ->values();
+
+            $seed = $this->buildHistoryPrompt($history, $to);
+        }
+
+        $decision = $agent->decide($to, $seed);
+        $reply = trim((string)($decision['reply_text'] ?? ''));
+
+        if ($reply === '') {
+            return response()->json(['ok' => false, 'message' => 'IA no devolvió respuesta.'], 422);
+        }
+
+        // Si la IA pide handover, NO enviamos como IA (o puedes enviar mensaje de “te paso con asesor”).
+        if (!empty($decision['handover'])) {
+            $flow = ChatFlow::firstOrCreate(['from' => $to], ['step' => 'start']);
+            $ctx  = is_array($flow->context) ? $flow->context : [];
+            $ctx['handover'] = true;
+            $ctx['handover_reason']  = (string)($decision['handover_reason'] ?? 'Escalado por IA');
+            $ctx['handover_summary'] = (string)($decision['handover_summary'] ?? '');
+            $flow->step = 'espera_asesor';
+            $flow->context = $ctx;
+            $flow->save();
+
+            return response()->json([
+                'ok' => true,
+                'handover' => true,
+                'reply' => null,
+                'reason' => $ctx['handover_reason'],
+                'summary'=> $ctx['handover_summary'],
+            ]);
+        }
+
+        // Enviar por WhatsApp
+        $res = $wa->sendText($to, $reply);
+        $json = $res->json();
+        $wamid = data_get($json, 'messages.0.id') ?? uniqid('wamid_ai_');
+
+        // Guardar en BD como OUT
+        $chat = ChatMessage::create([
+            'wamid'        => $wamid,
+            'from'         => $fromE164,
+            'to'           => $to,
+            'direction'    => 'out',
+            'type'         => 'text',
+            'text'         => $reply,
+            'wa_timestamp' => now($appTz),
+            'status'       => 'sent',
+            'raw'          => $json,
+        ]);
+
+        // Asegura handover OFF (IA activa)
+        $flow = ChatFlow::firstOrCreate(['from' => $to], ['step' => 'start']);
+        $ctx  = is_array($flow->context) ? $flow->context : [];
+        $ctx['handover'] = false;
+        $flow->step = 'ai';
+        $flow->context = $ctx;
+        $flow->save();
+
+        return response()->json(['ok' => true, 'sent' => true, 'message' => $this->presentMessageForFront($chat, $appTz)]);
     }
 
     /** Enviar mensaje (texto, imagen o documento) — MANUAL (asesor) */
@@ -134,106 +320,76 @@ class WhatsappInboxController extends Controller
             $request->validate(['file' => 'required|file|max:10240']);
         }
 
-        $to        = WhatsAppService::normalizeMsisdn((string) $msisdn);
-        $fromE164  = preg_replace('/\D+/', '', (string) config('services.whatsapp.phone_e164'));
-        $token     = (string) config('services.whatsapp.token');
-        $phoneId   = (string) config('services.whatsapp.phone_id');
-        $apiVer    = (string) (config('services.whatsapp.api_version') ?? config('services.whatsapp.version', 'v21.0'));
-        $url       = "https://graph.facebook.com/{$apiVer}/{$phoneId}/messages";
-        $appTz     = config('app.timezone', 'UTC'); // 👈 misma zona que webhook (MX)
-
-        $payload = [
-            'messaging_product' => 'whatsapp',
-            'to'   => $to,
-            'type' => $type,
-        ];
+        $to       = WhatsAppService::normalizeMsisdn((string) $msisdn);
+        $wa       = app(WhatsAppService::class);
+        $appTz    = config('app.timezone', 'UTC');
+        $fromE164 = preg_replace('/\D+/', '', (string) config('services.whatsapp.phone_e164'));
 
         $mediaId  = null;
         $filename = null;
 
         if ($type === 'text') {
-            $payload['text'] = ['body' => $request->input('text')];
+            $res = $wa->sendText($to, (string)$request->input('text'));
         } else {
-            $mediaId = $this->uploadMediaToWhatsApp($request->file('file'));
-            if (!$mediaId) {
+            $upload = $wa->uploadMedia($request->file('file'));
+            $mediaId = data_get($upload->json(), 'id');
+
+            if (!$upload->successful() || !$mediaId) {
+                Log::error('WA_UPLOAD_FAIL', ['resp' => $upload->json()]);
                 return response()->json(['message' => 'No se pudo subir el archivo a WhatsApp.'], 422);
             }
+
             $filename = $request->file('file')->getClientOriginalName();
 
             if ($type === 'image') {
-                $payload['image'] = ['id' => $mediaId];
+                // Envío simple sin caption
+                $payload = [
+                    'messaging_product' => 'whatsapp',
+                    'to'   => $to,
+                    'type' => 'image',
+                    'image'=> ['id' => $mediaId],
+                ];
+                $res = $this->waPost($payload);
             } else {
-                $payload['document'] = ['id' => $mediaId, 'filename' => $filename];
+                $res = $wa->sendDocumentById($to, $mediaId, $filename);
             }
         }
 
-        // Enviar a la API
-        $ch = curl_init($url);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Authorization: Bearer ' . $token,
-            'Content-Type: application/json',
-            'Accept: application/json',
-        ]);
-        curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $json = $res->json();
+        Log::info('WA_SEND_RES', ['res' => $json]);
 
-        $response = curl_exec($ch);
-        if ($response === false) {
-            $err = curl_error($ch);
-            curl_close($ch);
-            Log::error('WA_SEND_CURL_ERR', ['error' => $err]);
-            return response()->json(['message' => 'Error enviando a WhatsApp.'], 500);
-        }
-        curl_close($ch);
+        $wamid = data_get($json, 'messages.0.id') ?? uniqid('wamid_');
 
-        $res = json_decode($response, true) ?: [];
-        Log::info('WA_SEND_RES', ['res' => $res]);
-
-        // ID devuelto por WhatsApp
-        $wamid = $res['messages'][0]['id'] ?? uniqid('wamid_');
-
-        // Reclamar conversación por el asesor que envía
+        // Reclamar conversación por el asesor que envía (handover ON)
         $flow = ChatFlow::firstOrCreate(['from' => $to], ['step' => 'start']);
         $ctx  = is_array($flow->context) ? $flow->context : [];
         $ctx['handover'] = true;
+
         if ($user = Auth::user()) {
             $ctx['agent'] = [
                 'id'   => $user->id,
                 'name' => $user->name ?? ('Agente #' . $user->id),
             ];
         }
+
         $flow->step    = 'espera_asesor';
         $flow->context = $ctx;
         $flow->save();
 
-        // === Guardar en BD ===
         $chat = ChatMessage::create([
             'wamid'          => $wamid,
             'from'           => $fromE164,
             'to'             => $to,
             'direction'      => 'out',
             'type'           => $type,
-            'text'           => $type === 'text' ? $request->input('text') : null,
+            'text'           => $type === 'text' ? (string)$request->input('text') : null,
             'media_id'       => $mediaId,
             'media_filename' => $filename,
-            'wa_timestamp'   => now($appTz),  // 👈 MX, igual que webhook
+            'wa_timestamp'   => now($appTz),
             'status'         => 'sent',
-            'raw'            => $res,
+            'raw'            => $json,
         ]);
 
-        // Opcional: forzar wa_timestamp = created_at
-        $chat->wa_timestamp = $chat->created_at;
-        $chat->save();
-
-        // Media proxy inmediato
-        if (in_array($chat->type, ['image', 'document'])) {
-            $chat->media_link = $chat->media_id
-                ? ( \Illuminate\Support\Facades\Route::has('wa.media') ? route('wa.media', $chat->media_id) : $chat->media_link )
-                : $chat->media_link;
-        }
-
-        // Respuesta AJAX ya normalizada
         if ($request->ajax()) {
             return response()
                 ->json($this->presentMessageForFront($chat, $appTz))
@@ -243,69 +399,41 @@ class WhatsappInboxController extends Controller
         return back()->with('status', 'Mensaje enviado');
     }
 
-    /** Subir media al endpoint /media (retorna media_id) */
-    private function uploadMediaToWhatsApp($file): ?string
+    /** Helper para postear a WA usando el mismo token/version/phoneId (solo si ocupas payload custom) */
+    private function waPost(array $payload)
     {
-        $phoneId = (string) config('services.whatsapp.phone_id');
-        $apiVer  = (string) (config('services.whatsapp.api_version') ?? config('services.whatsapp.version', 'v21.0'));
-        $token   = (string) config('services.whatsapp.token');
+        $cfg     = config('services.whatsapp');
+        $token   = (string) ($cfg['token'] ?? '');
+        $version = (string) ($cfg['api_version'] ?? $cfg['version'] ?? 'v21.0');
+        $phoneId = (string) ($cfg['phone_id'] ?? '');
 
-        $url = "https://graph.facebook.com/{$apiVer}/{$phoneId}/media";
-        $cFile = new \CURLFile(
-            $file->getRealPath(),
-            $file->getMimeType() ?: 'application/octet-stream',
-            $file->getClientOriginalName()
-        );
+        $endpoint = "https://graph.facebook.com/{$version}/{$phoneId}/messages";
 
-        $data = [
-            'file'              => $cFile,
-            'messaging_product' => 'whatsapp',
-            'type'              => $file->getMimeType() ?: 'application/octet-stream',
-        ];
-
-        $ch = curl_init($url);
-        curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Authorization: Bearer ' . $token,
-            'Accept: application/json',
-        ]);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-
-        $result = curl_exec($ch);
-        if ($result === false) {
-            Log::error('WA_UPLOAD_CURL_ERR', ['error' => curl_error($ch)]);
-            curl_close($ch);
-            return null;
-        }
-        curl_close($ch);
-
-        $res = json_decode($result, true) ?: [];
-        if (!empty($res['error'])) {
-            Log::error('WA_UPLOAD_ERR', ['resp' => $res]);
-            return null;
-        }
-
-        return $res['id'] ?? null;
+        return \Illuminate\Support\Facades\Http::withToken($token)
+            ->acceptJson()
+            ->asJson()
+            ->timeout(30)
+            ->post($endpoint, $payload);
     }
 
     /** Polling del chat: mensajes de una conversación (ISO UTC) */
     public function fetch($msisdn)
     {
+        $appTz = config('app.timezone', 'UTC');
+
         $messages = ChatMessage::where(function ($q) use ($msisdn) {
                 $q->where('from', $msisdn)->orWhere('to', $msisdn);
             })
             ->orderBy('wa_timestamp', 'asc')
             ->get()
-            ->map(function ($m) {
+            ->map(function ($m) use ($appTz) {
                 if (in_array($m->type, ['image', 'document'])) {
                     $m->media_link = $m->media_id
-                        ? ( \Illuminate\Support\Facades\Route::has('wa.media') ? route('wa.media', $m->media_id) : $m->media_link )
+                        ? (\Illuminate\Support\Facades\Route::has('wa.media') ? route('wa.media', $m->media_id) : $m->media_link)
                         : $m->media_link;
                 }
                 try {
-                    // BD -> ISO UTC que el front convierte a MX
-                    $m->wa_timestamp = Carbon::parse($m->wa_timestamp)->utc()->toIso8601String();
+                    $m->wa_timestamp = Carbon::parse($m->wa_timestamp, $appTz)->utc()->toIso8601String();
                 } catch (\Throwable $e) {}
                 return $m;
             });
@@ -315,21 +443,16 @@ class WhatsappInboxController extends Controller
             ->header('Cache-Control','no-store, no-cache, must-revalidate');
     }
 
-    /** Polling de bandeja: lista de hilos recientes (convierte since a zona app + ETag/304) */
+    /** Polling de bandeja: lista de hilos recientes (ETag/304) */
     public function fetchThreads(Request $request)
     {
         $ourE164  = preg_replace('/\D+/', '', (string) config('services.whatsapp.phone_e164'));
         $sinceIso = $request->query('since');
         $appTz    = config('app.timezone', 'UTC');
 
-        // El front manda 'since' en ISO-UTC; convertimos a zona del app (MX) para comparar con wa_timestamp.
         $sinceApp = null;
         if ($sinceIso) {
-            try {
-                $sinceApp = Carbon::parse($sinceIso)->setTimezone($appTz);
-            } catch (\Throwable $e) {
-                $sinceApp = null;
-            }
+            try { $sinceApp = Carbon::parse($sinceIso)->setTimezone($appTz); } catch (\Throwable $e) {}
         }
 
         $q = ChatMessage::query()
@@ -362,12 +485,12 @@ class WhatsappInboxController extends Controller
                 : null;
 
             $display = $cliente
-                ? trim(trim(($cliente->nombre ?? '') . ' ' . ($cliente->apellido ?? ''))) ?: $msisdn
+                ? (trim(($cliente->nombre ?? '') . ' ' . ($cliente->apellido ?? '')) ?: $msisdn)
                 : $msisdn;
 
             $flow = ChatFlow::where('from', $msisdn)->first();
             $ctx  = is_array($flow?->context) ? $flow->context : [];
-            $agentName = $ctx['agent']['name'] ?? null;
+            $agentName = data_get($ctx, 'agent.name');
             $handover  = !empty($ctx['handover']) || (($flow->step ?? '') === 'espera_asesor');
 
             $unread = ChatMessage::where(function ($q) use ($msisdn) {
@@ -383,7 +506,6 @@ class WhatsappInboxController extends Controller
                 'peer'         => $msisdn,
                 'display_name' => $display,
                 'last_text'    => $lastMsg?->text ?? null,
-                // Publicamos en UTC para que el front lo pinte en MX
                 'last_at'      => $row->last_at ? Carbon::parse($row->last_at, $appTz)->utc()->toIso8601String() : null,
                 'unread_count' => $unread,
                 'agent_name'   => $agentName,
@@ -391,7 +513,6 @@ class WhatsappInboxController extends Controller
             ];
         })->values();
 
-        // ETag/304 sólido y tolerante a 'W/' en If-None-Match
         $etagBase = md5($sinceIso.'|'.$rows->toJson(JSON_UNESCAPED_UNICODE));
         $etag     = '"'.$etagBase.'"';
 
@@ -419,19 +540,31 @@ class WhatsappInboxController extends Controller
 
     /* ======================== Helpers ======================== */
 
-    /** Normaliza un mensaje para el front: incluye ISO-UTC y media_link resuelto */
+    /** Marca mensajes entrantes como leídos (local) al abrir el chat */
+    private function markThreadRead(string $msisdn): void
+    {
+        ChatMessage::where(function ($q) use ($msisdn) {
+                $q->where('from', $msisdn)->orWhere('to', $msisdn);
+            })
+            ->where('direction', 'in')
+            ->where(function ($q) {
+                $q->whereNull('status')->orWhere('status', '<>', 'read');
+            })
+            ->update(['status' => 'read']);
+    }
+
+    /** Normaliza un mensaje para el front: ISO UTC y media_link */
     private function presentMessageForFront(ChatMessage $m, string $appTz): array
     {
         $isoUtc = '';
         try {
-            // wa_timestamp está en zona app (MX). Lo publicamos como ISO UTC para el front.
             $isoUtc = Carbon::parse($m->wa_timestamp, $appTz)->utc()->toIso8601String();
         } catch (\Throwable $e) {}
 
         $mediaLink = null;
         if (in_array($m->type, ['image', 'document'])) {
             $mediaLink = $m->media_id
-                ? ( \Illuminate\Support\Facades\Route::has('wa.media') ? route('wa.media', $m->media_id) : $m->media_link )
+                ? (\Illuminate\Support\Facades\Route::has('wa.media') ? route('wa.media', $m->media_id) : $m->media_link)
                 : $m->media_link;
         }
 
@@ -446,8 +579,27 @@ class WhatsappInboxController extends Controller
             'media_id'       => $m->media_id,
             'media_link'     => $mediaLink,
             'media_filename' => $m->media_filename,
-            'wa_timestamp'   => $isoUtc,     // 👈 siempre ISO UTC
+            'wa_timestamp'   => $isoUtc,
             'status'         => $m->status,
         ];
+    }
+
+    /** Construye prompt con historial (para que la IA responda con contexto) */
+    private function buildHistoryPrompt($history, string $peerMsisdn): string
+    {
+        $lines = [];
+        foreach ($history as $m) {
+            $role = $m->direction === 'in' ? 'Cliente' : 'Agente/Empresa';
+            $txt  = $m->text ?: ($m->type === 'image' ? '[IMAGEN]' : ($m->type === 'document' ? '[DOCUMENTO]' : '['.$m->type.']'));
+            $lines[] = "{$role}: {$txt}";
+        }
+
+        $joined = implode("\n", $lines);
+
+        return "Historial reciente (WhatsApp) con el cliente {$peerMsisdn}:\n".
+               $joined."\n\n".
+               "INSTRUCCIONES: Responde como asistente de MediBuy. Si preguntan por precios/stock, consulta catálogo. ".
+               "Si detectas que se requiere humano (cobros, quejas fuertes, negociación, datos sensibles, urgencias), activa handover.\n".
+               "Responde breve, claro y con siguiente paso.";
     }
 }

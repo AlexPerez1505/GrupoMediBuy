@@ -19,20 +19,24 @@ class ProcesoEquipo extends Model
         'evidencia2',
         'evidencia3',
         'video',
-        'documento_pdf', // Se añade el campo para almacenar el PDF
-        'ficha_tecnica_id', // Debe estar aquí
-        'defectos', // Agregar defectos a $fillable
+        'documento_pdf',
+        'ficha_tecnica_id',
+        'defectos',
+        'checklist',         // <- nuevo: guardamos el checklist aquí (como array/JSON)
     ];
 
-    // Relación: un proceso pertenece a un registro
+    protected $casts = [
+        'defectos'  => 'array',   // se devolverá como array
+        'checklist' => 'array',   // se devolverá como array
+    ];
+
     public function registro()
     {
         return $this->belongsTo(Registro::class, 'registro_id', 'id');
     }
-    // En el modelo ProcesoEquipo o el que sea
-public function fichaTecnica()
-{
-    return $this->belongsTo(FichaTecnica::class, 'ficha_tecnica_id'); // 'ficha_tecnica_id' es el campo en 'procesos_equipos' que guarda el ID de la ficha
-}
 
+    public function fichaTecnica()
+    {
+        return $this->belongsTo(FichaTecnica::class, 'ficha_tecnica_id');
+    }
 }

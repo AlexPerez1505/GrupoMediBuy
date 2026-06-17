@@ -49,19 +49,43 @@ body{font-family:"Open Sans",sans-serif;background:#eaebec}
   border-radius:12px;padding:16px 14px 10px;transition:box-shadow .2s,border-color .2s;
 }
 .field:focus-within{border-color:#d8dee6;box-shadow:0 8px 24px rgba(18,38,63,.08)}
-.field input{
+
+.field input,
+.field select{
   width:100%;border:0;outline:0;background:transparent;
   font-size:15px;color:var(--ink);padding-top:10px;
+  /* CORRECCIÓN DOBLE FLECHA: */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  cursor: pointer;
+  z-index: 2; /* Para que quede por encima de la flecha SVG */
+  position: relative;
 }
+
 .field label{
   position:absolute;left:14px;top:14px;color:var(--muted);font-size:13px;
   transition:transform .15s ease, color .15s ease, font-size .15s ease, top .15s ease;
   pointer-events:none;
+  z-index: 1;
 }
 .field input::placeholder{color:transparent;}
 .field input:focus + label,
 .field input:not(:placeholder-shown) + label{
   top:8px;transform:translateY(-10px);font-size:11px;color:var(--mint-dark);
+}
+
+/* Label flotante para select usando .has-value */
+.field.has-value label,
+.field:focus-within label{
+  top:8px;transform:translateY(-10px);font-size:11px;color:var(--mint-dark);
+}
+
+/* caret */
+.field .caret{
+  position:absolute;right:14px;top:50%;transform:translateY(-10%);
+  color:#a2a7ae;pointer-events:none;
+  z-index: 0;
 }
 
 /* Price adornment */
@@ -115,6 +139,14 @@ body{font-family:"Open Sans",sans-serif;background:#eaebec}
 .error{color:#cc4b4b;font-size:12px;margin-top:6px}
 </style>
 
+@php
+  // Pre-llenado de datos si existen (Old inputs o Edición)
+  $oldTipo    = old('tipo_equipo',    $producto->tipo_equipo    ?? '');
+  $oldSubtipo = old('subtipo_equipo', $producto->subtipo_equipo ?? '');
+  $oldMarca   = old('marca',          $producto->marca          ?? '');
+  $oldModelo  = old('modelo',         $producto->modelo         ?? '');
+@endphp
+
 <div class="edit-wrap">
   <div class="panel">
     <div class="panel-head">
@@ -136,27 +168,56 @@ body{font-family:"Open Sans",sans-serif;background:#eaebec}
       <div class="grid">
         {{-- Tipo de equipo --}}
         <div>
-          <div class="field @error('tipo_equipo') is-invalid @enderror">
-            <input type="text" name="tipo_equipo" id="f-tipo" value="{{ old('tipo_equipo') }}" placeholder=" " required>
-            <label for="f-tipo">Tipo de equipo</label>
+          <div class="field @error('tipo_equipo') is-invalid @enderror" id="wrap-tipo">
+            <select name="tipo_equipo" id="f-tipo" required>
+              <option value="" selected disabled hidden></option>
+            </select>
+            <label for="f-tipo">Categoria</label>
+            <svg class="caret" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
           </div>
           @error('tipo_equipo')<div class="error">{{ $message }}</div>@enderror
         </div>
 
+        {{-- Subtipo --}}
+        <div>
+          <div class="field @error('subtipo_equipo') is-invalid @enderror" id="wrap-subtipo">
+            <select name="subtipo_equipo" id="f-subtipo" required disabled>
+              <option value="" selected disabled hidden></option>
+            </select>
+            <label for="f-subtipo">Subtipo</label>
+            <svg class="caret" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </div>
+          @error('subtipo_equipo')<div class="error">{{ $message }}</div>@enderror
+        </div>
+
         {{-- Marca --}}
         <div>
-          <div class="field @error('marca') is-invalid @enderror">
-            <input type="text" name="marca" id="f-marca" value="{{ old('marca') }}" placeholder=" ">
+          <div class="field @error('marca') is-invalid @enderror" id="wrap-marca">
+            <select name="marca" id="f-marca" required disabled>
+              <option value="" selected disabled hidden></option>
+            </select>
             <label for="f-marca">Marca</label>
+            <svg class="caret" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
           </div>
           @error('marca')<div class="error">{{ $message }}</div>@enderror
         </div>
 
         {{-- Modelo --}}
         <div>
-          <div class="field @error('modelo') is-invalid @enderror">
-            <input type="text" name="modelo" id="f-modelo" value="{{ old('modelo') }}" placeholder=" ">
+          <div class="field @error('modelo') is-invalid @enderror" id="wrap-modelo">
+            <select name="modelo" id="f-modelo" required disabled>
+              <option value="" selected disabled hidden></option>
+            </select>
             <label for="f-modelo">Modelo</label>
+            <svg class="caret" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
           </div>
           @error('modelo')<div class="error">{{ $message }}</div>@enderror
         </div>
@@ -164,7 +225,7 @@ body{font-family:"Open Sans",sans-serif;background:#eaebec}
         {{-- Precio --}}
         <div>
           <div class="field @error('precio') is-invalid @enderror">
-            <input type="number" step="0.01" name="precio" id="f-precio" value="{{ old('precio') }}" placeholder=" ">
+            <input type="number" step="0.01" name="precio" id="f-precio" value="{{ old('precio') }}" placeholder=" " required>
             <label for="f-precio">Precio</label>
             <span class="prefix">$ MXN</span>
           </div>
@@ -201,7 +262,7 @@ body{font-family:"Open Sans",sans-serif;background:#eaebec}
 </div>
 
 <script>
-// Preview de imagen dinámica
+/* ==================== Preview imagen dinámica ==================== */
 document.getElementById('imagen')?.addEventListener('change', function(e){
   const file = e.target.files && e.target.files[0];
   if(!file) return;
@@ -214,7 +275,7 @@ document.getElementById('imagen')?.addEventListener('change', function(e){
   reader.readAsDataURL(file);
 });
 
-// Formatear precio a 2 decimales al salir
+/* ==================== Formatear precio a 2 decimales ==================== */
 const precio = document.getElementById('f-precio');
 if(precio){
   precio.addEventListener('blur', ()=> {
@@ -224,5 +285,184 @@ if(precio){
     }
   });
 }
+
+/* ==================== LOGICA: Tipo → Subtipo → Marca → Modelo ==================== */
+const OLD = {
+  tipo:    @json($oldTipo),
+  subtipo: @json($oldSubtipo),
+  marca:   @json($oldMarca),
+  modelo:  @json($oldModelo),
+};
+
+@include('partials.catalogo-equipos-data')
+
+const $tipo    = document.getElementById('f-tipo');
+const $subtipo = document.getElementById('f-subtipo');
+const $marca   = document.getElementById('f-marca');
+const $modelo  = document.getElementById('f-modelo');
+
+const wrapTipo    = document.getElementById('wrap-tipo');
+const wrapSubtipo = document.getElementById('wrap-subtipo');
+const wrapMarca   = document.getElementById('wrap-marca');
+const wrapModelo  = document.getElementById('wrap-modelo');
+
+function norm(s){
+  return (s||'').toString().trim().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/\s+/g,' ');
+}
+
+function setHasValue(wrap, el){
+  wrap?.classList.toggle('has-value', !!(el && el.value));
+}
+
+function clearSelect(sel){
+  while(sel.options.length > 1) sel.remove(1);
+  sel.value = '';
+}
+
+function fillSelect(sel, arr){
+  (arr||[]).forEach(v => {
+    const opt = document.createElement('option');
+    opt.value = v;
+    opt.textContent = v;
+    sel.appendChild(opt);
+  });
+}
+
+function pickExact(arr, wanted){
+  const w = norm(wanted);
+  if(!w) return '';
+  const found = (arr||[]).find(x => norm(x) === w);
+  return found || '';
+}
+
+function getMarcas(tipo, subtipo){
+  const tipoSlug = norm(tipo);
+  const subSlug  = norm(subtipo);
+
+  const tipoNode = marcasModelosPorSubtipo[tipoSlug];
+  if(!tipoNode) return [];
+
+  let node = null;
+  for (const k in tipoNode){
+    if (norm(k) === subSlug){ node = tipoNode[k]; break; }
+  }
+  if(!node) return [];
+  return Object.keys(node);
+}
+
+function getModelos(tipo, subtipo, marca){
+  const tipoSlug = norm(tipo);
+  const subSlug  = norm(subtipo);
+
+  const tipoNode = marcasModelosPorSubtipo[tipoSlug];
+  if(!tipoNode) return [];
+
+  let node = null;
+  for (const k in tipoNode){
+    if (norm(k) === subSlug){ node = tipoNode[k]; break; }
+  }
+  if(!node) return [];
+  const arr = node[marca] || [];
+  return Array.isArray(arr) ? arr : [];
+}
+
+function onTipoChange(){
+  clearSelect($subtipo);
+  clearSelect($marca);
+  clearSelect($modelo);
+
+  const tipo = $tipo.value;
+  const subs = tipo ? (tiposEquipos[tipo] || []) : [];
+
+  fillSelect($subtipo, subs);
+  $subtipo.disabled = !tipo;
+
+  $marca.disabled  = true;
+  $modelo.disabled = true;
+
+  setHasValue(wrapTipo, $tipo);
+  setHasValue(wrapSubtipo, $subtipo);
+  setHasValue(wrapMarca, $marca);
+  setHasValue(wrapModelo, $modelo);
+}
+
+function onSubtipoChange(){
+  clearSelect($marca);
+  clearSelect($modelo);
+
+  const tipo = $tipo.value;
+  const subtipo = $subtipo.value;
+
+  const marcas = (tipo && subtipo) ? getMarcas(tipo, subtipo) : [];
+  fillSelect($marca, marcas);
+
+  $marca.disabled  = !(tipo && subtipo && marcas.length);
+  $modelo.disabled = true;
+
+  setHasValue(wrapSubtipo, $subtipo);
+  setHasValue(wrapMarca, $marca);
+  setHasValue(wrapModelo, $modelo);
+}
+
+function onMarcaChange(){
+  clearSelect($modelo);
+
+  const tipo = $tipo.value;
+  const subtipo = $subtipo.value;
+  const marca = $marca.value;
+
+  const modelos = (tipo && subtipo && marca) ? getModelos(tipo, subtipo, marca) : [];
+  fillSelect($modelo, modelos);
+
+  $modelo.disabled = !(marca && modelos.length);
+
+  setHasValue(wrapMarca, $marca);
+  setHasValue(wrapModelo, $modelo);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  // llenar TIPOS
+  fillSelect($tipo, Object.keys(tiposEquipos));
+
+  // bind
+  $tipo.addEventListener('change', onTipoChange);
+  $subtipo.addEventListener('change', onSubtipoChange);
+  $marca.addEventListener('change', onMarcaChange);
+  $modelo.addEventListener('change', ()=> setHasValue(wrapModelo, $modelo));
+
+  // precargar EDIT/OLD
+  const tipoPick = pickExact(Object.keys(tiposEquipos), OLD.tipo);
+  if(tipoPick){
+    $tipo.value = tipoPick;
+    onTipoChange();
+
+    const subPick = pickExact(tiposEquipos[tipoPick] || [], OLD.subtipo);
+    if(subPick){
+      $subtipo.value = subPick;
+      onSubtipoChange();
+
+      const marcas = getMarcas(tipoPick, subPick);
+      const marcaPick = pickExact(marcas, OLD.marca);
+      if(marcaPick){
+        $marca.value = marcaPick;
+        onMarcaChange();
+
+        const modelos = getModelos(tipoPick, subPick, marcaPick);
+        const modeloPick = pickExact(modelos, OLD.modelo);
+        if(modeloPick){
+          $modelo.value = modeloPick;
+        }
+      }
+    }
+  }
+
+  // aplicar has-value inicial
+  setHasValue(wrapTipo, $tipo);
+  setHasValue(wrapSubtipo, $subtipo);
+  setHasValue(wrapMarca, $marca);
+  setHasValue(wrapModelo, $modelo);
+});
 </script>
 @endsection

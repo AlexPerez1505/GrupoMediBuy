@@ -14,12 +14,26 @@ class Remision extends Model
     protected $fillable = [
         'cliente_id',
         'user_id',
-        'fecha', // si estás usando una fecha personalizada (si no, puedes quitarlo también)
+        'fecha',
         'iva',
         'subtotal',
         'aplicar_iva',
         'total',
         'importe_letra',
+
+        'tiene_envio',
+        'envio_costo',
+        'envio_direccion',
+        'meses_a_pagar',
+        'mensualidad',
+
+        // NOTA: 'meta' eliminado porque tu DB no tiene esa columna
+    ];
+
+    protected $casts = [
+        'aplicar_iva' => 'boolean',
+        'tiene_envio' => 'boolean',
+        // 'meta' eliminado
     ];
 
     public function cliente()
@@ -34,16 +48,11 @@ class Remision extends Model
 
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function items()
     {
-        return $this->hasMany(ItemRemision::class);
+        return $this->hasMany(ItemRemision::class, 'remision_id');
     }
-    public function venta()
-{
-    return $this->belongsTo(Venta::class);
-}
-
 }

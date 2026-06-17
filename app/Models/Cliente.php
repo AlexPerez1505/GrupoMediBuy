@@ -1,15 +1,18 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Notifications\Notifiable;  // <-- Importa el trait
+use Illuminate\Notifications\Notifiable;
 use App\Models\Seguimiento;
-
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Cliente extends Model
 {
-    use HasFactory, Notifiable;  // <-- Usa el trait Notifiable
+    use HasFactory, Notifiable;
+
+    protected $table = 'clientes';
 
     protected $fillable = [
         'nombre',
@@ -18,9 +21,23 @@ class Cliente extends Model
         'email',
         'comentarios',
         'asesor',
-        'categoria_id'
+        'categoria_id',
+        'recibe_promocion',
+        'congreso_conocido',
+
+        // campos nuevos para rentas médicas
+        'nombre_comercial',
+        'direccion',
+        'activo',
+        'tipo_cliente',
     ];
-      public function categoria()
+
+    protected $casts = [
+        'recibe_promocion' => 'boolean',
+        'activo' => 'boolean',
+    ];
+
+    public function categoria()
     {
         return $this->belongsTo(Categoria::class);
     }
@@ -33,5 +50,24 @@ class Cliente extends Model
     public function seguimientos()
     {
         return $this->hasMany(Seguimiento::class);
+    }
+
+    public function rentals(): HasMany
+    {
+        return $this->hasMany(Rental::class, 'cliente_id');
+    }
+
+    public function getNombreCompletoAttribute(): string
+    {
+        return trim(($this->nombre ?? '') . ' ' . ($this->apellido ?? ''));
+    }
+
+    public function getNombreRentaAttribute(): string
+    {
+        if (!empty($this->nombre_comercial)) {
+            return $this->nombre_comercial;
+        }
+
+        return $this->nombre_completo;
     }
 }

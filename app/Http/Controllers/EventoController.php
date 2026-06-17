@@ -2,134 +2,194 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Evento;
+use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 
 class EventoController extends Controller
 {
+    /** LISTA PARA FULLCALENDAR */
     public function index()
     {
-        return response()->json(Evento::all());
+        $hasWpp  = $this->hasWpp();
+        $eventos = Evento::orderBy('start', 'asc')->get();
+
+        $payload = $eventos->map(function (Evento $e) use ($hasWpp) {
+            return [
+                'id'    => (string) $e->id,
+                'title' => $e->title,
+                'start' => $this->asIso($e->start),
+                // ya no usamos fin, lo dejamos null para un evento "puntual"
+                'end'   => null,
+                'allDay' => (bool) $e->all_day,
+                'extendedProps' => [
+                    'location'              => $e->location,
+                    'repeat'                => $e->repeat,
+                    'repeat_end'            => null,  // legacy
+                    'guests'                => $e->guests ?? [],
+                    'notes'                 => $e->notes,
+                    'remind_offset_minutes' => $e->remind_offset_minutes,
+                    'timezone'              => $e->timezone,
+                    'wpp'                   => $hasWpp ? ($e->wpp ?: ['enabled' => true]) : null,
+                ],
+            ];
+        });
+
+        return response()->json($payload);
     }
 
+    /** MOSTRAR UNO (si lo necesitas) */
     public function show($id)
     {
-        $evento = Evento::find($id);
-
-        if (!$evento) {
-            return response()->json(['error' => 'Evento no encontrado'], 404);
-        }
-
-        return response()->json([
-            'title' => $evento->title,
-            'location' => $evento->location,
-            'all_day' => $evento->all_day,
-            'start' => $evento->start,
-            'end' => $evento->end,
-            'repeat' => $evento->repeat,
-            'repeat_end' => $evento->repeat_end,
-            'guests' => json_decode($evento->guests, true),
-            'alert' => $evento->alert,
-            'url' => $evento->url,
-            'notes' => $evento->notes,
-        ]);
+        $evento = Evento::findOrFail($id);
+        return response()->json($evento);
     }
 
+    /** CREAR DESDE EL MODAL */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'start' => 'required|date',
-            'end' => 'nullable|date|after_or_equal:start',
-            'all_day' => 'required|boolean',
-            'location' => 'nullable|string|max:255',
-            'repeat' => 'nullable|string',
-            'repeat_end' => 'nullable|date',
-            'guests' => 'nullable|array',
-            'alert' => 'nullable|string',
-            'url' => 'nullable|url',
-            'notes' => 'nullable|string',
+        $hasWpp = $this->hasWpp();
+
+        $data = $request->validate([
+            'title'                 => 'required|string|max:255',
+            'location'              => 'nullable|string|max:1024',
+            'start'                 => 'required|date',
+            'all_day'               => 'nullable|boolean',
+            'guests'                => 'nullable|array',
+            'guests.*'              => 'nullable',
+            'notes'                 => 'nullable|string',
+            'repeat'                => 'required|in:none,daily,weekly,monthly',
+            'timezone'              => 'nullable|string|max:80',
+            'remind_offset_minutes' => 'required|integer|min:1|max:10080',
         ]);
 
-        $evento = Evento::create([
-            'title' => $validated['title'],
-            'start' => Carbon::parse($validated['start']),
-            'end' => isset($validated['end']) ? Carbon::parse($validated['end']) : null,
-            'all_day' => $validated['all_day'],
-            'location' => $validated['location'] ?? null,
-            'repeat' => $validated['repeat'] ?? null,
-            'repeat_end' => $validated['repeat_end'] ?? null,
-            'guests' => isset($validated['guests']) ? json_encode($validated['guests']) : null,
-            'alert' => $validated['alert'] ?? null,
-            'url' => $validated['url'] ?? null,
-            'notes' => $validated['notes'] ?? null,
-        ]);
+        // Normalizar fecha
+        $start = Carbon::parse($data['start']);
 
-        return response()->json(['success' => true, 'evento' => $evento], 201);
+        $evento = new Evento();
+        $evento->title      = $data['title'];
+        $evento->location   = $data['location'] ?? null;
+        $evento->start      = $start;
+        $evento->end        = $start; // por si la columna sigue existiendo
+        $evento->all_day    = (bool) ($data['all_day'] ?? false);
+        $evento->guests     = $data['guests'] ?? [];
+        $evento->notes      = $data['notes'] ?? null;
+        $evento->repeat     = $data['repeat'] ?? 'none';
+        $evento->timezone   = $data['timezone'] ?: config('app.timezone', 'America/Mexico_City');
+        $evento->remind_offset_minutes = $data['remind_offset_minutes'];
+
+        // Siempre queremos WhatsApp (y correo) activos
+        if ($hasWpp) {
+            $evento->wpp = ['enabled' => true];
+        }
+
+        // Calcula el next_reminder_at en base a start/offset/repeat
+        $evento->computeNextReminder();
+        $evento->save();
+
+        return response()->json(['success' => true, 'id' => $evento->id], 201);
     }
 
+    /** ACTUALIZAR (incluye drag & drop desde el calendario) */
     public function update($id, Request $request)
     {
-        $evento = Evento::find($id);
+        $evento = Evento::findOrFail($id);
+        $hasWpp = $this->hasWpp();
 
-        if (!$evento) {
-            return response()->json(['error' => 'Evento no encontrado'], 404);
-        }
-
-        $validated = $request->validate([
-            'title' => 'nullable|string|max:255',
-            'start' => 'nullable|date',
-            'end' => 'nullable|date|after_or_equal:start',
-            'location' => 'nullable|string|max:255',
-            'all_day' => 'nullable|boolean',
-            'repeat' => 'nullable|string',
-            'repeat_end' => 'nullable|date',
-            'guests' => 'nullable|array',
-            'alert' => 'nullable|string',
-            'url' => 'nullable|url',
-            'notes' => 'nullable|string',
+        $data = $request->validate([
+            'title'                 => 'nullable|string|max:255',
+            'location'              => 'nullable|string|max:1024',
+            'start'                 => 'nullable|date',
+            'all_day'               => 'nullable|boolean',
+            'guests'                => 'nullable|array',
+            'guests.*'              => 'nullable',
+            'notes'                 => 'nullable|string',
+            'repeat'                => 'nullable|in:none,daily,weekly,monthly',
+            'timezone'              => 'nullable|string|max:80',
+            'remind_offset_minutes' => 'nullable|integer|min:1|max:10080',
         ]);
 
-        if (isset($validated['start'])) {
-            $evento->start = Carbon::parse($validated['start']);
+        if (array_key_exists('start', $data) && $data['start']) {
+            $evento->start = Carbon::parse($data['start']);
+            $evento->end   = $evento->start;
         }
 
-        if (isset($validated['end'])) {
-            $evento->end = Carbon::parse($validated['end']);
+        if (array_key_exists('title', $data)) {
+            $evento->title = $data['title'] ?? $evento->title;
+        }
+        if (array_key_exists('location', $data)) {
+            $evento->location = $data['location'] ?? null;
+        }
+        if (array_key_exists('all_day', $data)) {
+            $evento->all_day = (bool) $data['all_day'];
+        }
+        if (array_key_exists('guests', $data)) {
+            $evento->guests = $data['guests'] ?? [];
+        }
+        if (array_key_exists('notes', $data)) {
+            $evento->notes = $data['notes'] ?? null;
+        }
+        if (array_key_exists('repeat', $data)) {
+            $evento->repeat = $data['repeat'] ?? 'none';
+        }
+        if (array_key_exists('timezone', $data) && $data['timezone']) {
+            $evento->timezone = $data['timezone'];
+        }
+        if (array_key_exists('remind_offset_minutes', $data) && $data['remind_offset_minutes']) {
+            $evento->remind_offset_minutes = $data['remind_offset_minutes'];
         }
 
-        $evento->fill([
-            'title' => $validated['title'] ?? $evento->title,
-            'location' => $validated['location'] ?? $evento->location,
-            'all_day' => $validated['all_day'] ?? $evento->all_day,
-            'repeat' => $validated['repeat'] ?? $evento->repeat,
-            'repeat_end' => $validated['repeat_end'] ?? $evento->repeat_end,
-            'guests' => isset($validated['guests']) ? json_encode($validated['guests']) : $evento->guests,
-            'alert' => $validated['alert'] ?? $evento->alert,
-            'url' => $validated['url'] ?? $evento->url,
-            'notes' => $validated['notes'] ?? $evento->notes,
-        ])->save();
+        // Refrescamos el siguiente recordatorio
+        $evento->computeNextReminder();
 
-        return response()->json(['success' => true, 'evento' => $evento], 200);
+        // Aseguramos que WhatsApp siga activo (si existe la columna)
+        if ($hasWpp) {
+            $wpp = $evento->wpp ?? [];
+            $wpp['enabled'] = true;
+            $evento->wpp = $wpp;
+        }
+
+        $evento->save();
+
+        return response()->json(['success' => true]);
     }
 
+    /** ELIMINAR */
     public function destroy($id)
     {
-        $evento = Evento::find($id);
-
-        if (!$evento) {
-            return response()->json(['error' => 'Evento no encontrado'], 404);
-        }
-
+        $evento = Evento::findOrFail($id);
         $evento->delete();
-
-        return response()->json(['success' => true, 'message' => 'Evento eliminado'], 200);
+        return response()->json(['success' => true]);
     }
-    // EventoController.php
-public function usuarios()
-{
-    return response()->json(User::select('id', 'name')->get());
-}
 
+    /** LISTA DE USUARIOS (para el select de invitados) */
+    public function usuarios()
+    {
+        return response()->json(
+            User::select('id', 'name', 'email', 'phone')
+                ->orderBy('name')
+                ->get()
+        );
+    }
+
+    /* ===== Helpers ===== */
+
+    private function hasWpp(): bool
+    {
+        return Schema::hasColumn((new Evento)->getTable(), 'wpp');
+    }
+
+    private function asIso($value): ?string
+    {
+        if (! $value) {
+            return null;
+        }
+        try {
+            return Carbon::parse($value)->toIso8601String();
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
 }

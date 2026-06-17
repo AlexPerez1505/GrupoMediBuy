@@ -20,6 +20,7 @@ class ChecklistController extends Controller
 {
     public function __construct()
     {
+        // ✅ Protege todo el controlador con autenticación
         $this->middleware('auth');
     }
 

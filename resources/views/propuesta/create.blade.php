@@ -1,60 +1,75 @@
 @extends('layouts.app')
-@section('title', 'Cotización')
-@section('titulo', 'Cotización')
+
+@section('title', 'Nueva Propuesta')
 @section('content')
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <link rel="stylesheet" href="{{ asset('css/propuestacreate.css') }}?v={{ time() }}">
-<div class="container" style="margin-top: 80px;">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
+<meta name="csrf-token" content="{{ csrf_token() }}">
 
+<style>
+  .gift-switch{display:flex;align-items:center;gap:10px;user-select:none}
+  .gift-switch .form-check-input{width:44px;height:22px;border-radius:999px;cursor:pointer}
+  .gift-badge{
+    display:inline-flex;align-items:center;justify-content:center;
+    font-weight:700;font-size:.78rem;padding:6px 10px;border-radius:999px;
+    background: rgba(16,185,129,.12);color:#065f46;border:1px solid rgba(16,185,129,.22);
+    white-space:nowrap
+  }
+  .gift-muted{color:#64748b;font-size:.9rem}
+  .pay-summary span{display:inline-flex;gap:.35rem;align-items:center;margin-left:.6rem;font-weight:700}
+  .pay-summary .ok{color:#166534}
+  .pay-summary .bad{color:#b91c1c}
+  .pay-summary .warn{color:#92400e}
+  .pay-field{position:relative}
+  .pay-input{padding-right:55px}
+  .pay-suffix{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:.85rem;color:#64748b}
+</style>
+
+<div class="container">
     <form id="form-propuesta" method="POST" action="{{ route('propuestas.store') }}">
-    @csrf
-    <div class="row">
-        <div class="col-md-3 mt-3">
-            <!-- Tarjeta de Cliente -->
-            <div class="card modern-card mb-3">
-                <div class="card-header modern-heade">Cliente</div>
-                <div class="card-body">
-                    <div class="dropdown position-relative">
-                        <input 
-                            type="text" 
-                            id="search-client" 
-                            class="form-control modern-input dropdown-toggle" 
-                            data-bs-toggle="dropdown" 
-                            placeholder="Buscar cliente..."
-                            autocomplete="off"
-                            aria-haspopup="true"
-                            aria-expanded="false"
-                        >
-                        <ul class="dropdown-menu modern-dropdown w-100" id="client-list">
-                            <li>
-                                <button type="button" class="dropdown-item modern-dropdown-item" onclick='selectClient({
-                                    id: 1,
-                                    nombre: "Público en General",
-                                    apellido: "",
-                                    telefono: "",
-                                    email: "",
-                                    comentarios: ""
-                                })'>
-                                    Público en General
-                                </button>
-                            </li>
-                            <li>
-                                <button type="button" class="dropdown-item modern-dropdown-item" onclick="openCreateClientModal()">
-                                    + Crear nuevo cliente
-                                </button>
-                            </li>
-                        </ul>
+        @csrf
+
+        <div class="row">
+            <div class="col-md-3 mt-3">
+                <div class="card modern-card mb-3">
+                    <div class="card-header modern-heade">Cliente</div>
+                    <div class="card-body">
+                        <div class="dropdown position-relative">
+                            <input
+                                type="text"
+                                id="search-client"
+                                class="form-control modern-input dropdown-toggle"
+                                data-bs-toggle="dropdown"
+                                placeholder="Buscar cliente..."
+                                autocomplete="off"
+                                aria-haspopup="true"
+                                aria-expanded="false"
+                            >
+                            <ul class="dropdown-menu modern-dropdown w-100" id="client-list">
+                                <li>
+                                    <button type="button" class="dropdown-item modern-dropdown-item" onclick='selectClient({
+                                        id: 1,
+                                        nombre: "Público en General",
+                                        apellido: "",
+                                        telefono: "",
+                                        email: "",
+                                        comentarios: ""
+                                    })'>
+                                        Público en General
+                                    </button>
+                                </li>
+                                <li>
+                                    <button type="button" class="dropdown-item modern-dropdown-item" onclick="openCreateClientModal()">
+                                        + Crear nuevo cliente
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+                        <input type="hidden" name="cliente_id" id="cliente_id">
                     </div>
-                    <input type="hidden" name="cliente_id" id="cliente_id">
+                    <div id="client-details" class="mt-3"></div>
                 </div>
-                <div id="client-details" class="mt-3"></div>
-            </div>
-   
- 
 
-
-                <!-- Tarjeta de Lugar de la Propuesta -->
                 <div class="card modern-card mb-3">
                     <div class="card-header modern-heade">Lugar de la Propuesta</div>
                     <div class="card-body">
@@ -69,12 +84,12 @@
                             <option value="CVDL CONGRESO DE VETERINARIA">CVDL CONGRESO DE VETERINARIA</option>
                             <option value="AMG ECOS INTERNACIONALES DE GASTROENTEROLOGIA">AMG ECOS INTERNACIONALES DE GASTROENTEROLOGIA</option>
                             <option value="AMG SEMANA NACIONAL GASTRO">AMG SEMANA NACIONAL GASTRO</option>
+                            <option value="COLEGIO DE ESPECIALISTAS EN CIRUGIA GENERAL">COLEGIO DE ESPECIALISTAS EN CIRUGIA GENERAL</option>
                             <option value="otro">Otro</option>
                         </select>
                     </div>
                 </div>
 
-                <!-- Tarjeta de Nota al Cliente -->
                 <div class="card modern-card mb-3">
                     <div class="card-header modern-heade">Nota al Cliente</div>
                     <div class="card-body">
@@ -82,7 +97,6 @@
                     </div>
                 </div>
 
-                <!-- Tarjeta de Registrado por -->
                 <div class="card modern-card">
                     <div class="card-header modern-heade">Registrado por</div>
                     <div class="card-body">
@@ -95,804 +109,1033 @@
                 </div>
             </div>
 
-            
-<div class="col-md-9">
-    <div class="card modern-card mt-3">
-        <div class="card-header modern-header">Productos</div>
-        <div class="card-body">
-
-            <div class="dropdown">
-                <input 
-                    type="text" 
-                    id="buscarProducto" 
-                    class="form-control modern-input dropdown-toggle" 
-                    data-bs-toggle="dropdown" 
-                    placeholder="Buscar producto..." 
-                    autocomplete="off"
-                    onkeyup="filtrarProductos(this.value)"
-                >
-
-                <ul class="dropdown-menu modern-dropdown w-100" id="dropdownProductos">
-                    <li>
-                        <button class="dropdown-item modern-dropdown-item" data-bs-toggle="modal" data-bs-target="#modal1">
-                            + Crear Producto
-                        </button>
-                    </li>
-
-                    @foreach($productos->sortBy('tipo_equipo') as $producto)
-                        <li>
-                            <button 
-                                class="dropdown-item modern-dropdown-item d-flex align-items-center" 
-                                onclick="agregarProductoDesdeDropdown(
-                                    {{ $producto->id }},
-                                    @json($producto->tipo_equipo),
-                                    @json($producto->modelo),
-                                    @json($producto->marca),
-                                    {{ $producto->precio }},
-                                    @json($producto->imagen)
-                                )"
+            <div class="col-md-9">
+                <div class="card modern-card mt-3">
+                    <div class="card-header modern-header">Productos</div>
+                    <div class="card-body">
+                        <div class="dropdown">
+                            <input
+                                type="text"
+                                id="buscarProducto"
+                                class="form-control modern-input dropdown-toggle"
+                                data-bs-toggle="dropdown"
+                                placeholder="Buscar producto..."
+                                autocomplete="off"
+                                onkeyup="filtrarProductos(this.value)"
                             >
-                                <img src="/storage/{{ $producto->imagen }}" alt="{{ $producto->tipo_equipo }}" class="modern-product-img me-2" style="width: 40px; height: 40px; object-fit: cover; border-radius: 6px;">
-                                <div class="flex-grow-1 modern-product-info">
-                                    <strong>{{ strtoupper($producto->tipo_equipo) }}</strong> - {{ strtoupper($producto->modelo) }} {{ strtoupper($producto->marca) }}
-                                    <br>
-                                    <span class="text-muted modern-product-price">${{ number_format($producto->precio, 2) }}</span>
-                                </div>
-                                <span class="badge bg-secondary modern-badge">{{ $producto->stock }} unidades</span>
-                            </button>
-                        </li>
-                    @endforeach
-                </ul>
-            </div>
-        </div>
-    </div>
-
-    <div class="card modern-card mt-3">
-        <div class="card-header modern-header">Productos Seleccionados</div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <input type="hidden" name="productos_json" id="productos_json" value="">
-                
-                <table id="tabla-productos" class="table modern-table">
-                    <thead>
-                        <tr>
-                            <th>Imagen</th>
-                            <th>Equipo</th>
-                            <th>Modelo</th>
-                            <th>Marca</th>
-                            <th>Cantidad</th>
-                            <th>Subtotal</th>
-                            <th>Sobreprecio</th>
-                            <th>Acción</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <div class="d-flex flex-column flex-md-row">
-        <div class="card modern-card mt-3 w-100 w-md-50">
-            <div class="card-header modern-header">Resumen</div>
-            <div class="card-body">
-                <p>Subtotal: $<span id="subtotal" class="modern-value">0.00</span></p>
-                <input type="hidden" name="subtotal" id="subtotal_input" value="0">
-
-                <div class="form-group">
-                    <label>Descuento</label>
-                    <input type="number" name="descuento" id="descuento" value="0" class="form-control modern-input w-25 d-inline-block" onchange="actualizarTotal()">
-                </div>
-                <br>
-                <div class="form-group">
-                    <label>Envío</label>
-                    <input type="number" name="envio" id="envio" value="0" class="form-control modern-input w-25 d-inline-block" onchange="actualizarTotal()">
-                </div>
-                <div class="form-check">
-                    <input type="checkbox" class="form-check-input" id="aplica_iva" onchange="actualizarTotal()">
-                    <label class="form-check-label">Aplicar IVA (16%)</label>
-                </div>
-                <input type="hidden" name="iva" id="iva_input" value="0">
-                <p>IVA: $<span id="iva">0.00</span></p>
-                <p><strong>Total: $<span id="total">0.00</span></strong></p>
-                <input type="hidden" name="total" id="total_input" value="0">
-
-                <div class="form-group">
-                    <label for="tipoPago">Selecciona Plan:</label>
-                    <select id="tipoPago" name="plan" class="form-control modern-input w-50" required>
-                        <option value="" selected disabled>Selecciona un plan</option>
-                        <option value="contado">Pago de Contado</option>
-                        <option value="personalizado">Plan Personalizado</option>
-                        <option value="estatico">Plan Fijo</option>
-                        <option value="dinamico">Plan Flexible</option>
-                        <option value="credito">Plan a Crédito</option>
-                    </select>
+                            <ul class="dropdown-menu modern-dropdown w-100" id="dropdownProductos">
+                                <li>
+                                    <button type="button" class="dropdown-item modern-dropdown-item" data-bs-toggle="modal" data-bs-target="#modal1">
+                                        + Crear Producto
+                                    </button>
+                                </li>
+                                @foreach($productos->sortBy('tipo_equipo') as $producto)
+                                    <li>
+                                        <button
+                                            type="button"
+                                            class="dropdown-item modern-dropdown-item d-flex align-items-center"
+                                            onclick="agregarProductoDesdeDropdown(
+                                                {{ $producto->id }},
+                                                @json($producto->tipo_equipo),
+                                                @json($producto->modelo),
+                                                @json($producto->marca),
+                                                {{ $producto->precio }},
+                                                @json($producto->imagen)
+                                            )"
+                                        >
+                                            <img src="/storage/{{ $producto->imagen }}" alt="{{ $producto->tipo_equipo }}" class="modern-product-img me-2" style="width: 40px; height: 40px; object-fit: cover; border-radius: 6px;">
+                                            <div class="flex-grow-1 modern-product-info">
+                                                <strong>{{ strtoupper($producto->tipo_equipo) }}</strong> - {{ strtoupper($producto->modelo) }} {{ strtoupper($producto->marca) }}
+                                                <br>
+                                                <span class="text-muted modern-product-price">${{ number_format($producto->precio, 2) }}</span>
+                                            </div>
+                                            <span class="badge bg-secondary modern-badge">{{ $producto->stock }} unidades</span>
+                                        </button>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    </div>
                 </div>
 
-                <div id="opcionesDinamicas" style="display: none; margin-top: 1rem;">
-                    <label for="pagoInicial">Pago Inicial:</label>
-                    <input type="number" id="pagoInicial" class="form-control modern-input w-50" min="0" step="0.01">
+                <div class="card modern-card mt-3">
+                    <div class="card-header modern-header d-flex justify-content-between align-items-center">
+                        <span>Productos Seleccionados</span>
+                        <span class="gift-muted">Marca <span class="gift-badge">REGALO</span> para excluir del total y ocultar precio.</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <input type="hidden" name="productos_json" id="productos_json" value="">
+                            <table id="tabla-productos" class="table modern-table">
+                                <thead>
+                                    <tr>
+                                        <th>Imagen</th>
+                                        <th>Equipo</th>
+                                        <th>Modelo</th>
+                                        <th>Marca</th>
+                                        <th>Cantidad</th>
+                                        <th>Subtotal</th>
+                                        <th>Sobreprecio</th>
+                                        <th style="width:170px;">Regalo</th>
+                                        <th>Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
 
-                <div id="opcionesCredito" style="display: none; margin-top: 1rem;">
-                    <label for="pagoCreditoInicial">Pago Inicial:</label>
-                    <input type="number" id="pagoCreditoInicial" class="form-control modern-input w-50" min="0" step="0.01">
-                    <label for="plazoCredito" style="margin-top: 0.5rem;">Plazo (meses):</label>
-                    <input type="number" id="plazoCredito" class="form-control modern-input w-50" value="6" min="1" step="1">
+                <div class="card modern-card mt-3">
+                    <div class="card-header modern-header d-flex justify-content-between align-items-center">
+                        <span>Equipos / mercancía a cuenta (Trade-in)</span>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="btn-add-equipo-cuenta">
+                            + Agregar equipo a cuenta
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <input type="hidden" name="equipos_cuenta_json" id="equipos_cuenta_json" value="[]">
+
+                        <div class="table-responsive">
+                            <table class="table modern-table" id="tabla-equipos-cuenta">
+                                <thead>
+                                    <tr>
+                                        <th>Tipo de equipo</th>
+                                        <th>Marca</th>
+                                        <th>Modelo</th>
+                                        <th>No. de serie</th>
+                                        <th style="width: 140px;">Valor a cuenta</th>
+                                        <th style="width: 70px;">Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                        <small class="text-muted">
+                            Estos equipos se tomarán a cuenta y su suma se reflejará como <strong>valor a cuenta</strong> en el resumen.
+                        </small>
+                    </div>
                 </div>
 
-                <div id="opcionesPersonalizado" style="display: none; margin-top: 1rem;">
-                    <label for="mesesPersonalizado">Selecciona el número de meses:</label>
-                    <input type="number" id="mesesPersonalizado" class="form-control modern-input w-50" min="1" step="1" value="1">
-                    <div id="listaPagosPersonalizados" class="mt-3"></div>
+                <div class="d-flex flex-column flex-md-row">
+                    <div class="card modern-card mt-3 w-100 w-md-50">
+                        <div class="card-header modern-header">Resumen</div>
+                        <div class="card-body">
+                            <p>Subtotal: $<span id="subtotal" class="modern-value">0.00</span></p>
+                            <input type="hidden" name="subtotal" id="subtotal_input" value="0">
+
+                            <div class="form-group">
+                                <label>Descuento</label>
+                                <input type="number" name="descuento" id="descuento" value="0" class="form-control modern-input w-25 d-inline-block" onchange="actualizarTotal()">
+                            </div>
+                            <br>
+                            <div class="form-group">
+                                <label>Envío</label>
+                                <input type="number" name="envio" id="envio" value="0" class="form-control modern-input w-25 d-inline-block" onchange="actualizarTotal()">
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="aplica_iva" onchange="actualizarTotal()">
+                                <label class="form-check-label">Aplicar IVA (16%)</label>
+                            </div>
+                            <input type="hidden" name="iva" id="iva_input" value="0">
+                            <p>IVA: $<span id="iva">0.00</span></p>
+
+                            <p><strong>Total: $<span id="total">0.00</span></strong></p>
+                            <input type="hidden" name="total" id="total_input" value="0">
+
+                            <div class="form-group mt-3">
+                                <label>Valor a cuenta (equipos / mercancía a cuenta)</label>
+                                <input
+                                    type="number"
+                                    name="valor_a_cuenta"
+                                    id="valor_a_cuenta"
+                                    value="0"
+                                    class="form-control modern-input w-25 d-inline-block"
+                                    min="0"
+                                    step="0.01"
+                                    readonly
+                                >
+                                <small class="text-muted d-block mt-1">
+                                    Este monto es la suma de los equipos a cuenta de la tabla superior y se resta del total para calcular el contrato.
+                                </small>
+                            </div>
+
+                            <p class="mt-3 mb-0">
+                                <strong>Valor a cuenta:</strong>
+                                $<span id="valor_cuenta_view" class="modern-value">0.00</span>
+                            </p>
+                            <p class="mb-2">
+                                <strong>Total del contrato:</strong>
+                                $<span id="total_contrato_view" class="modern-value">0.00</span>
+                            </p>
+
+                            <input type="hidden" name="total_a_cuenta" id="total_a_cuenta_input" value="0">
+                            <input type="hidden" name="total_contrato" id="total_contrato_input" value="0">
+
+                            <div class="form-group mt-3">
+                                <label for="tipoPago">Selecciona Plan:</label>
+                                <select id="tipoPago" name="plan" class="form-control modern-input w-50" required>
+                                    <option value="" selected disabled>Selecciona un plan</option>
+                                    <option value="contado">Pago de Contado</option>
+                                    <option value="personalizado">Plan Personalizado</option>
+                                    <option value="estatico">Plan Fijo</option>
+                                    <option value="dinamico">Plan Flexible</option>
+                                    <option value="credito">Plan a Crédito</option>
+                                </select>
+                            </div>
+
+                            <div id="opcionesDinamicas" style="display: none; margin-top: 1rem;">
+                                <label for="pagoInicial">Pago Inicial:</label>
+                                <input type="number" id="pagoInicial" class="form-control modern-input w-50" min="0" step="0.01">
+                            </div>
+
+                            <div id="opcionesCredito" style="display: none; margin-top: 1rem;">
+                                <label for="pagoCreditoInicial">Pago Inicial:</label>
+                                <input type="number" id="pagoCreditoInicial" class="form-control modern-input w-50" min="0" step="0.01">
+                                <label for="plazoCredito" style="margin-top: 0.5rem;">Plazo (meses):</label>
+                                <input type="number" id="plazoCredito" class="form-control modern-input w-50" value="6" min="1" step="1">
+                            </div>
+
+                            <div id="opcionesPersonalizado" style="display: none; margin-top: 1rem;">
+                                <label for="mesesPersonalizado">Selecciona el número de meses:</label>
+                                <input type="number" id="mesesPersonalizado" class="form-control modern-input w-50" min="1" step="1" value="1">
+                            </div>
+
+                            <input type="hidden" id="pagosJsonInput" name="pagos_json" value="">
+
+                            <br>
+                            <div class="form-group position-relative mt-4" style="max-width: 900px; width: 100%;">
+                                <label for="ficha_tecnica_search">Ficha Técnica a incluir en el PDF:</label>
+                                <input type="text" id="ficha_tecnica_search" class="form-control" placeholder="Escribe para buscar..." autocomplete="off">
+                                <input type="hidden" name="ficha_tecnica_id" id="ficha_tecnica_id">
+
+                                <ul id="dropdown_fichas" class="list-group position-absolute mt-1 w-100 shadow-sm" style="z-index: 1000; display: none; max-height: 250px; overflow-y: auto;">
+                                    @foreach ($fichas->sortBy('nombre') as $ficha)
+                                        <li class="list-group-item list-option" data-id="{{ $ficha->id }}">{{ strtoupper($ficha->nombre) }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+
+                            <br>
+                            <div class="botones-compactos">
+                                <button type="submit" class="btn-guardar">Guardar</button>
+                                <a href="{{ route('propuestas.index') }}" class="btn-regresar">Regresar</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card modern-card mt-3 w-100 w-md-50 ms-md-3">
+                        <div class="card-header modern-header">Detalles del Financiamiento</div>
+                        <div class="card-body" id="plan-pagos"></div>
+                    </div>
                 </div>
-
-                <input type="hidden" id="pagosJsonInput" name="pagos_json" value="">
-
-<style>
-  /* Forzar mayúsculas en select y opciones */
-  #ficha_tecnica_id,
-  #ficha_tecnica_id option {
-    text-transform: uppercase;
-  }
-
- #dropdown_fichas {
-        background-color: #fdfcff;
-        border: 1px solid #ddd;
-        border-radius: 12px;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
-        z-index: 999;
-    }
-
-    .list-option {
-        cursor: pointer;
-        padding: 10px 14px;
-        font-size: 15px;
-        color: #555;
-        transition: background-color 0.2s ease;
-    }
-
-    .list-option:hover {
-        background-color: #f3e5f5;
-    }
-
-    .list-option strong {
-        font-weight: bold;
-        color: #6a1b9a;
-    }
-
-</style>
-
-<br>
-<div class="form-group position-relative mt-4" style="max-width: 900px; width: 100%;">
-    <label for="ficha_tecnica_search">Ficha Técnica a incluir en el PDF:</label>
-    
-    <input type="text" id="ficha_tecnica_search" class="form-control" placeholder="Escribe para buscar..." autocomplete="off">
-    
-    <!-- Input oculto que se envía con el ID real -->
-    <input type="hidden" name="ficha_tecnica_id" id="ficha_tecnica_id">
-
-    <ul id="dropdown_fichas" class="list-group position-absolute mt-1 w-100 shadow-sm" style="z-index: 1000; display: none; max-height: 250px; overflow-y: auto;">
-        @foreach ($fichas->sortBy('nombre') as $ficha)
-            <li class="list-group-item list-option" data-id="{{ $ficha->id }}">{{ strtoupper($ficha->nombre) }}</li>
-        @endforeach
-    </ul>
-</div>
-
-<br>
-
-             <div class="botones-compactos">
-    <button type="submit" class="btn-guardar"> Guardar</button>
-    <a href="{{ route('propuestas.index') }}" class="btn-regresar"> Regresar</a>
-</div>
-            </div>
-        </div>
-
-        <div class="card modern-card mt-3 w-100 w-md-50 ms-md-3">
-            <div class="card-header modern-header">Detalles del Financiamiento</div>
-            <div class="card-body" id="plan-pagos"></div>
-        </div>
-    </div>
-</div>
             </div>
         </div>
     </form>
 </div>
 
-<form id="form-cliente" method="POST" action="{{ route('clientes.store') }}">
-  <div class="modal fade" id="modal_formulario" tabindex="-1" role="dialog" aria-labelledby="FormularioLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content">
-        <div class="modal-heade">
-          <h5 class="modal-title" id="createClientModalLabel">Registrar Cliente</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
+<div class="modal fade" id="modal_formulario" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <span class="cm-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" stroke-width="1.8">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+          </span>
+          Crear cliente
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
 
+      <form id="formCrearCliente">
         <div class="modal-body">
-          <div class="row mb-3">
+          <div class="row g-3">
             <div class="col-md-6">
-              <label for="nombre" class="form-label">Nombre</label>
-              <input type="text" class="form-control text-uppercase" id="nombre" name="nombre" placeholder="Ingresar nombre" required>
+              <div class="cm-field">
+                <div class="cm-label">Nombre</div>
+                <input type="text" name="nombre" class="form-control modern-input" placeholder="Ej. Juan" required>
+              </div>
             </div>
-            <div class="col-md-6">
-              <label for="apellido" class="form-label">Apellido</label>
-              <input type="text" class="form-control text-uppercase" id="apellido" name="apellido" placeholder="Ingresar apellido" required>
-            </div>
-          </div>
 
-          <div class="row mb-3">
             <div class="col-md-6">
-              <label for="telefono" class="form-label">Teléfono</label>
-              <input type="tel" class="form-control text-uppercase" id="telefono" name="telefono" placeholder="Ingresar teléfono" required>
-              <span id="error-telefono" class="text-danger" style="display: none;">El teléfono ya está registrado.</span>
+              <div class="cm-field">
+                <div class="cm-label">Apellido</div>
+                <input type="text" name="apellido" class="form-control modern-input" placeholder="Ej. Pérez" required>
+              </div>
             </div>
-            <div class="col-md-6">
-              <label for="email" class="form-label">Email</label>
-              <input type="email" class="form-control" id="email" name="email" placeholder="Ingresar email">
-              <span id="error-email" class="text-danger" style="display: none;">El correo ya está registrado.</span>
-            </div>
-          </div>
 
-          <div class="mb-3">
-            <label for="comentarios" class="form-label">Dirección</label>
-            <textarea id="comentarios" name="comentarios" class="form-control text-uppercase" placeholder="Agrega información de tu cliente"></textarea>
+            <div class="col-md-6">
+              <div class="cm-field">
+                <div class="cm-label">Teléfono</div>
+                <input type="text" name="telefono" class="form-control modern-input" placeholder="Ej. 55 1234 5678">
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="cm-field">
+                <div class="cm-label">Email</div>
+                <input type="email" name="email" class="form-control modern-input" placeholder="correo@ejemplo.com">
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="cm-field">
+                <div class="cm-label">¿Recibe promoción?</div>
+                <select name="recibe_promocion" class="form-control modern-input" required>
+                  <option value="">Selecciona una opción</option>
+                  <option value="1">Sí</option>
+                  <option value="0">No</option>
+                </select>
+                <div class="cm-help">
+                  <span class="dot"></span>
+                  <span>Indica si este cliente puede recibir promociones.</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-12">
+              <div class="cm-field">
+                <div class="cm-label">Dirección / Comentarios</div>
+                <textarea name="comentarios" class="form-control modern-textarea" rows="3" placeholder="Ej. Hospital Ángeles, piso 3..."></textarea>
+                <div class="cm-help">
+                  <span class="dot"></span>
+                  <span>Tip: agrega referencias útiles.</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn btn-primary">Agregar</button>
+        <div class="modal-footer d-flex justify-content-end">
+          <button type="button" class="btn btn-cancel" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-save">Guardar cliente</button>
         </div>
       </form>
     </div>
   </div>
 </div>
-<script>
-  // Función para convertir texto en mayúsculas automáticamente
-  document.querySelectorAll('.text-uppercase').forEach(input => {
-      input.addEventListener('input', function () {
-          this.value = this.value.toUpperCase();
-      });
-  });
 
-  // Formateo del teléfono
-  document.getElementById("telefono").addEventListener("input", function (event) {
-      let valor = this.value.replace(/\D/g, ""); // Elimina caracteres no numéricos
-
-      if (valor.length <= 10) {
-          valor = valor.replace(/(\d{2})(\d{4})(\d{4})/, "$1 $2 $3");
-      } else if (valor.length > 10) {
-          valor = valor.replace(/(\d{2})(\d{2})(\d{4})(\d{4})/, "+$1 $2 $3 $4");
-      }
-
-      this.value = valor;
-  });
-</script>
-
-
-
-<!-- Modal -->
-<div class="modal fade" id="cliente_creado" tabindex="-1" role="dialog" aria-labelledby="ClienteCreadoLabel" 
-    aria-hidden="true" data-backdrop="static" data-keyboard="false">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header encabezado_modal text-center">
-                <h5 class="modal-title titulo_modal">¡Cliente guardado exitosamente!</h5>
-            </div>
-            <div class="modal-body">
-                <div class="text-center">
-                    <img src="{{ asset('images/confirmar.jpeg') }}" alt="Logo de encabezado" class="logo-modal">
-                </div>
-                <p class="text-center mensaje-modal">
-                    El cliente se ha registrado correctamente en el sistema.  
-                    Puedes proceder a cerrar este mensaje.  
-                    <b>Grupo MediBuy</b>.
-                </p>
-            </div>
-            <div class="modal-footer d-flex justify-content-center">
-                <button class="btn btn-listo" onclick="cerrarModal()">Listo</button>
-            </div>
-        </div>
-    </div>
-</div>
-@endsection
-
-<!-- Modal -->
-<form id="formProducto" method="POST" action="{{ route('productos.store') }}" enctype="multipart/form-data">
-    @csrf
-    <div class="modal fade" id="modal1" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-heade">
-                    <h5 class="modal-title" id="exampleModalLabel">Registrar Equipo</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <!-- Tipo de equipo -->
-                    <div class="mb-3">
-                        <label class="form-label">Nombre</label>
-                        <input type="text" name="tipo_equipo" class="form-control" placeholder="Ej: Monitor" required>
-                    </div>
-
-                    <!-- Modelo y Marca -->
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Modelo</label>
-                            <input type="text" name="modelo" class="form-control" placeholder="Ej: Vision Pro" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Marca</label>
-                            <input type="text" name="marca" class="form-control" placeholder="Ej: Stryker" required>
-                        </div>
-                    </div>
-
-                    <!-- Existencias y Precio -->
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Existencias</label>
-                            <input type="number" name="stock" class="form-control" value="1" required min="1">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Precio</label>
-                            <input type="number" name="precio" class="form-control" value="0.00" required min="0">
-                        </div>
-                    </div>
-
-                    <!-- Imagen -->
-                    <div class="mb-3 text-center">
-                        <label class="form-label d-block">Imagen</label>
-                        <div class="image-container">
-                            <label for="image-upload" class="image-preview">
-                                <img id="preview-icon" src="https://cdn-icons-png.flaticon.com/512/1829/1829586.png" 
-                                     alt="Añadir imagen">
-                                <span id="preview-text">Añadir imagen</span>
-                            </label>
-                            <input type="file" id="image-upload" name="imagen" accept="image/*" hidden>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Agregar</button>
-                </div>
-            </div>
-        </div>
-    </div>
-</form>
-
-<!-- Asegúrate de incluir SweetAlert2 -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+<script>
+function filtrarProductos(valor){ return true; }
+</script>
 
 <script>
-document.getElementById("formProducto").addEventListener("submit", function (event) {
-    event.preventDefault(); // Evita recarga
+document.addEventListener("DOMContentLoaded", function () {
+    const input = document.getElementById('ficha_tecnica_search');
+    const hiddenInput = document.getElementById('ficha_tecnica_id');
+    const dropdown = document.getElementById('dropdown_fichas');
+    const originalOptions = [...dropdown.querySelectorAll('.list-option')];
 
-    let formData = new FormData(this);
+    const normalize = str => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
-    fetch("{{ route('productos.store') }}", {
-        method: "POST",
-        body: formData,
-        headers: {
-            "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute("content"),
-            "Accept": "application/json" // para que Laravel retorne JSON
+    input.addEventListener('input', function () {
+        const value = normalize(input.value);
+        dropdown.innerHTML = '';
+        let matches = 0;
+
+        originalOptions.forEach(option => {
+            const textOriginal = option.textContent;
+            const textNormalized = normalize(textOriginal);
+
+            if (textNormalized.includes(value)) {
+                matches++;
+                const li = document.createElement('li');
+                li.classList.add('list-group-item', 'list-option');
+                li.setAttribute('data-id', option.getAttribute('data-id'));
+                li.textContent = textOriginal;
+                li.addEventListener('click', () => {
+                    input.value = textOriginal;
+                    hiddenInput.value = option.getAttribute('data-id');
+                    dropdown.style.display = 'none';
+                });
+                dropdown.appendChild(li);
+            }
+        });
+
+        dropdown.style.display = matches ? 'block' : 'none';
+    });
+
+    document.addEventListener('click', function (e) {
+        if (!dropdown.contains(e.target) && e.target !== input) {
+            dropdown.style.display = 'none';
         }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.message) {
-            Swal.fire({
-                toast: true,
-                icon: 'success',
-                title: data.message,
-                position: 'top-end',
-                showConfirmButton: false,
-                timer: 3000,
-                timerProgressBar: true,
-                didOpen: (toast) => {
-                    toast.addEventListener('mouseenter', Swal.stopTimer)
-                    toast.addEventListener('mouseleave', Swal.resumeTimer)
-                }
-            });
-            // Opcional: limpiar formulario y cerrar modal
-            this.reset();
-            const modal = bootstrap.Modal.getInstance(document.getElementById('modal1'));
-            if (modal) modal.hide();
+    });
+});
+</script>
+{{-- ==================== Generación de plan de pagos SIMPLE / LIBRE (Auto-Balanceo Sin Decimales en %) ==================== --}}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const tipoPago = document.getElementById('tipoPago');
+  const opcionesDinamicas = document.getElementById('opcionesDinamicas');
+  const opcionesCredito = document.getElementById('opcionesCredito');
+  const opcionesPersonalizado = document.getElementById('opcionesPersonalizado');
+
+  const planPagosDiv = document.getElementById('plan-pagos');
+  const pagoInicial = document.getElementById('pagoInicial');
+  const pagoCreditoInicial = document.getElementById('pagoCreditoInicial');
+  const plazoCredito = document.getElementById('plazoCredito');
+  const mesesPersonalizado = document.getElementById('mesesPersonalizado');
+
+  window.pagos = [];
+
+  const NOMBRES = [
+    "Primer","Segundo","Tercer","Cuarto","Quinto","Sexto",
+    "Séptimo","Octavo","Noveno","Décimo","Undécimo","Duodécimo"
+  ];
+
+  function obtenerTotalContrato() {
+    const hContrato = document.getElementById('total_contrato_input');
+    if (hContrato && hContrato.value !== '') {
+      const v = parseFloat(hContrato.value);
+      return isNaN(v) ? 0 : Math.max(0, v);
+    }
+    return 0;
+  }
+
+  function fmtMXN(n) {
+    return (Number(n) || 0).toLocaleString('es-MX', {
+      style: 'currency',
+      currency: 'MXN'
+    });
+  }
+
+  function toISO(d) {
+    return d.toISOString().split('T')[0];
+  }
+
+  function clamp(n, min, max) {
+    n = Number(n);
+    if (isNaN(n)) n = min;
+    return Math.max(min, Math.min(max, n));
+  }
+
+  function clampInt(n, min, max) {
+    n = parseInt(n || 0, 10);
+    if (isNaN(n)) n = min;
+    return Math.max(min, Math.min(max, n));
+  }
+
+  function dateByOffsetMonths(offset) {
+    const base = new Date();
+    const f = new Date(base);
+    f.setMonth(f.getMonth() + offset);
+    return f;
+  }
+
+  function dateLabel(d) {
+    return d.toLocaleDateString('es-MX', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric'
+    });
+  }
+
+  function limpiarPlan() {
+    planPagosDiv.innerHTML = '';
+    window.pagos = [];
+  }
+
+  function setEditorTotalBase(v) {
+    planPagosDiv.dataset.totalBase = String(Number(v) || 0);
+  }
+
+  function getEditorTotalBase() {
+    return Number(planPagosDiv.dataset.totalBase || 0) || 0;
+  }
+
+  function buildEditorUI(title, totalBase, rows, opts = {}) {
+    limpiarPlan();
+
+    const total = Math.max(0, Number(totalBase) || 0);
+    if (!total || !rows.length) {
+      planPagosDiv.innerHTML = `<p class="text-muted mb-0">Agrega productos para calcular el plan.</p>`;
+      return;
+    }
+
+    const wrap = document.createElement('div');
+    wrap.className = 'pay-editor';
+
+    const head = document.createElement('div');
+    head.className = 'pay-head';
+    head.innerHTML = `
+      <div>
+        <div class="pay-title">${title}</div>
+        <div class="pay-sub">Sistema de Auto-balanceo: Al editar un pago, los siguientes se ajustan para cuadrar el total. Porcentajes en números enteros.</div>
+      </div>
+      <div class="pay-base">
+        <div class="lbl">Base</div>
+        <div class="val">${fmtMXN(total)}</div>
+      </div>
+    `;
+    wrap.appendChild(head);
+
+    const list = document.createElement('div');
+    list.className = 'pay-list';
+    wrap.appendChild(list);
+
+    const footer = document.createElement('div');
+    footer.className = 'pay-footer';
+    footer.innerHTML = `
+      <div class="text-muted" style="font-size:.9rem">
+        Bloquea los pagos que no quieras que el sistema modifique automáticamente.
+      </div>
+      <div id="paySummary" class="pay-summary"></div>
+    `;
+    wrap.appendChild(footer);
+
+    if (!document.getElementById('pay-simple-styles')) {
+      const style = document.createElement('style');
+      style.id = 'pay-simple-styles';
+      style.innerHTML = `
+        .pay-editor{display:flex;flex-direction:column;gap:12px}
+        .pay-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;padding:12px 14px;border:1px solid #e5e7eb;border-radius:14px;background:#fff}
+        .pay-title{font-weight:700;font-size:1rem}
+        .pay-sub{font-size:.88rem;color:#6b7280}
+        .pay-base{min-width:170px;text-align:right}
+        .pay-base .lbl{font-size:.82rem;color:#6b7280}
+        .pay-base .val{font-weight:800;font-size:1rem}
+        .pay-list{display:flex;flex-direction:column;gap:12px}
+        .pay-card{border:1px solid #e5e7eb;border-radius:16px;background:#fff;padding:14px;transition:border-color 0.2s}
+        .pay-card:focus-within{border-color:#3b82f6}
+        .pay-card-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:12px}
+        .pay-card-top .h{font-weight:700}
+        .pay-card-top .d{font-size:.88rem;color:#6b7280}
+        .pay-real{text-align:right}
+        .pay-real .mxn{font-weight:800}
+        .pay-real .pct{font-size:.84rem;color:#6b7280}
+        .pay-card-mid{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+        .pay-card .field{position:relative}
+        .pay-card .field .suffix{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:.84rem;color:#6b7280;pointer-events:none}
+        .pay-card .input{padding-right:48px}
+        .pay-card .lock{display:flex;align-items:center;gap:8px;font-size:.92rem;cursor:pointer}
+        .pay-card .btn-del{border:none;background:#fee2e2;color:#991b1b;padding:9px 12px;border-radius:10px;font-weight:700}
+        .pay-card .btn-del:hover{background:#fecaca}
+        .pay-note{margin-top:10px;font-size:.86rem;color:#6b7280}
+        .pay-summary{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
+        .pay-summary .pill{display:inline-flex;align-items:center;gap:6px;padding:7px 10px;border-radius:999px;font-weight:700;font-size:.83rem;transition:all 0.3s}
+        .pay-summary .ok{background:#dcfce7;color:#166534}
+        .pay-summary .warn{background:#fef3c7;color:#92400e}
+        .pay-summary .bad{background:#fee2e2;color:#b91c1c}
+        @media(max-width:768px){
+          .pay-head{flex-direction:column}
+          .pay-base{text-align:left}
+          .pay-card-mid{flex-direction:column;align-items:stretch}
+          .pay-card .field{width:100% !important;min-width:100% !important}
+          .pay-card .btn-del{width:100%}
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    planPagosDiv.appendChild(wrap);
+
+    rows.forEach((r, i) => {
+      const f = dateByOffsetMonths(r.offset || 0);
+      const pct = clamp(r.pct ?? (100 / rows.length), 0, 100);
+      const amount = total * pct / 100;
+
+      const canDelete = rows.length > 1 && !opts.readonly && (i !== 0);
+      const delBtn = canDelete
+        ? `<button type="button" class="btn-del" data-action="delete">Eliminar</button>`
+        : `<button type="button" class="btn-del" style="opacity:.45" disabled>Eliminar</button>`;
+
+      const card = document.createElement('div');
+      card.className = 'pay-card';
+      card.dataset.idx = String(i);
+      card.dataset.mes = toISO(f);
+      card.innerHTML = `
+        <div class="pay-card-top">
+          <div>
+            <div class="h">${r.desc || (i === 0 ? 'Pago inicial' : ('Pago ' + (i + 1)))}</div>
+            <div class="d">${dateLabel(f)}</div>
+          </div>
+          <div class="pay-real">
+            <div class="mxn" data-real="mxn">${fmtMXN(amount)}</div>
+            <div class="pct" data-real="pct">% real: ${Math.round(pct)}</div>
+          </div>
+        </div>
+
+        <div class="pay-card-mid">
+          <label class="lock">
+            <input type="checkbox" class="form-check-input lock-input" ${r.locked ? 'checked' : ''}>
+            <span>Bloquear</span>
+          </label>
+
+          <div class="field" style="flex:1;min-width:220px;">
+            <input type="number" class="form-control input pct-input" min="0" max="100" step="1" value="${Math.round(pct)}">
+            <span class="suffix">%</span>
+          </div>
+
+          <div class="field" style="flex:1;min-width:220px;">
+            <input type="number" class="form-control input amt-input" min="0" max="${total.toFixed(2)}" step="0.01" value="${amount.toFixed(2)}">
+            <span class="suffix">MXN</span>
+          </div>
+
+          ${delBtn}
+        </div>
+      `;
+
+      list.appendChild(card);
+
+      const pctEl = card.querySelector('.pct-input');
+      const amtEl = card.querySelector('.amt-input');
+      const lockEl = card.querySelector('.lock-input');
+
+      if (opts.readonly) {
+        pctEl.disabled = true;
+        amtEl.disabled = true;
+        lockEl.disabled = true;
+      } else if (lockEl.checked) {
+        pctEl.disabled = true;
+        amtEl.disabled = true;
+      }
+    });
+
+    // ========================================================
+    // FUNCIÓN DE CASCADA (Balanceo hacia abajo)
+    // ========================================================
+    function redistribuirHaciaAbajo(editIndex, allCards, totalMonto) {
+      if (editIndex >= allCards.length - 1) return;
+
+      let sumaArriba = 0;
+      for (let i = 0; i < editIndex; i++) {
+        sumaArriba += parseFloat(allCards[i].querySelector('.amt-input').value) || 0;
+      }
+
+      const cardActual = allCards[editIndex];
+      let montoActual = parseFloat(cardActual.querySelector('.amt-input').value) || 0;
+
+      const maximoPermitido = totalMonto - sumaArriba;
+      if (montoActual > maximoPermitido) {
+        montoActual = maximoPermitido; 
+      }
+
+      let restanteParaAbajo = Math.max(0, totalMonto - sumaArriba - montoActual);
+
+      let filasDesbloqueadas = [];
+      for (let i = editIndex + 1; i < allCards.length; i++) {
+        if (!allCards[i].querySelector('.lock-input').checked) {
+          filasDesbloqueadas.push(allCards[i]);
         } else {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'No se pudo crear el producto.',
-            });
+          restanteParaAbajo -= (parseFloat(allCards[i].querySelector('.amt-input').value) || 0);
         }
-    })
-    .catch(error => {
-        console.error("Error:", error);
-        Swal.fire({
-            icon: 'error',
-            title: 'Error inesperado',
-            text: 'Ocurrió un error al enviar el formulario.',
+      }
+
+      restanteParaAbajo = Math.max(0, restanteParaAbajo);
+      if (filasDesbloqueadas.length > 0) {
+        const montoPorFila = restanteParaAbajo / filasDesbloqueadas.length;
+        const pctPorFila = totalMonto > 0 ? (montoPorFila / totalMonto) * 100 : 0;
+
+        filasDesbloqueadas.forEach(c => {
+          c.querySelector('.amt-input').value = montoPorFila.toFixed(2);
+          c.querySelector('.pct-input').value = Math.round(pctPorFila); // Sin decimales
         });
+      }
+    }
+
+    // ========================================================
+    // EVENTOS DE ENTRADA (TOTALMENTE LIBRES)
+    // ========================================================
+    list.addEventListener('input', function (ev) {
+      const card = ev.target.closest('.pay-card');
+      if (!card) return;
+
+      const cards = Array.from(planPagosDiv.querySelectorAll('.pay-card'));
+      const editIndex = cards.indexOf(card);
+      const total = getEditorTotalBase();
+      const pctEl = card.querySelector('.pct-input');
+      const amtEl = card.querySelector('.amt-input');
+
+      // Si escribimos en porcentaje, no tocamos su valor, solo actualizamos el monto
+      if (ev.target.classList.contains('pct-input')) {
+        if (pctEl.value === '') {
+          amtEl.value = ''; 
+        } else {
+          let pct = parseFloat(pctEl.value);
+          if (!isNaN(pct)) {
+            const amt = total > 0 ? (total * pct / 100) : 0;
+            amtEl.value = amt.toFixed(2);
+          }
+        }
+      }
+
+      if (ev.target.classList.contains('amt-input')) {
+        if (amtEl.value === '') {
+          pctEl.value = ''; 
+        } else {
+          let amt = parseFloat(amtEl.value);
+          if (!isNaN(amt)) {
+            const pct = total > 0 ? (amt / total) * 100 : 0;
+            pctEl.value = Math.round(pct); // Entero inmediato
+          }
+        }
+      }
+
+      redistribuirHaciaAbajo(editIndex, cards, total);
+      actualizarResumenPagos();
     });
+
+    // Validar topes y dar formato solo al quitar el foco (blur/change)
+    list.addEventListener('change', function (ev) {
+      const card = ev.target.closest('.pay-card');
+      if (!card) return;
+
+      const total = getEditorTotalBase();
+      const pctEl = card.querySelector('.pct-input');
+      const amtEl = card.querySelector('.amt-input');
+      const cards = Array.from(planPagosDiv.querySelectorAll('.pay-card'));
+      const editIndex = cards.indexOf(card);
+
+      if (ev.target.classList.contains('pct-input') || ev.target.classList.contains('amt-input')) {
+        let sumaArriba = 0;
+        for (let i = 0; i < editIndex; i++) {
+          sumaArriba += parseFloat(cards[i].querySelector('.amt-input').value) || 0;
+        }
+
+        let maximoPermitido = total - sumaArriba;
+        let finalAmt = parseFloat(amtEl.value) || 0;
+
+        // Limite superior a 100% solo si el usuario se excede al salir del campo
+        if (ev.target.classList.contains('pct-input')) {
+           let rawPct = parseFloat(pctEl.value) || 0;
+           if (rawPct > 100) rawPct = 100;
+           finalAmt = total > 0 ? (total * rawPct / 100) : 0;
+        }
+
+        if(finalAmt > maximoPermitido) {
+           finalAmt = maximoPermitido; 
+        }
+
+        amtEl.value = finalAmt.toFixed(2);
+        pctEl.value = Math.round(total > 0 ? (finalAmt/total)*100 : 0); // Cerrar a entero
+      }
+
+      if (ev.target.classList.contains('lock-input')) {
+        const lockEl = card.querySelector('.lock-input');
+        if (lockEl.checked) {
+          pctEl.disabled = true;
+          amtEl.disabled = true;
+        } else {
+          pctEl.disabled = false;
+          amtEl.disabled = false;
+        }
+        redistribuirHaciaAbajo(editIndex, cards, total);
+      }
+
+      actualizarResumenPagos();
+    });
+
+    list.addEventListener('click', function (ev) {
+      const btn = ev.target.closest('[data-action="delete"]');
+      if (!btn) return;
+
+      const card = btn.closest('.pay-card');
+      if (!card) return;
+
+      card.remove();
+
+      const cards = Array.from(planPagosDiv.querySelectorAll('.pay-card'));
+      cards.forEach((c, i) => c.dataset.idx = String(i));
+      
+      if(cards.length > 0) redistribuirHaciaAbajo(0, cards, getEditorTotalBase());
+      actualizarResumenPagos();
+    });
+
+    actualizarResumenPagos();
+  }
+
+  function actualizarResumenPagos() {
+    const total = getEditorTotalBase();
+    const cards = Array.from(planPagosDiv.querySelectorAll('.pay-card'));
+    if (!cards.length) {
+      window.pagos = [];
+      return;
+    }
+
+    let sumaPct = 0;
+    let sumaAmt = 0;
+
+    window.pagos = cards.map((card, i) => {
+      const pctEl = card.querySelector('.pct-input');
+      const amtEl = card.querySelector('.amt-input');
+      const mxn = card.querySelector('[data-real="mxn"]');
+      const pct = card.querySelector('[data-real="pct"]');
+
+      let porcentaje = Math.round(parseFloat(pctEl?.value) || 0);
+      let monto = Math.max(0, parseFloat(amtEl?.value) || 0);
+
+      sumaPct += porcentaje;
+      sumaAmt += monto;
+
+      if (mxn) mxn.textContent = fmtMXN(monto);
+      if (pct) pct.textContent = `% real: ${porcentaje}`;
+
+      return {
+        cuota: monto.toFixed(2),
+        descripcion: (card.querySelector('.h')?.textContent || (i === 0 ? 'Pago inicial' : `Pago ${i + 1}`)).trim(),
+        mes: card.dataset.mes
+      };
+    });
+
+    const diffAmt = total - sumaAmt;
+    const okAmt = Math.abs(diffAmt) < 0.5;
+
+    const summary = planPagosDiv.querySelector('#paySummary');
+    if (!summary) return;
+
+    const amtClass = okAmt ? 'ok' : (sumaAmt > total + 0.5 ? 'bad' : 'warn');
+    let amtMsg = okAmt ? `Cuadre exacto: ${fmtMXN(sumaAmt)}` : (sumaAmt > total + 0.5 ? `Te pasas ${fmtMXN(Math.abs(diffAmt))}` : `Faltan ${fmtMXN(Math.abs(diffAmt))}`);
+
+    summary.innerHTML = `<span class="pill ${amtClass}">${amtMsg}</span>`;
+  }
+
+  function renderContado() {
+    const total = obtenerTotalContrato();
+    setEditorTotalBase(total);
+    buildEditorUI('Pago de Contado', total, [
+      { desc: 'Pago único', offset: 0, pct: 100, locked: true }
+    ], { readonly: true });
+  }
+
+  function renderEstatico() {
+    const total = obtenerTotalContrato();
+    setEditorTotalBase(total);
+    if (total <= 0) return buildEditorUI('Plan Fijo', 0, []);
+
+    if (total < 500000) {
+      buildEditorUI('Plan Fijo', total, [
+        { desc: 'Pago inicial', offset: 0, pct: 50, locked: false },
+        { desc: 'Primer pago', offset: 1, pct: 25, locked: false },
+        { desc: 'Segundo pago', offset: 2, pct: 25, locked: false },
+      ]);
+      return;
+    }
+
+    const pctIni = 40;
+    const restantePct = 100 - pctIni;
+    const restante = total * (restantePct / 100);
+    const n = Math.min(6, Math.max(4, Math.ceil(restante / 50000)));
+
+    const each = restantePct / n;
+    const rows = [{ desc: 'Pago inicial', offset: 0, pct: pctIni, locked: false }];
+    for (let i = 0; i < n; i++) {
+      rows.push({
+        desc: `${NOMBRES[i] || ('Pago ' + (i + 1))} pago`,
+        offset: i + 1,
+        pct: each,
+        locked: false
+      });
+    }
+
+    buildEditorUI('Plan Fijo', total, rows);
+  }
+
+  function renderDinamico() {
+    const total = obtenerTotalContrato();
+    setEditorTotalBase(total);
+    if (total <= 0) return buildEditorUI('Plan Flexible', 0, []);
+
+    const ini = parseFloat(pagoInicial?.value) || 0;
+    if (ini <= 0 || ini >= total) {
+      buildEditorUI('Plan Flexible', total, [
+        { desc: 'Pago inicial', offset: 0, pct: 0, locked: false },
+        { desc: 'Pago 1', offset: 1, pct: 50, locked: false },
+        { desc: 'Pago 2', offset: 2, pct: 50, locked: false },
+      ]);
+      return;
+    }
+
+    const n = (total < 150000) ? 2 : (total < 400000) ? 4 : 6;
+    const pctIni = (ini / total) * 100;
+    const each = (100 - pctIni) / n;
+
+    const rows = [{ desc: 'Pago inicial', offset: 0, pct: pctIni, locked: true }];
+    for (let i = 0; i < n; i++) {
+      rows.push({ desc: `Pago ${i + 1}`, offset: i + 1, pct: each, locked: false });
+    }
+
+    buildEditorUI('Plan Flexible', total, rows);
+  }
+
+  function renderCredito() {
+    const totalContrato = obtenerTotalContrato();
+    if (totalContrato <= 0) {
+      setEditorTotalBase(0);
+      return buildEditorUI('Plan a Crédito', 0, []);
+    }
+
+    const ini = parseFloat(pagoCreditoInicial?.value) || 0;
+    const plazo = clampInt(plazoCredito?.value, 1, 120);
+
+    if (ini < 0 || ini >= totalContrato) {
+      setEditorTotalBase(totalContrato);
+      buildEditorUI('Plan a Crédito', totalContrato, [
+        { desc: 'Pago inicial', offset: 0, pct: 0, locked: false },
+        { desc: 'Pago 1', offset: 1, pct: 50, locked: false },
+        { desc: 'Pago 2', offset: 2, pct: 50, locked: false },
+      ]);
+      return;
+    }
+
+    const tasa = 0.05;
+    const monto = totalContrato - ini;
+    const totalFinanciadoTeorico = monto + (monto * tasa * plazo);
+    const totalConCredito = ini + totalFinanciadoTeorico;
+
+    setEditorTotalBase(totalConCredito);
+
+    const pctIni = (ini / totalConCredito) * 100;
+    const each = (100 - pctIni) / plazo;
+
+    const rows = [{ desc: 'Pago inicial', offset: 0, pct: pctIni, locked: true }];
+    for (let i = 0; i < plazo; i++) {
+      rows.push({ desc: `Pago ${i + 1}`, offset: i + 1, pct: each, locked: false });
+    }
+
+    buildEditorUI('Plan a Crédito', totalConCredito, rows);
+  }
+
+  function renderPersonalizado() {
+    const total = obtenerTotalContrato();
+    const meses = clampInt(mesesPersonalizado?.value, 1, 60);
+    const count = meses + 1;
+    setEditorTotalBase(total);
+
+    if (total <= 0) return buildEditorUI('Plan Personalizado', 0, []);
+
+    const rows = [];
+    for (let i = 0; i < count; i++) {
+      rows.push({
+        desc: i === 0 ? 'Pago inicial' : `${NOMBRES[i - 1] || ('Pago ' + (i + 1))} pago`,
+        offset: i,
+        pct: (100 / count),
+        locked: false
+      });
+    }
+
+    buildEditorUI('Plan Personalizado', total, rows);
+  }
+
+  function renderSegunTipo() {
+    const t = (tipoPago?.value || '').toLowerCase();
+
+    if (opcionesDinamicas) opcionesDinamicas.style.display = (t === 'dinamico') ? 'block' : 'none';
+    if (opcionesCredito) opcionesCredito.style.display = (t === 'credito') ? 'block' : 'none';
+    if (opcionesPersonalizado) opcionesPersonalizado.style.display = (t === 'personalizado') ? 'block' : 'none';
+
+    if (t === 'contado') return renderContado();
+    if (t === 'estatico') return renderEstatico();
+    if (t === 'dinamico') return renderDinamico();
+    if (t === 'credito') return renderCredito();
+    if (t === 'personalizado') return renderPersonalizado();
+
+    limpiarPlan();
+  }
+
+  tipoPago?.addEventListener('change', renderSegunTipo);
+
+  [pagoInicial, pagoCreditoInicial, plazoCredito].forEach(inp => {
+    inp?.addEventListener('input', function () {
+      const t = (tipoPago?.value || '').toLowerCase();
+      if (t === 'dinamico' || t === 'credito') renderSegunTipo();
+    });
+  });
+
+  mesesPersonalizado?.addEventListener('input', function () {
+    if ((tipoPago?.value || '').toLowerCase() === 'personalizado') renderPersonalizado();
+  });
+
+  mesesPersonalizado?.addEventListener('change', function () {
+    if ((tipoPago?.value || '').toLowerCase() === 'personalizado') renderPersonalizado();
+  });
+
+  const onTotalChanged = () => {
+    const t = (tipoPago?.value || '').toLowerCase();
+    if (t === 'personalizado') {
+      renderPersonalizado();
+      return;
+    }
+    renderSegunTipo();
+  };
+
+  window.addEventListener('total:changed', onTotalChanged);
+  renderSegunTipo();
 });
 </script>
 
-<script>
-     document.getElementById('image-upload').addEventListener('change', function(event) {
-    const file = event.target.files[0];
-    if (file && file.type.startsWith('image/')) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const previewIcon = document.getElementById('preview-icon');
-            const previewText = document.getElementById('preview-text');
-
-            previewIcon.src = e.target.result;
-            previewIcon.style.width = '100%';
-            previewIcon.style.height = '100%';
-            previewText.style.display = 'none';
-        };
-        reader.readAsDataURL(file);
-    }
-});
-
-</script>
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const input = document.getElementById('ficha_tecnica_search');
-        const hiddenInput = document.getElementById('ficha_tecnica_id');
-        const dropdown = document.getElementById('dropdown_fichas');
-        const originalOptions = [...dropdown.querySelectorAll('.list-option')];
-
-        // Normaliza texto para que ignore acentos y mayúsculas
-        const normalize = str => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-
-        input.addEventListener('input', function () {
-            const value = normalize(input.value);
-            dropdown.innerHTML = '';
-            let matches = 0;
-
-            originalOptions.forEach(option => {
-                const textOriginal = option.textContent;
-                const textNormalized = normalize(textOriginal);
-
-                if (textNormalized.includes(value)) {
-                    matches++;
-                    const highlighted = textOriginal.replace(new RegExp(value, 'i'), match => {
-                        return `<strong style="color:#4a148c">${match}</strong>`;
-                    });
-
-                    const li = document.createElement('li');
-                    li.classList.add('list-group-item', 'list-option');
-                    li.setAttribute('data-id', option.getAttribute('data-id'));
-                    li.innerHTML = highlighted;
-                    li.addEventListener('click', () => {
-                        input.value = textOriginal;
-                        hiddenInput.value = option.getAttribute('data-id');
-                        dropdown.style.display = 'none';
-                    });
-                    dropdown.appendChild(li);
-                }
-            });
-
-            dropdown.style.display = matches ? 'block' : 'none';
-        });
-
-        document.addEventListener('click', function (e) {
-            if (!dropdown.contains(e.target) && e.target !== input) {
-                dropdown.style.display = 'none';
-            }
-        });
-    });
-</script>
-
-
-<script>
-function cerrarModal() {
-    var modal = document.getElementById("cliente_creado");
-    var modalInstance = bootstrap.Modal.getInstance(modal);
-
-    if (modalInstance) {
-        modalInstance.hide();
-    } else {
-        new bootstrap.Modal(modal).hide();
-    }
-}
-</script>
-
+{{-- ==================== Serializar pagos_json al enviar ==================== --}}
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const tipoPago = document.getElementById('tipoPago');
-    const opcionesDinamicas = document.getElementById('opcionesDinamicas');
-    const opcionesCredito = document.getElementById('opcionesCredito');
-    const opcionesPersonalizado = document.getElementById('opcionesPersonalizado');
-    const listaPagosPersonalizados = document.getElementById('listaPagosPersonalizados');
-    const planPagosDiv = document.getElementById('plan-pagos');
-    const pagoInicial = document.getElementById('pagoInicial');
-    const pagoCreditoInicial = document.getElementById('pagoCreditoInicial');
-    const plazoCredito = document.getElementById('plazoCredito');
-    const mesesPersonalizado = document.getElementById('mesesPersonalizado');
+  const form = document.getElementById('form-propuesta');
+  const inputPagosJson = document.getElementById('pagosJsonInput');
+  const selectPlan = document.getElementById('tipoPago');
+  const planPagosDiv = document.getElementById('plan-pagos');
 
-    window.pagos = [];
-
-    function obtenerTotal() {
-        const totalTexto = document.getElementById('total')?.textContent || "0";
-        return parseFloat(totalTexto.replace(/[$,]/g, '')) || 0;
+  form.addEventListener('submit', function (e) {
+    if (!selectPlan || !selectPlan.value) {
+      alert('Selecciona un plan de pagos antes de continuar.');
+      e.preventDefault();
+      return;
     }
 
-    function formatear(moneda) {
-        return moneda.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' });
+    if (!window.pagos || window.pagos.length === 0) {
+      alert('No hay pagos definidos, por favor selecciona o genera un plan de pagos.');
+      e.preventDefault();
+      return;
     }
 
-    function formatoFechaISO(date) {
-        return date.toISOString().split('T')[0]; // yyyy-mm-dd
+    const totalBase = Number(planPagosDiv?.dataset?.totalBase || 0) || 0;
+    const suma = window.pagos.reduce((acc, p) => acc + (parseFloat(p.cuota) || 0), 0);
+
+    if (suma > totalBase + 0.5) {
+      alert('La suma de los pagos supera el total permitido del contrato. Ajusta los montos antes de guardar.');
+      e.preventDefault();
+      return;
     }
 
-    function actualizarPlanPagos(total) {
-        planPagosDiv.innerHTML = '';
-        window.pagos = [];
-
-        let tipo = tipoPago.value;
-        function formatoMoneda(valor) {
-            return parseFloat(valor).toFixed(2);
-        }
-
-        let fechaActual = new Date();
-        let fechaPago = new Date(fechaActual);
-        let nombresPagos = ["Primer", "Segundo", "Tercer", "Cuarto", "Quinto", "Sexto", "Séptimo", "Octavo", "Noveno", "Décimo", "Undécimo", "Duodécimo"];
-
-        if (total <= 0) {
-            planPagosDiv.innerHTML = '<p style="color:red;">Total inválido o cero</p>';
-            return;
-        }
-
-        const agregarPago = (cuota, fecha, descripcion) => {
-            const fechaCopia = new Date(fecha);
-            const fechaStr = fechaCopia.toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' });
-            const fechaISO = formatoFechaISO(fechaCopia);
-            window.pagos.push({ cuota: formatoMoneda(cuota), mes: fechaISO, descripcion });
-
-            const p = document.createElement('p');
-            p.innerHTML = `<strong>${descripcion} - ${fechaStr}:</strong> ${formatear(parseFloat(cuota))}`;
-            planPagosDiv.appendChild(p);
-        };
-
-        if (tipo === 'estatico') {
-            if (total < 500000) {
-                let fechaIni = new Date(fechaPago);
-                agregarPago(total * 0.5, fechaIni, 'Pago inicial');
-
-                let fecha1 = new Date(fechaPago);
-                fecha1.setMonth(fecha1.getMonth() + 1);
-                agregarPago(total * 0.25, fecha1, 'Primer pago');
-
-                let fecha2 = new Date(fechaPago);
-                fecha2.setMonth(fecha2.getMonth() + 2);
-                agregarPago(total * 0.25, fecha2, 'Segundo pago');
-            } else {
-                let fechaIni = new Date(fechaPago);
-                let primerPago = total * 0.4;
-                agregarPago(primerPago, fechaIni, 'Pago inicial');
-
-                let restante = total - primerPago;
-                let numPagos = Math.min(6, Math.max(4, Math.ceil(restante / 50000)));
-                let cuotaRestante = restante / numPagos;
-
-                for (let i = 0; i < numPagos; i++) {
-                    let fecha = new Date(fechaPago);
-                    fecha.setMonth(fecha.getMonth() + i + 1);
-                    agregarPago(cuotaRestante, fecha, `${nombresPagos[i] || (i + 1)} pago`);
-                }
-            }
-        } else if (tipo === 'dinamico') {
-            let pagoIni = parseFloat(pagoInicial.value) || 0;
-            if (pagoIni <= 0 || pagoIni >= total) {
-                planPagosDiv.innerHTML = '<p style="color:red;">Pago inicial inválido</p>';
-                return;
-            }
-
-            let restante = total - pagoIni;
-            let numPagos = (total < 150000) ? 2 : (total < 400000) ? 4 : 6;
-            let cuotaRestante = restante / numPagos;
-
-            agregarPago(pagoIni, fechaPago, 'Pago inicial');
-
-            for (let i = 0; i < numPagos; i++) {
-                fechaPago.setMonth(fechaPago.getMonth() + 1);
-                agregarPago(cuotaRestante, fechaPago, `${nombresPagos[i] || (i + 1)} pago`);
-            }
-        } else if (tipo === 'credito') {
-            let pagoIni = parseFloat(pagoCreditoInicial.value) || 0;
-            let plazo = parseInt(plazoCredito.value) || 6;
-            if (pagoIni < 0 || pagoIni >= total) {
-                planPagosDiv.innerHTML = '<p style="color:red;">Pago inicial de crédito inválido</p>';
-                return;
-            }
-            if (plazo <= 0) {
-                planPagosDiv.innerHTML = '<p style="color:red;">Plazo inválido</p>';
-                return;
-            }
-
-            let tasaInteres = 0.05;
-            let montoCredito = total - pagoIni;
-            let totalCredito = montoCredito + (montoCredito * tasaInteres * plazo);
-            let cuotaMensual = totalCredito / plazo;
-
-            agregarPago(pagoIni, fechaPago, 'Pago inicial');
-
-            const totalCreditoP = document.createElement('p');
-            totalCreditoP.innerHTML = `<strong>Total a pagar con crédito:</strong> ${formatear(totalCredito)}`;
-            planPagosDiv.appendChild(totalCreditoP);
-
-            for (let i = 0; i < plazo; i++) {
-                fechaPago.setMonth(fechaPago.getMonth() + 1);
-                agregarPago(cuotaMensual, fechaPago, `${nombresPagos[i] || (i + 1)} pago`);
-            }
-        } else if (tipo === 'personalizado') {
-            generarPagosPersonalizados(total);
-        }else if (tipo === 'contado') {
-    let fechaPagoUnico = new Date();
-    agregarPago(total, fechaPagoUnico, 'Pago único');
-}
-    }
-
-    function generarPagosPersonalizados(total) {
-        let meses = parseInt(mesesPersonalizado.value) || 1;
-        listaPagosPersonalizados.innerHTML = "";
-        planPagosDiv.innerHTML = "";
-        window.pagos = [];
-
-        let pagoSugerido = total / (meses + 1);
-        let fechaActual = new Date();
-        let nombresPagos = ["Primer", "Segundo", "Tercer", "Cuarto", "Quinto", "Sexto", "Séptimo", "Octavo", "Noveno", "Décimo", "Undécimo", "Duodécimo"];
-
-        for (let i = 0; i <= meses; i++) {
-            let div = document.createElement('div');
-            div.classList.add('mb-2');
-
-            let mesPago = new Date(fechaActual);
-            mesPago.setMonth(mesPago.getMonth() + i);
-            let fechaStr = mesPago.toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' });
-
-            let label = document.createElement('label');
-            label.innerHTML = i === 0
-                ? `<strong>Pago inicial - ${fechaStr}:</strong>`
-                : `<strong>${nombresPagos[i - 1] || `${i + 1}°`} pago - ${fechaStr}:</strong>`;
-
-            let inputDiv = document.createElement('div');
-            inputDiv.classList.add('d-flex', 'align-items-center');
-
-            let input = document.createElement('input');
-            input.type = 'number';
-            input.classList.add('form-control', 'modern-input', 'w-50');
-            input.setAttribute('data-mes', i);
-            input.value = pagoSugerido.toFixed(2);
-
-            input.addEventListener('input', function () {
-                input.dataset.modificado = "true";
-                recalcularPagosPersonalizados();
-            });
-
-            inputDiv.appendChild(input);
-            div.appendChild(label);
-            div.appendChild(inputDiv);
-            listaPagosPersonalizados.appendChild(div);
-        }
-
-        recalcularPagosPersonalizados();
-    }
-
-function recalcularPagosPersonalizados() {
-    let total = obtenerTotal();
-    let listaPagos = document.querySelectorAll('#listaPagosPersonalizados input');
-    let sumaPagos = 0;
-    let pagosNoEditados = [];
-    let nombresPagos = ["Primer", "Segundo", "Tercer", "Cuarto", "Quinto", "Sexto", "Séptimo", "Octavo", "Noveno", "Décimo", "Undécimo", "Duodécimo"];
-
-    listaPagos.forEach((input) => {
-        if (!input.dataset.modificado) pagosNoEditados.push(input);
-    });
-
-    listaPagos.forEach(input => sumaPagos += parseFloat(input.value) || 0);
-
-    if (Math.abs(sumaPagos - total) > 0.01 && pagosNoEditados.length > 0) {
-        let diferencia = total - sumaPagos;
-        let ajuste = diferencia / pagosNoEditados.length;
-
-        pagosNoEditados.forEach(input => {
-            let nuevo = (parseFloat(input.value) || 0) + ajuste;
-            input.value = nuevo.toFixed(2);
-        });
-    }
-
-    planPagosDiv.innerHTML = "";
-    window.pagos = [];
-
-    let fechaBase = new Date();
-    listaPagos.forEach((input, index) => {
-        let monto = parseFloat(input.value) || 0;
-        let fechaPago = new Date(fechaBase);
-        fechaPago.setMonth(fechaPago.getMonth() + index);
-        const fechaStr = fechaPago.toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' });
-        const fechaISO = formatoFechaISO(fechaPago);
-
-        const descripcion = index === 0 ? "Pago inicial" : `${nombresPagos[index - 1] || (index + 1)} pago`;
-
-        window.pagos.push({
-            cuota: monto.toFixed(2),
-            descripcion,
-            mes: fechaISO
-        });
-
-        let p = document.createElement('p');
-        p.innerHTML = `<strong>${descripcion} - ${fechaStr}:</strong> ${formatear(monto)}`;
-        planPagosDiv.appendChild(p);
-    });
-
-    let sumaFinal = Array.from(listaPagos).reduce((acc, input) => acc + (parseFloat(input.value) || 0), 0);
-    let totalPagosP = document.createElement('p');
-    totalPagosP.style.fontWeight = "bold";
-    totalPagosP.textContent = Math.abs(sumaFinal - total) < 0.01
-        ? `Total de pagos: ${formatear(sumaFinal)} ✅ (Coincide)`
-        : `Total de pagos: ${formatear(sumaFinal)} ⚠️ (No coincide)`;
-    planPagosDiv.appendChild(totalPagosP);
-}
-
-
-    tipoPago.addEventListener('change', function () {
-        opcionesDinamicas.style.display = tipoPago.value === 'dinamico' ? 'block' : 'none';
-        opcionesCredito.style.display = tipoPago.value === 'credito' ? 'block' : 'none';
-        opcionesPersonalizado.style.display = tipoPago.value === 'personalizado' ? 'block' : 'none';
-        actualizarPlanPagos(obtenerTotal());
-    });
-
-    [pagoInicial, pagoCreditoInicial, plazoCredito, mesesPersonalizado].forEach(input => {
-        input?.addEventListener('input', () => actualizarPlanPagos(obtenerTotal()));
-    });
-
-    actualizarPlanPagos(obtenerTotal());
+    inputPagosJson.value = JSON.stringify(window.pagos);
+  });
 });
 </script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const form = document.getElementById('form-propuesta');
-    const inputPagosJson = document.getElementById('pagosJsonInput');
-    const selectPlan = document.getElementById('tipoPago');
+  const form = document.getElementById('form-propuesta');
+  const inputPagosJson = document.getElementById('pagosJsonInput');
+  const selectPlan = document.getElementById('tipoPago');
+  const planPagosDiv = document.getElementById('plan-pagos');
 
-    form.addEventListener('submit', function (e) {
-        console.log('Form submit capturado');
-        console.log('window.pagos:', window.pagos);
-        console.log('selectPlan:', selectPlan);
+  form.addEventListener('submit', function (e) {
+    if (!selectPlan || !selectPlan.value) {
+      alert('Selecciona un plan de pagos antes de continuar.');
+      e.preventDefault();
+      return;
+    }
 
-        if (!selectPlan) {
-            alert('Error: el select de plan no existe o tiene otro id.');
-            e.preventDefault();
-            return;
-        }
+    if (!window.pagos || window.pagos.length === 0) {
+      alert('No hay pagos definidos, por favor selecciona o genera un plan de pagos.');
+      e.preventDefault();
+      return;
+    }
 
-        const planSeleccionado = selectPlan.value;
-        console.log('planSeleccionado:', planSeleccionado);
+    const totalBase = Number(planPagosDiv?.dataset?.totalBase || 0) || 0;
+    const suma = window.pagos.reduce((acc, p) => acc + (parseFloat(p.cuota) || 0), 0);
 
-        // ✅ Validación general: debe haber al menos un pago, sin importar el tipo de plan
-        if (!window.pagos || window.pagos.length === 0) {
-            alert('No hay pagos definidos, por favor selecciona o genera un plan de pagos.');
-            e.preventDefault();
-            return;
-        }
+    if (suma > totalBase + 0.5) {
+      alert('La suma de los pagos supera el total permitido del contrato. Ajusta los montos antes de guardar.');
+      e.preventDefault();
+      return;
+    }
 
-        // ✅ Formatear los pagos y pasarlos al input oculto como JSON
-        const pagosFormateados = window.pagos.map(pago => {
-            return {
-                ...pago,
-                mes: pago.mes // Asegúrate que esté en formato 'YYYY-MM-DD'
-            };
-        });
-
-        inputPagosJson.value = JSON.stringify(pagosFormateados);
-        console.log('Pagos a enviar:', inputPagosJson.value);
-    });
+    inputPagosJson.value = JSON.stringify(window.pagos);
+  });
 });
 </script>
+
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     const buscarProducto = document.getElementById("buscarProducto");
@@ -908,13 +1151,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 fetch("{{ route('productos.search') }}?search=" + encodeURIComponent(searchQuery), { signal: controladorAbort.signal }).then(res => res.json()),
                 fetch("{{ route('paquetes.search') }}?search=" + encodeURIComponent(searchQuery), { signal: controladorAbort.signal }).then(res => res.json())
             ])
-            .then(([productos, paquetes]) => {
-                mostrarResultados(paquetes, productos);
-            })
+            .then(([productos, paquetes]) => mostrarResultados(paquetes, productos))
             .catch(error => {
-                if (error.name !== "AbortError") {
-                    console.error("Error en la búsqueda:", error);
-                }
+                if (error.name !== "AbortError") console.error("Error en la búsqueda:", error);
             });
         } else {
             restaurarListaOriginal();
@@ -924,7 +1163,7 @@ document.addEventListener("DOMContentLoaded", function () {
     function mostrarResultados(paquetes, productos) {
         dropdownProductos.innerHTML = `
             <li>
-                <button class="dropdown-item modern-dropdown-item" data-bs-toggle="modal" data-bs-target="#modal1">
+                <button type="button" class="dropdown-item modern-dropdown-item" data-bs-toggle="modal" data-bs-target="#modal1">
                     + Crear Producto
                 </button>
             </li>
@@ -934,41 +1173,45 @@ document.addEventListener("DOMContentLoaded", function () {
             paquetes.forEach(paquete => {
                 let li = document.createElement("li");
                 li.innerHTML = `
-                    <button class="dropdown-item modern-dropdown-item"
+                    <button type="button" class="dropdown-item modern-dropdown-item"
                             data-id="${paquete.id}"
                             data-productos='${JSON.stringify(paquete.productos)}'
                             onclick="agregarPaqueteDesdeData(this)">
-                        📦 ${paquete.nombre.toUpperCase()} - Paquete
+                        ${String(paquete.nombre || '').toUpperCase()} - PAQUETE
                     </button>
                 `;
                 dropdownProductos.appendChild(li);
             });
         }
 
-        productos.sort((a, b) => a.tipo_equipo.localeCompare(b.tipo_equipo));
+        productos.sort((a, b) => (a.tipo_equipo || '').localeCompare(b.tipo_equipo || ''));
 
         if (productos.length > 0) {
             productos.forEach(producto => {
-let li = document.createElement("li");
-li.innerHTML = `
-    <button class="dropdown-item modern-dropdown-item d-flex align-items-center"
-            onclick="agregarProductoDesdeDropdown(${producto.id}, '${producto.tipo_equipo}', '${producto.modelo}', '${producto.marca}', ${producto.precio}, '${producto.imagen}')">
-        <img src="/storage/${producto.imagen}" alt="${producto.tipo_equipo}" class="modern-product-img me-2" style="width: 40px; height: 40px; object-fit: cover; border-radius: 6px;">
-        <div class="flex-grow-1 modern-product-info">
-            <strong>${producto.tipo_equipo}</strong> - ${producto.modelo} ${producto.marca}
-            <br>
-            <span class="text-muted modern-product-price">$${producto.precio}</span>
-        </div>
-        <span class="badge modern-badge">${producto.stock} unidades</span>
-    </button>
-`;
-dropdownProductos.appendChild(li);
+                const tipo = (producto.tipo_equipo || '').replace(/'/g,"\\'");
+                const modelo = (producto.modelo || '').replace(/'/g,"\\'");
+                const marca = (producto.marca || '').replace(/'/g,"\\'");
+                const img = (producto.imagen || '').replace(/'/g,"\\'");
 
+                let li = document.createElement("li");
+                li.innerHTML = `
+                    <button type="button" class="dropdown-item modern-dropdown-item d-flex align-items-center"
+                            onclick="agregarProductoDesdeDropdown(${producto.id}, '${tipo}', '${modelo}', '${marca}', ${producto.precio}, '${img}')">
+                        <img src="/storage/${img}" alt="${tipo}" class="modern-product-img me-2" style="width: 40px; height: 40px; object-fit: cover; border-radius: 6px;">
+                        <div class="flex-grow-1 modern-product-info">
+                            <strong>${tipo}</strong> - ${modelo} ${marca}
+                            <br>
+                            <span class="text-muted modern-product-price">$${producto.precio}</span>
+                        </div>
+                        <span class="badge modern-badge">${producto.stock} unidades</span>
+                    </button>
+                `;
+                dropdownProductos.appendChild(li);
             });
         }
 
         if (paquetes.length === 0 && productos.length === 0) {
-            dropdownProductos.innerHTML += '<li><button class="dropdown-item text-muted">No se encontraron resultados</button></li>';
+            dropdownProductos.innerHTML += '<li><button type="button" class="dropdown-item text-muted">No se encontraron resultados</button></li>';
         }
     }
 
@@ -977,9 +1220,7 @@ dropdownProductos.appendChild(li);
             fetch("{{ route('productos.search') }}?search=").then(res => res.json()),
             fetch("{{ route('paquetes.search') }}?search=").then(res => res.json())
         ])
-        .then(([productos, paquetes]) => {
-            mostrarResultados(paquetes, productos);
-        })
+        .then(([productos, paquetes]) => mostrarResultados(paquetes, productos))
         .catch(error => console.error("Error al restaurar lista:", error));
     }
 
@@ -1000,190 +1241,334 @@ dropdownProductos.appendChild(li);
         }
     });
 
-    // Mostrar todos al iniciar
     restaurarListaOriginal();
 
-    // Función global para insertar paquetes
     window.agregarPaqueteDesdeData = function (element) {
-        let id = element.getAttribute("data-id");
         let productos = JSON.parse(element.getAttribute("data-productos"));
-        agregarPaquete(id, productos);
+        (productos || []).forEach(producto => {
+            agregarProductoDesdeDropdown(
+                producto.id,
+                producto.tipo_equipo,
+                producto.modelo,
+                producto.marca,
+                parseFloat(producto.precio),
+                producto.imagen
+            );
+        });
     };
-function agregarPaquete(paqueteId, productos) {
-    productos.forEach(producto => {
-        agregarProductoDesdeDropdown(
-            producto.id,
-            producto.tipo_equipo,
-            producto.modelo,
-            producto.marca,
-            parseFloat(producto.precio),
-            '/storage/' + producto.imagen // Ruta correcta para mostrar la imagen
-        );
-    });
-  }
 });
 </script>
+
 <script>
-$(document).ready(function () {
-    console.log('Documento listo.');
+const IVA_RATE = 0.16;
 
-    // Preparar JSON al enviar formulario
-    $('#form-propuesta').submit(function (e) {
-        console.log('Submit detectado.');
+function formatMoney(n) {
+  const num = Number(n || 0);
+  return num.toLocaleString('es-MX', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+}
 
-        actualizarTotal();      // Primero recalcula los subtotales y totales
-        prepararProductosJSON(); // Luego genera el JSON ya con datos correctos
+const to2 = (n) => Number(n || 0).toFixed(2);
 
-        const productosJson = $('#productos_json').val();
-        console.log('Valor de productos_json al enviar:', productosJson);
+document.addEventListener('DOMContentLoaded', () => {
+  bindRealtimeListeners();
 
-        if (!productosJson || productosJson === '[]') {
-            e.preventDefault();
-            alert('Debes agregar al menos un producto.');
-            console.log('Productos JSON vacío, se detiene el submit.');
-            return;
-        }
+  const form = document.getElementById('form-propuesta');
+  if (form) {
+    form.addEventListener('submit', (e) => {
+      actualizarTotal();
+      prepararProductosJSON();
+      prepararEquiposCuentaJSON();
 
-        console.log('Productos JSON listo para enviar:', productosJson);
+      const productosJson = document.getElementById('productos_json')?.value || '[]';
+      if (!productosJson || productosJson === '[]') {
+        e.preventDefault();
+        alert('Debes agregar al menos un producto.');
+      }
     });
+  }
+
+  actualizarTotal();
+  prepararProductosJSON();
+  prepararEquiposCuentaJSON();
 });
+
+function bindRealtimeListeners() {
+  const recalcNow = () => { actualizarTotal(); prepararProductosJSON(); prepararEquiposCuentaJSON(); };
+
+  if (window.jQuery) {
+    $(document).on('input keyup change paste mouseup wheel', '#descuento, #envio', recalcNow);
+    $(document).on('change click keyup', '#aplica_iva', recalcNow);
+    $(document).on('input keyup change paste wheel', '.cantidad, .sobreprecio', function () {
+      actualizarSubtotal(this);
+    });
+    $(document).on('change', '.gift-toggle', function () {
+      actualizarSubtotal(this);
+    });
+  }
+}
+
+function isGiftRow(tr){
+  return !!tr.querySelector('.gift-toggle')?.checked;
+}
+
 function agregarProductoDesdeDropdown(id, nombre, modelo, marca, precio, imagen) {
-    console.log('Agregando producto:', { id, nombre, modelo, marca, precio, imagen });
+  if (!id || !nombre) return;
 
-    if (!id || !nombre) {
-        console.log('ID o nombre vacío, no se agrega.');
-        return;
-    }
+  if (document.querySelector(`#tabla-productos tbody tr[data-id="${id}"]`)) {
+    alert('Este producto ya ha sido agregado.');
+    return;
+  }
 
-    if ($(`#tabla-productos tbody tr[data-id="${id}"]`).length > 0) {
-        alert('Este producto ya ha sido agregado.');
-        console.log('Producto duplicado, no se agrega.');
-        return;
-    }
+  let img = (imagen || '').toString();
+  img = img.replace(/^\/+/, '');
+  const imagenRuta = img.startsWith('storage/') ? '/' + img : '/storage/' + img;
 
-    // Asegura que la ruta de la imagen esté bien
-    let imagenRuta = imagen.includes('/storage') ? imagen : '/storage/' + imagen;
+  const fila = `
+    <tr data-id="${id}" data-precio="${Number(precio) || 0}">
+      <td><img src="${imagenRuta}" alt="${nombre}" style="width:50px;height:50px;object-fit:cover;border-radius:6px;"></td>
+      <td class="equipo">${nombre}</td>
+      <td class="modelo">${modelo || ''}</td>
+      <td class="marca">${marca || ''}</td>
+      <td><input type="number" class="form-control cantidad" value="1" min="1" step="1"></td>
+      <td class="subtotal">${(Number(precio) || 0).toFixed(2)}</td>
+      <td><input type="number" class="form-control sobreprecio" value="0" min="0" step="0.01"></td>
+      <td>
+        <div class="gift-switch">
+          <input type="checkbox" class="form-check-input gift-toggle" title="Marcar como regalo">
+          <span class="gift-muted">Regalo</span>
+        </div>
+      </td>
+      <td><button type="button" class="btn btn-sm btn-danger" onclick="eliminarFila(this)">Eliminar</button></td>
+    </tr>
+  `;
+  const tbody = document.querySelector('#tabla-productos tbody');
+  if (tbody) tbody.insertAdjacentHTML('beforeend', fila);
 
-    const fila = `
-        <tr data-id="${id}" data-precio="${precio}">
-            <td>
-                <img src="${imagenRuta}" alt="${nombre}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 6px;">
-            </td>
-            <td class="equipo">${nombre}</td>
-            <td>${modelo}</td>
-            <td>${marca}</td>
-            <td>
-                <input type="number" class="form-control cantidad" value="1" min="1" onchange="actualizarSubtotal(this)">
-            </td>
-            <td class="subtotal">${precio.toFixed(2)}</td>
-            <td>
-                <input type="number" class="form-control sobreprecio" value="0" min="0" onchange="actualizarSubtotal(this)">
-            </td>
-            <td>
-                <button type="button" class="btn btn-sm btn-danger" onclick="eliminarFila(this)">Eliminar</button>
-            </td>
-        </tr>
-    `;
+  actualizarTotal();
+  prepararProductosJSON();
 
-    $('#tabla-productos tbody').append(fila);
-    console.log('Producto agregado a la tabla.');
-
-    actualizarTotal();
-    prepararProductosJSON();
-
-    $('#buscarProducto').val('');
-    $('.dropdown-menu').removeClass('show');
+  const buscador = document.getElementById('buscarProducto');
+  if (buscador) buscador.value = '';
+  document.querySelectorAll('.dropdown-menu.show').forEach(el => el.classList.remove('show'));
 }
 
 function eliminarFila(btn) {
-    console.log('Eliminando fila.');
-    $(btn).closest('tr').remove();
-    actualizarTotal();
-    prepararProductosJSON();
+  const tr = btn.closest('tr');
+  if (tr) tr.remove();
+  actualizarTotal();
+  prepararProductosJSON();
 }
 
 function actualizarSubtotal(input) {
-    console.log('Actualizando subtotal.');
-    const fila = $(input).closest('tr');
-    const cantidad = parseFloat(fila.find('.cantidad').val()) || 1;
-    const sobreprecio = parseFloat(fila.find('.sobreprecio').val()) || 0;
-    const precioBase = parseFloat(fila.attr('data-precio')) || 0;
+  const fila = input.closest('tr');
+  if (!fila) return;
 
+  const regalo = isGiftRow(fila);
+  const cantidad = Math.max(1, parseFloat(fila.querySelector('.cantidad')?.value) || 1);
+  const sobreprecioEl = fila.querySelector('.sobreprecio');
+  let sobreprecio = Math.max(0, parseFloat(sobreprecioEl?.value) || 0);
+  const precioBase = Math.max(0, parseFloat(fila.getAttribute('data-precio')) || 0);
+
+  const celda = fila.querySelector('.subtotal');
+
+  if (regalo) {
+    if (sobreprecioEl) { sobreprecioEl.value = to2(0); sobreprecioEl.disabled = true; }
+    if (celda) celda.innerHTML = `<span class="gift-badge">REGALO</span>`;
+  } else {
+    if (sobreprecioEl) sobreprecioEl.disabled = false;
     const nuevoSubtotal = cantidad * (precioBase + sobreprecio);
-    fila.find('.subtotal').text(nuevoSubtotal.toFixed(2));
+    if (celda) celda.textContent = to2(nuevoSubtotal);
+  }
 
-    actualizarTotal();
-    prepararProductosJSON();
+  actualizarTotal();
+  prepararProductosJSON();
 }
+
 function actualizarTotal() {
-    console.log('Calculando totales...');
-    let subtotal = 0;
+  let subtotal = 0;
 
-    $('#tabla-productos tbody tr').each(function () {
-        const cantidad = parseFloat($(this).find('.cantidad').val()) || 1;
-        const sobreprecio = parseFloat($(this).find('.sobreprecio').val()) || 0;
-        const precioBase = parseFloat($(this).attr('data-precio')) || 0;
+  document.querySelectorAll('#tabla-productos tbody tr').forEach(tr => {
+    const regalo = isGiftRow(tr);
 
-        const subtotalProducto = cantidad * (precioBase + sobreprecio);
-        $(this).find('.subtotal').text(subtotalProducto.toFixed(2));
-        subtotal += subtotalProducto;
-    });
+    const cantidad = Math.max(1, parseFloat(tr.querySelector('.cantidad')?.value) || 1);
+    const sobreprecioEl = tr.querySelector('.sobreprecio');
+    const sobreprecio = regalo ? 0 : Math.max(0, parseFloat(sobreprecioEl?.value) || 0);
+    const precioBase = Math.max(0, parseFloat(tr.getAttribute('data-precio')) || 0);
 
-    const descuento = parseFloat($('#descuento').val()) || 0;
-    const envio = parseFloat($('#envio').val()) || 0;
+    const celda = tr.querySelector('.subtotal');
 
-    // Validar descuento para que no sea mayor que subtotal
-    const descuentoValidado = descuento > subtotal ? subtotal : descuento;
-
-    // Base para IVA incluye envío
-    let baseIVA = subtotal - descuentoValidado + envio;
-    if (baseIVA < 0) baseIVA = 0;
-
-    let iva = 0;
-    if ($('#aplica_iva').is(':checked')) {
-        iva = baseIVA * 0.16;
+    if (regalo) {
+      if (celda) celda.innerHTML = `<span class="gift-badge">REGALO</span>`;
+      if (sobreprecioEl) { sobreprecioEl.value = to2(0); sobreprecioEl.disabled = true; }
+      return;
     }
 
-    const total = subtotal - descuentoValidado + envio + iva;
+    if (sobreprecioEl) sobreprecioEl.disabled = false;
 
-    $('#subtotal').text(subtotal.toFixed(2));
-    $('#subtotal_input').val(subtotal.toFixed(2));
-    $('#iva').text(iva.toFixed(2));
-    $('#iva_input').val(iva.toFixed(2));
-    $('#total').text(total.toFixed(2));
-    $('#total_input').val(total.toFixed(2));
+    const sub = cantidad * (precioBase + sobreprecio);
+    if (celda) celda.textContent = to2(sub);
+    subtotal += sub;
+  });
 
-    console.log('Subtotal:', subtotal.toFixed(2), 'IVA:', iva.toFixed(2), 'Total:', total.toFixed(2));
+  const descuentoInput = document.getElementById('descuento');
+  const envioInput = document.getElementById('envio');
+
+  const descuento = Math.max(0, parseFloat(descuentoInput?.value) || 0);
+  const envio = Math.max(0, parseFloat(envioInput?.value) || 0);
+
+  const descuentoValidado = Math.min(descuento, subtotal);
+
+  let baseIVA = subtotal - descuentoValidado + envio;
+  if (baseIVA < 0) baseIVA = 0;
+
+  const aplicaIVA = document.getElementById('aplica_iva')?.checked ? true : false;
+  const iva = aplicaIVA ? baseIVA * IVA_RATE : 0;
+
+  const total = subtotal - descuentoValidado + envio + iva;
+
+  const aCuentaInput = document.getElementById('valor_a_cuenta');
+  let valorCuenta = Math.max(0, parseFloat(aCuentaInput?.value) || 0);
+  if (valorCuenta > total) valorCuenta = total;
+  if (aCuentaInput) aCuentaInput.value = to2(valorCuenta);
+
+  const totalContrato = total - valorCuenta;
+
+  const subSpan = document.getElementById('subtotal');
+  const ivaSpan = document.getElementById('iva');
+  const totSpan = document.getElementById('total');
+  if (subSpan) subSpan.textContent = formatMoney(subtotal);
+  if (ivaSpan) ivaSpan.textContent = formatMoney(iva);
+  if (totSpan) totSpan.textContent = formatMoney(total);
+
+  const cuentaSpan = document.getElementById('valor_cuenta_view');
+  const contratoSpan = document.getElementById('total_contrato_view');
+  if (cuentaSpan) cuentaSpan.textContent = formatMoney(valorCuenta);
+  if (contratoSpan) contratoSpan.textContent = formatMoney(totalContrato);
+
+  const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = to2(val); };
+  setVal('subtotal_input', subtotal);
+  setVal('iva_input', iva);
+  setVal('total_input', total);
+  setVal('total_a_cuenta_input', valorCuenta);
+  setVal('total_contrato_input', totalContrato);
+
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event('total:changed'));
 }
 
 function prepararProductosJSON() {
-    console.log('Preparando JSON de productos...');
-    const productos = [];
+  const productos = [];
+  document.querySelectorAll('#tabla-productos tbody tr').forEach(tr => {
+    const regalo = isGiftRow(tr);
 
-    $('#tabla-productos tbody tr').each(function () {
-        const fila = $(this);
-        const producto = {
-            producto_id: fila.data('id'),
-            cantidad: parseFloat(fila.find('.cantidad').val()) || 1,
-            precio_unitario: parseFloat(fila.attr('data-precio')) || 0,
-            sobreprecio: parseFloat(fila.find('.sobreprecio').val()) || 0,
-            subtotal: parseFloat(fila.find('.subtotal').text()) || 0, // Subtotal ya incluye sobreprecio
-        };
-        console.log('Producto encontrado:', producto);
-        productos.push(producto);
+    const cantidad = Math.max(1, parseFloat(tr.querySelector('.cantidad')?.value) || 1);
+    const precioUnit = Math.max(0, parseFloat(tr.getAttribute('data-precio')) || 0);
+    const sobreprecioEl = tr.querySelector('.sobreprecio');
+    const sobreprecio = regalo ? 0 : Math.max(0, parseFloat(sobreprecioEl?.value) || 0);
+
+    let subtotal = 0;
+    if (!regalo) {
+      const celda = tr.querySelector('.subtotal');
+      subtotal = Math.max(0, parseFloat(celda?.textContent) || 0);
+      if (!subtotal) subtotal = cantidad * (precioUnit + sobreprecio);
+    }
+
+    productos.push({
+      producto_id: tr.getAttribute('data-id'),
+      cantidad: cantidad,
+      precio_unitario: regalo ? 0 : precioUnit,
+      sobreprecio: sobreprecio,
+      subtotal: subtotal,
+      es_regalo: regalo
     });
+  });
 
-    $('#productos_json').val(JSON.stringify(productos));
-    console.log('JSON generado:', productos);
+  const hidden = document.getElementById('productos_json');
+  if (hidden) hidden.value = JSON.stringify(productos);
 }
 </script>
 
-
-
 <script>
-    console.log("Ruta encontrar clientes:", `{{ route('clientes.encontrar') }}`);
-</script>
+document.addEventListener('DOMContentLoaded', function () {
+    const btnAdd = document.getElementById('btn-add-equipo-cuenta');
+    const tablaEquipos = document.getElementById('tabla-equipos-cuenta').querySelector('tbody');
 
+    btnAdd?.addEventListener('click', function () {
+        agregarEquipoCuentaFila();
+    });
+
+    tablaEquipos.addEventListener('input', function (e) {
+        if (e.target.classList.contains('ec-valor') ||
+            e.target.classList.contains('ec-tipo') ||
+            e.target.classList.contains('ec-marca') ||
+            e.target.classList.contains('ec-modelo') ||
+            e.target.classList.contains('ec-serie')) {
+            prepararEquiposCuentaJSON();
+        }
+    });
+
+    tablaEquipos.addEventListener('click', function (e) {
+        if (e.target.classList.contains('btn-remove-equipo')) {
+            const tr = e.target.closest('tr');
+            if (tr) tr.remove();
+            prepararEquiposCuentaJSON();
+        }
+    });
+});
+
+function agregarEquipoCuentaFila() {
+    const tbody = document.querySelector('#tabla-equipos-cuenta tbody');
+    if (!tbody) return;
+
+    const row = document.createElement('tr');
+    row.innerHTML = `
+        <td><input type="text" class="form-control ec-tipo text-uppercase" placeholder="Ej. TORRE 1588"></td>
+        <td><input type="text" class="form-control ec-marca text-uppercase" placeholder="Marca"></td>
+        <td><input type="text" class="form-control ec-modelo text-uppercase" placeholder="Modelo"></td>
+        <td><input type="text" class="form-control ec-serie text-uppercase" placeholder="N° serie"></td>
+        <td><input type="number" class="form-control ec-valor" min="0" step="0.01" value="0"></td>
+        <td><button type="button" class="btn btn-sm btn-outline-danger btn-remove-equipo">&times;</button></td>
+    `;
+    tbody.appendChild(row);
+}
+
+function prepararEquiposCuentaJSON() {
+    const filas = document.querySelectorAll('#tabla-equipos-cuenta tbody tr');
+    const equipos = [];
+    let totalCuenta = 0;
+
+    filas.forEach(tr => {
+        const tipo = tr.querySelector('.ec-tipo')?.value?.trim() || null;
+        const marca = tr.querySelector('.ec-marca')?.value?.trim() || null;
+        const modelo = tr.querySelector('.ec-modelo')?.value?.trim() || null;
+        const serie = tr.querySelector('.ec-serie')?.value?.trim() || null;
+        let valor = parseFloat(tr.querySelector('.ec-valor')?.value) || 0;
+        valor = Math.max(0, valor);
+
+        if (!tipo && !marca && !modelo && !serie && valor === 0) return;
+
+        equipos.push({
+            tipo_equipo: tipo,
+            marca: marca,
+            modelo: modelo,
+            numero_serie: serie,
+            valor_a_cuenta: valor
+        });
+
+        totalCuenta += valor;
+    });
+
+    const hidden = document.getElementById('equipos_cuenta_json');
+    if (hidden) hidden.value = JSON.stringify(equipos);
+
+    const inputCuenta = document.getElementById('valor_a_cuenta');
+    if (inputCuenta) inputCuenta.value = to2(totalCuenta);
+
+    actualizarTotal();
+}
+</script>
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
@@ -1191,14 +1576,11 @@ document.addEventListener("DOMContentLoaded", function () {
     const clientList = document.getElementById("client-list");
     const clienteIdInput = document.getElementById("cliente_id");
     const clientDetails = document.getElementById("client-details");
-    const formVenta = document.getElementById("form-propuesta"); // Cambiado a form-propuesta
+    const formVenta = document.getElementById("form-propuesta");
+    const CLIENT_SEARCH_URL = "{{ route('clientes.encontrar') }}";
 
-    if (!searchInput || !clientList || !clienteIdInput || !clientDetails || !formVenta) {
-        console.error("Alguno de los elementos no se encontró. Revisa los IDs.");
-        return;
-    }
+    if (!searchInput || !clientList || !clienteIdInput || !clientDetails || !formVenta) return;
 
-    // Validación antes de enviar el formulario
     formVenta.addEventListener("submit", function (e) {
         if (!clienteIdInput.value) {
             e.preventDefault();
@@ -1206,12 +1588,12 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
-    // Función para cargar clientes desde backend
     function loadClients(search = "") {
-          fetch(`https://medibuy.grupomedibuy.com/encontrar-clientes?search=${encodeURIComponent(search)}`, {
+        fetch(`${CLIENT_SEARCH_URL}?search=${encodeURIComponent(search)}`, {
             method: "GET",
             headers: {
                 "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content,
+                "Accept": "application/json",
             },
         })
         .then(response => response.json())
@@ -1237,41 +1619,38 @@ document.addEventListener("DOMContentLoaded", function () {
             `;
 
             if (clients.length === 0 && search !== "") {
-                clientList.innerHTML += `
-                    <li><button type="button" class="dropdown-item disabled">No se encontraron resultados</button></li>
-                `;
+                clientList.innerHTML += `<li><button type="button" class="dropdown-item disabled">No se encontraron resultados</button></li>`;
             } else {
                 clients.forEach(client => {
-                    const clientFullName = `${client.nombre.toUpperCase()} ${client.apellido.toUpperCase()}`;
+                    const clientFullName = `${(client.nombre || '').toUpperCase()} ${(client.apellido || '').toUpperCase()}`.trim();
                     const encodedClient = encodeURIComponent(JSON.stringify(client));
                     const clientItem = document.createElement("li");
                     clientItem.innerHTML = `
                         <button type="button" class="dropdown-item modern-dropdown-item" onclick='selectClientFromEncoded("${encodedClient}")'>
-                            ${clientFullName}
+                            ${clientFullName || 'SIN NOMBRE'}
                         </button>
                     `;
                     clientList.appendChild(clientItem);
                 });
             }
         })
-        .catch(error => {
-            console.error("Error al cargar clientes:", error);
-        });
+        .catch(error => console.error("Error al cargar clientes:", error));
     }
 
-    // Función para seleccionar cliente a partir del string codificado
     window.selectClientFromEncoded = function (encoded) {
         const client = JSON.parse(decodeURIComponent(encoded));
         selectClient(client);
     };
 
-    // Función para actualizar UI con cliente seleccionado
     window.selectClient = function (client) {
-        searchInput.value = `${client.nombre.toUpperCase()} ${client.apellido.toUpperCase()}`;
+        const nombre = (client.nombre || '').toUpperCase();
+        const apellido = (client.apellido || '').toUpperCase();
+
+        searchInput.value = `${nombre} ${apellido}`.trim();
         clienteIdInput.value = client.id ?? "";
 
         clientDetails.innerHTML = `
-            <p><strong>Nombre:</strong> ${client.nombre.toUpperCase()} ${client.apellido.toUpperCase()}</p>
+            <p><strong>Nombre:</strong> ${nombre} ${apellido}</p>
             <p><strong>Teléfono:</strong> ${client.telefono || "No registrado"}</p>
             <p><strong>Email:</strong> ${client.email || "No registrado"}</p>
             <p><strong>Dirección:</strong> ${client.comentarios || "No registrado"}</p>
@@ -1280,13 +1659,11 @@ document.addEventListener("DOMContentLoaded", function () {
         clientList.classList.remove("show");
     };
 
-    // Abrir modal para crear nuevo cliente
     window.openCreateClientModal = function () {
         const modalFormulario = new bootstrap.Modal(document.getElementById("modal_formulario"));
         modalFormulario.show();
     };
 
-    // Eventos para búsqueda dinámica
     searchInput.addEventListener("input", () => {
         const search = searchInput.value.trim();
         loadClients(search);
@@ -1302,104 +1679,67 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
-    // Carga inicial sin filtro
     loadClients();
-
-
-
-
-    // ------------------------ LÓGICA DE CREACIÓN DE CLIENTE ------------------------
-    const form = document.getElementById("form-cliente");
-    const modalFormularioElement = document.getElementById("modal_formulario");
-    const modalExitoElement = document.getElementById("cliente_creado");
-
-    if (!form || !modalFormularioElement || !modalExitoElement) {
-        console.error("Elementos de modal o formulario no encontrados. Revisa los IDs.");
-        return;
-    }
-
-    const modalFormulario = new bootstrap.Modal(modalFormularioElement);
-    const modalExito = new bootstrap.Modal(modalExitoElement);
-
-    form.addEventListener("submit", function (event) {
-        event.preventDefault();
-
-        const errorTelefono = document.getElementById("error-telefono");
-        const errorEmail = document.getElementById("error-email");
-        errorTelefono.style.display = "none";
-        errorEmail.style.display = "none";
-        errorTelefono.textContent = "";
-        errorEmail.textContent = "";
-
-        const nombre = document.getElementById("nombre").value.trim();
-        const apellido = document.getElementById("apellido").value.trim();
-        const telefono = document.getElementById("telefono").value.trim();
-        const email = document.getElementById("email").value.trim();
-        const comentarios = document.getElementById("comentarios").value.trim();
-
-        if (!nombre || !apellido || !telefono) {
-            alert("Todos los campos son obligatorios.");
-            return;
-        }
-
-        fetch("{{ route('clientes.check-unique') }}", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content,
-            },
-            body: JSON.stringify({ telefono, email }),
-        })
-        .then((res) => res.json())
-        .then((data) => {
-            if (data.success) {
-                fetch("{{ route('clientes.store') }}", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Accept": "application/json",
-                        "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content,
-                    },
-                    body: JSON.stringify({ nombre, apellido, telefono, email, comentarios }),
-                })
-                .then((res) => res.json())
-                .then((data) => {
-                    if (data.success) {
-                        bootstrap.Modal.getInstance(modalFormularioElement).hide();
-                        modalFormularioElement.addEventListener("hidden.bs.modal", function () {
-                            modalExito.show();
-                            loadClients();
-                        }, { once: true });
-                        form.reset();
-                    } else {
-                        alert(data.message || "Ocurrió un error al guardar el cliente.");
-                    }
-                })
-                .catch((error) => {
-                    console.error("Error al guardar el cliente:", error);
-                    alert("Error al guardar el cliente.");
-                });
-            } else {
-                if (data.error_telefono) {
-                    errorTelefono.textContent = data.error_telefono;
-                    errorTelefono.style.display = "block";
-                }
-                if (data.error_email) {
-                    errorEmail.textContent = data.error_email;
-                    errorEmail.style.display = "block";
-                }
-            }
-        })
-        .catch((error) => {
-            console.error("Error al verificar duplicados:", error);
-            alert("Error al verificar la existencia del teléfono o correo.");
-        });
-    });
-
-    modalExitoElement.addEventListener("hidden.bs.modal", function () {
-        // Opcional recarga
-    });
 });
 </script>
 
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const formCrear = document.getElementById("formCrearCliente");
+  if (!formCrear) return;
 
+  const CREATE_URL = "{{ route('clientes.store') }}";
+
+  formCrear.addEventListener("submit", async function (e) {
+    e.preventDefault();
+
+    try {
+      const fd = new FormData(formCrear);
+
+      const res = await fetch(CREATE_URL, {
+        method: "POST",
+        headers: {
+          "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content,
+          "Accept": "application/json",
+        },
+        body: fd
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert(data.message || "No se pudo crear el cliente.");
+        return;
+      }
+
+      const newClientId = data?.cliente_id ?? data?.id ?? null;
+
+      if (newClientId) {
+        const clientObj = data?.id ? data : {
+          id: newClientId,
+          nombre: fd.get('nombre') || '',
+          apellido: fd.get('apellido') || '',
+          telefono: fd.get('telefono') || '',
+          email: fd.get('email') || '',
+          comentarios: fd.get('comentarios') || '',
+        };
+
+        if (typeof window.selectClient === "function") window.selectClient(clientObj);
+
+        const el = document.getElementById("modal_formulario");
+        const instance = window.bootstrap?.Modal?.getOrCreateInstance(el);
+        instance?.hide();
+
+        formCrear.reset();
+
+        const searchInput = document.getElementById("search-client");
+        if (searchInput) searchInput.dispatchEvent(new Event("input"));
+      } else {
+        alert("Cliente creado, pero el servidor no regresó el ID del cliente.");
+      }
+    } catch (err) {
+      alert("Error al crear cliente.");
+    }
+  });
+});
+</script>
+@endsection

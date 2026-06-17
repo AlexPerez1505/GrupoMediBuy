@@ -1,14 +1,26 @@
 @extends('layouts.app')
 @section('title', 'Publicaciones')
 @section('titulo', 'Publicaciones')
-
 @section('content')
-@include('components.registro-uso')
+<div style="display:flex; justify-content:flex-start;">
+    <a href="{{ url('/home') }}"
+       style="display:inline-flex; align-items:center; gap:8px;
+              background:#ef4444; color:#ffffff;
+              padding:10px 20px; border-radius:10px;
+              font-weight:700; text-decoration:none;
+              transition:background .2s ease;"
+       onmouseover="this.style.background='#dc2626'"
+       onmouseout="this.style.background='#ef4444'">
+        <i class="bi bi-arrow-left"></i> Ir A Inicio
+    </a>
+</div>
+
+
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <link rel="stylesheet" href="{{ asset('css/publicaciones.css') }}?v={{ time() }}">
 
-<div id="contenedor-publicaciones" style="margin-top:110px;">
+<div id="contenedor-publicaciones">
     @include('partials.publicaciones-list', ['publicaciones' => $publicaciones])
 </div>
 

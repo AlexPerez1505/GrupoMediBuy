@@ -23,7 +23,7 @@ return new class extends Migration {
         if (Schema::hasColumn('prestamos', 'registro_id')) {
             DB::statement("
                 INSERT INTO prestamo_registro (prestamo_id, registro_id, created_at, updated_at)
-                SELECT id, registro_id, NOW(), NOW()
+                SELECT id, registro_id, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
                 FROM prestamos
                 WHERE registro_id IS NOT NULL
             ");

@@ -22,13 +22,28 @@ class Servicio extends Model
         'evidencia2',
         'evidencia3',
         'video',
-        'firma_digital', // <-- ESTE ES EL IMPORTANTE
+        'firma_digital',
         'observaciones',
-        'user_name'
+        'user_name',
+        'nombre_doctor',
+        'estado_proceso',
+        'mantenimiento_tipo',
+        'orden_id',
+        'orden_validada_at',
     ];
-        // Relación con los movimientos
-        public function movimientos()
-        {
-            return $this->hasMany(Movimiento::class);
-        }
+
+    protected $casts = [
+        'orden_validada_at' => 'datetime',
+        'fecha_adquisicion' => 'date',
+    ];
+
+    public function movimientos()
+    {
+        return $this->hasMany(Movimiento::class, 'servicio_id');
+    }
+
+    public function orden()
+    {
+        return $this->belongsTo(Orden::class, 'orden_id');
+    }
 }

@@ -1,3 +1,4 @@
+
 <?php
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
@@ -30,7 +31,6 @@ use App\Http\Controllers\ValoracionController;
 use Illuminate\Support\Facades\Mail;
 use App\Http\Controllers\RemisionController;
 use App\Models\Cliente;
-use App\Http\Controllers\OrdenController;
 use App\Http\Controllers\VentaController;
 use App\Http\Controllers\CartaGarantiaController;
 use App\Http\Controllers\ReciboController;
@@ -47,18 +47,55 @@ use App\Http\Controllers\ChecklistFirmaController;
 use App\Http\Controllers\IncidenteController;
 use App\Http\Controllers\EvidenciaController;
 use App\Http\Controllers\WhatsappPromotionController;
-use App\Http\Controllers\WhatsappWebhookController;
 use App\Http\Controllers\WhatsappInboxController;
+use App\Http\Controllers\WhatsappWebhookController;
 use App\Http\Middleware\VerifyCsrfToken;
 use App\Http\Controllers\CashTransactionController;
-// routes/web.php
 use App\Http\Controllers\PromoController;
+use App\Http\Controllers\NotificacionPagoController;
+use App\Http\Controllers\EnvioGastoController;
+use App\Http\Controllers\OrdenController;
+// routes/web.php
+use App\Http\Controllers\TicketController;
+use App\Http\Controllers\TicketCommentController;
+use App\Http\Controllers\AiChecklistController;
+use App\Http\Controllers\AiClienteController;
+use Illuminate\Support\Facades\Artisan;
+
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\NotificationsController; // 👈 ESTE FALTABA
+use App\Http\Controllers\CronPublicController;
+use App\Http\Controllers\PublicRemisionPdfController;
+use App\Http\Controllers\PagoController;
+use App\Http\Controllers\InventoryController;
+use App\Http\Controllers\InventoryCategoryController;
+use App\Http\Controllers\UploadController;
+use App\Http\Controllers\AiTicketController;
+use App\Http\Controllers\TicketChecklistController;
+
+use App\Http\Controllers\ComponentController;
+use App\Http\Controllers\EquipmentController;
+use App\Http\Controllers\RentalController;
+use App\Http\Controllers\MaintenanceController;
+use App\Http\Controllers\LogisticsController;
+use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\ComplianceLogController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\BentoController;
+//nueva ruta, (es para el excel)
+use App\Http\Controllers\ExcellController;
+
+
+Route::get('exportar/reporte', [ExcellController::class, 'exportarExcel'])
+     ->name('exportar.reporte');
 
 // Rutas de autenticación (sin middleware 'auth')
+Route::redirect('/', '/login');
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login'])->name('Login');
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
-
+    Route::get('/inventario/servicio', [ServicioController::class, 'index'])
+        ->name('inventario.servicio.index');
 // Rutas para recuperación de contraseña (sin middleware 'auth')
 Route::get('/reset-password/{token}', function ($token) {
     return view('reset_password', ['token' => $token]);
@@ -67,10 +104,8 @@ Route::post('/reset-password', [ResetPasswordController::class, 'reset'])->name(
 
 // Agrupar todas las demás rutas dentro de 'auth'
 Route::middleware(['auth'])->group(function () {
-    Route::get('/', function () {
-        return view('registro');
-    });
 
+Route::get('/clientes/{cliente}/seguimientos', [SeguimientoController::class, 'index'])->name('seguimientos.index');
     Route::get('/inventario', [RegistroController::class, 'mostrarProductos'])->name('inventario');
     Route::post('/registro/guardar', [RegistroController::class, 'guardarRegistro'])->name('registro.guardar');
     Route::get('/obtener-detalles/{id}', [RegistroController::class, 'obtenerDetalles']);
@@ -84,7 +119,7 @@ Route::middleware(['auth'])->group(function () {
 
 
     Route::get('/remisiones', function () { return view('remisiones'); });
-    Route::get('/agenda', function () { return view('agenda'); });
+
 
 
 
@@ -116,11 +151,17 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/cotizaciones/descargarPDF/{id}', [CotizacionController::class, 'descargarPDF'])->name('cotizaciones.descargarPDF');
 
-    Route::post('/eventos', [EventoController::class, 'store']);
-    Route::get('/eventos', [EventoController::class, 'index']);
-    Route::put('/eventos/{id}', [EventoController::class, 'update']);
-    Route::get('evento/{id}', [EventoController::class, 'show']);
-    Route::delete('/eventos/{id}', [EventoController::class, 'destroy']);
+ Route::controller(EventoController::class)->group(function () {
+    // API de agenda
+    Route::get('/eventos',        'index')->name('eventos.index');
+    Route::post('/eventos',       'store')->name('eventos.store');
+    Route::get('/evento/{id}',    'show')->name('eventos.show');
+    Route::put('/eventos/{id}',   'update')->name('eventos.update');
+    Route::delete('/eventos/{id}','destroy')->name('eventos.destroy');
+
+    // <<< NUEVO: endpoint para invitados
+    Route::get('/agenda/usuarios','usuarios')->name('agenda.users');
+});
 
     Route::get('/servicio', function () { return view('servicio'); });
     Route::post('/users/store', [UserController::class, 'store'])->name('users.store');
@@ -137,15 +178,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/paquete/{id}/productos', [PaqueteController::class, 'getProductosDePaquete']);
     Route::get('/paquetes/search', [PaqueteController::class, 'search'])->name('paquetes.search');
 
-    // Rutas para guías y entregas
-    Route::get('/guias', [GuiaController::class, 'create'])->name('guias.create');
-    Route::post('/guias', [GuiaController::class, 'store'])->name('guias.store');
 
-    Route::get('/entrega', [EntregaGuiaController::class, 'create'])->name('entrega.create');
-    Route::post('/entrega', [EntregaGuiaController::class, 'store'])->name('entrega.store');
-
-    // Vista con entregas
-    Route::get('/entregas', [EntregaGuiaController::class, 'index'])->name('entregas.index');
 
     
 });
@@ -197,8 +230,7 @@ Route::put('/camionetas/{id}', [CamionetaController::class, 'update'])->name('ca
 
 Route::resource('fichas', FichaTecnicaController::class);
 Route::get('fichas/{ficha}/download', [FichaTecnicaController::class, 'download'])->name('fichas.download');
-Route::get('/procesos/{id}/stock', [ProcesoEquipoController::class, 'stock'])->name('proceso.stock');
-
+Route::get('procesos/{id}/stock', [ProcesoEquipoController::class, 'stock'])->name('stock');
 
 Route::get('/solicitudes', [SolicitudMaterialController::class, 'index'])->name('solicitudes.index');
 Route::get('/solicitudes/crear', [SolicitudMaterialController::class, 'create'])->name('solicitudes.create');
@@ -219,7 +251,7 @@ Route::get('/eventos/usuarios', [EventoController::class, 'usuarios']);
 Route::post('/servicio', [ServicioController::class, 'store'])->name('servicio.store');
 
 Route::get('/detalles/{id}', [ServicioController::class, 'detalles'])->name('detalles.equipo');
-Route::get('/inventario/servicio', [ServicioController::class, 'index'])->name('inventarioservicio');
+
 
 // Mostrar formulario de cada tipo de movimiento
 Route::get('/movimientos/salida-mantenimiento/{id}', [MovimientoController::class, 'salidaMantenimiento'])->name('movimientos.salidaMantenimiento');
@@ -273,58 +305,58 @@ Route::get('/mi-historial', [AsistenciaController::class, 'miHistorial'])
     ->middleware('auth');
 
 
-// --- PAGOS ---
+Route::get('/cuentas-por-cobrar', [RemisionController::class, 'cuentasPorCobrar'])->name('remisions.cuentasPorCobrar');
+Route::put('/pagos_financiamiento/{id}/marcar-pagado', [VentaController::class, 'marcarPagado'])->name('pagos.marcarPagado');
 Route::post('/pagos', [PagoController::class, 'store'])->name('pagos.store');
-Route::get('/pagos/{item}', [PagoController::class, 'index'])->name('pagos.index');
 Route::get('/pagos/{pago}/recibo', [VentaController::class, 'reciboPago'])->name('pagos.recibo');
+Route::get('/pagos/{item}', [PagoController::class, 'index'])->name('pagos.index');
 Route::get('/pagos/{item}/recibo', [PagoController::class, 'generarPDF'])->name('pagos.recibo.pdf');
 Route::get('/pagos/generar-pdf', [PagoController::class, 'generarPDF'])->name('pagos.generarPDF');
-Route::get('/pagos/seguimiento/{item_id}', [PagoController::class, 'seguimientoInteligente'])->name('pagos.seguimiento');
-
-// --- CUENTAS POR COBRAR ---
-Route::get('/cuentas-por-cobrar', [RemisionController::class, 'cuentasPorCobrar'])->name('remisions.cuentasPorCobrar');
-
-// --- PAGOS FINANCIAMIENTO ---
-Route::put('/pagos_financiamiento/{id}/marcar-pagado', [VentaController::class, 'marcarPagado'])->name('pagos.marcarPagado');
-Route::get('/ventas/pendientes', [VentaController::class, 'pendientes'])->name('ventas.pendientes');
-// --- VENTAS ---
 Route::middleware('auth')->group(function () {
     Route::get('/ventas/crear', [VentaController::class, 'create'])->name('ventas.create');
     Route::post('/ventas', [VentaController::class, 'store'])->name('ventas.store');
     Route::get('/ventas/deudores', [VentaController::class, 'deudores'])->name('ventas.deudores');
+    // Nueva ruta para PDF
     Route::get('/ventas/{venta}/pdf', [VentaController::class, 'pdf'])->name('ventas.pdf');
 });
 Route::middleware('web')->get('/ventas/{venta}', [VentaController::class, 'show'])->name('ventas.show');
-Route::get('/ventas', [VentaController::class, 'index'])->name('ventas.index');
-Route::get('/ventas/{venta}/pagos', [VentaController::class, 'indexPagos'])->name('ventas.pagos.index');
-Route::post('/ventas/{venta}/pagos', [VentaController::class, 'storePago'])->name('ventas.pagos.store');
-Route::get('/ventas/{venta}/edit', [VentaController::class, 'edit'])->name('ventas.edit');
-Route::put('/ventas/{venta}', [VentaController::class, 'update'])->name('ventas.update');
-Route::get('/api/ventas', [VentaController::class, 'apiVentas']);
-Route::get('/venta/{venta}/recibo-final', [VentaController::class, 'reciboFinal'])->name('venta.recibo.final');
 
-// --- CARTA GARANTÍA ---
+Route::get('ventas/{venta}/edit', [VentaController::class, 'edit'])->name('ventas.edit');
+Route::put('ventas/{venta}', [VentaController::class, 'update'])->name('ventas.update');
+Route::get('/ventas', [VentaController::class, 'index'])->name('ventas.index');
+Route::get('/api/ventas', [VentaController::class, 'apiVentas']);
 Route::get('/carta-garantia', [CartaGarantiaController::class, 'index'])->name('carta.index');
 Route::get('/carta-garantia/create', [CartaGarantiaController::class, 'create'])->name('carta.create');
 Route::post('/carta-garantia', [CartaGarantiaController::class, 'store'])->name('carta.store');
 Route::get('/carta-garantia/{id}/descargar', [CartaGarantiaController::class, 'descargar'])->name('carta.descargar');
 Route::delete('/carta-garantia/{id}', [CartaGarantiaController::class, 'destroy'])->name('carta.destroy');
+Route::get('/pagos/seguimiento/{item_id}', [PagoController::class, 'seguimientoInteligente'])->name('pagos.seguimiento');
+Route::get('/ventas/{venta}/pagos', [VentaController::class, 'indexPagos'])->name('ventas.pagos.index');
+Route::post('/ventas/{venta}/pagos', [VentaController::class, 'storePago'])->name('ventas.pagos.store');
 
-// --- RECIBOS ---
+
+
 Route::get('/verificar-recibo', [ReciboController::class, 'formularioVerificacion'])->name('recibo.verificar');
 Route::post('/verificar-recibo', [ReciboController::class, 'verificar'])->name('recibo.verificar.post');
 
+Route::get('/venta/{venta}/recibo-final', [VentaController::class, 'reciboFinal'])->name('venta.recibo.final');
 // --- NOTIFICACIONES ---
-Route::post('/financiamientos/notificar/{pago}', [NotificacionPagoController::class, 'reenviar']);
+Route::middleware(['auth'])->group(function () {
+    Route::post(
+        '/financiamientos/notificar/{pago}',
+        [NotificacionPagoController::class, 'reenviar']
+    )->name('financiamientos.notificar');
+});
 
-// --- CLIENTES ---
 Route::get('/buscar-clientes', [VentaController::class, 'buscarClientes'])->name('clientes.buscar');
-Route::get('/encontrar-clientes', [PropuestaController::class, 'encontrarClientes'])->name('clientes.encontrar');
 
-// --- SEGUIMIENTOS ---
-Route::get('/clientes/{cliente}/seguimientos', [SeguimientoController::class, 'index'])->name('seguimientos.index');
+// Seguimientos
+
 Route::post('/clientes/{cliente}/seguimientos', [SeguimientoController::class, 'store'])->name('seguimientos.store');
 Route::delete('/seguimientos/{id}', [SeguimientoController::class, 'destroy'])->name('seguimientos.destroy');
+
+Route::get('/encontrar-clientes', [PropuestaController::class, 'encontrarClientes'])->name('clientes.encontrar');
+Route::get('/buscar-clientes', [VentaController::class, 'buscarClientes'])->name('clientes.buscar');
 
 
 Route::get('/whatsapp/enviar/{venta}', [App\Http\Controllers\WhatsAppController::class, 'enviarRecordatorio']);
@@ -334,7 +366,7 @@ Route::get('/cuentas/crear', [CuentaController::class, 'create'])->name('cuentas
 Route::post('/cuentas', [CuentaController::class, 'store'])->name('cuentas.store');
 Route::get('/cuentas', [CuentaController::class, 'index'])->name('cuentas.index');
 Route::delete('/cuentas/{id}', [CuentaController::class, 'destroy'])->name('cuentas.destroy');
-Route::get('/cuentas/exportar/pdf', [CuentaController::class, 'exportarPDF'])->name('cuentas.exportar.pdf');
+Route::post('/cuentas/exportar-pdf', [CuentaController::class, 'exportarPdf'])->name('cuentas.exportar.pdf');
 Route::get('/cuentas/{cuenta}/edit', [CuentaController::class, 'edit'])->name('cuentas.edit');
 Route::put('/cuentas/{cuenta}', [CuentaController::class, 'update'])->name('cuentas.update');
 
@@ -377,12 +409,9 @@ Route::get('/reporte-pedidos', [\App\Http\Controllers\PedidoController::class, '
 Route::get('/recepciones/pdf', [RecepcionController::class, 'exportarPDF'])->name('recepciones.timeline.pdf');
 
 
-
-
-
-
 use App\Models\ModuloUso;
 use Illuminate\Support\Facades\Auth;
+
 
 Route::get('/home', function () {
     $tusAccesos = collect([
@@ -406,18 +435,17 @@ Route::get('/home', function () {
         route('asistencias.index', [], false),
     ]);
 
-   $modulosRecientes = ModuloUso::where('user_id', Auth::id())
-    ->where('updated_at', '>=', now()->subHours(12))
-    ->orderByDesc('updated_at')
-    ->get()
-    ->filter(function ($modulo) use ($tusAccesos) {
-        return !$tusAccesos->contains(url($modulo->ruta));
-    })
-    ->take(6);
-
+    $modulosRecientes = ModuloUso::where('user_id', Auth::id())
+        ->where('updated_at', '>=', now()->subHours(12))
+        ->orderByDesc('updated_at')
+        ->get()
+        ->filter(function ($modulo) use ($tusAccesos) {
+            return !$tusAccesos->contains(url($modulo->ruta));
+        })
+        ->take(6);
 
     return view('home', compact('modulosRecientes'));
-});
+})->middleware('auth'); // ← ESTE ES EL CAMBIO
 
 
 
@@ -444,52 +472,12 @@ Route::get('/registros-disponibles', [RegistroController::class, 'registrosStock
 Route::get('/registro-info/{id}', [RegistroController::class, 'info']);
 
 
+Route::put('/ventas/{venta}/pagos-financiamiento', [VentaController::class, 'updatePagosFinanciamiento'])
+    ->name('ventas.pagosFinanciamiento.update');
 
 
 
-Route::get('orden/create', [OrdenController::class, 'create'])->name('orden.create');
-Route::post('orden',       [OrdenController::class, 'store'])->name('orden.store');
-Route::get('orden/{orden}/pdf', [OrdenController::class, 'pdf'])->name('orden.pdf');
-Route::resource('aparatos', AparatoController::class);
-
-Route::get('aparatos/{aparato}/checklist-items', [AparatoController::class, 'checklistItems']);
-
-
-// Resourceful routes
-Route::resource('items', ItemController::class);
-Route::resource('item-partes', ItemParteController::class);
-Route::resource('checklists', ChecklistController::class);
-Route::resource('checklist-firmas', ChecklistFirmaController::class);
-Route::resource('incidentes', IncidenteController::class);
-Route::resource('evidencias', EvidenciaController::class);
-
-Route::get('checklists/{checklist}/proceso', [App\Http\Controllers\ChecklistController::class, 'proceso'])
-    ->name('checklists.proceso');
-Route::post('checklists/{checklist}/proceso/guardar-paso', [App\Http\Controllers\ChecklistController::class, 'guardarPaso'])
-    ->name('checklists.proceso.guardarPaso');
-
-
-
-
-Route::get('/ventas/{venta}/productos', [VentaController::class, 'productos'])->name('ventas.productos');
-
-
-// Mostrar el formulario del checklist para una venta completa
-Route::get('/checklists/{ventaId}/wizard', [ChecklistController::class, 'wizard'])->name('checklists.wizard');
-Route::post('/checklists/{ventaId}/guardar', [ChecklistController::class, 'guardarPaso'])->name('checklists.guardarPaso');
-Route::get('/checklists/{ventaId}/resumen', [ChecklistController::class, 'resumen'])->name('checklists.resumen');
-
-
-Route::prefix('checklists/{venta}')->middleware('auth')->group(function() {
-    Route::get('wizard',        [ChecklistController::class, 'wizard'])->name('checklists.wizard');
-    Route::get('ingenieria',    [ChecklistController::class, 'ingenieria'])->name('checklists.ingenieria');
-    Route::post('ingenieria',   [ChecklistController::class, 'guardarIngenieria'])->name('checklists.guardarIngenieria');
-    Route::get('embalaje',      [ChecklistController::class, 'embalaje'])->name('checklists.embalaje');
-    Route::post('embalaje',     [ChecklistController::class, 'guardarEmbalaje'])->name('checklists.guardarEmbalaje');
-    Route::get('entrega',       [ChecklistController::class, 'entrega'])->name('checklists.entrega');
-    Route::post('entrega',      [ChecklistController::class, 'guardarEntrega'])->name('checklists.guardarEntrega');
-});
-
+Route::get('registros/{id}/imprimir-barcode', [App\Http\Controllers\RegistroController::class, 'imprimirBarcode'])->name('registros.imprimir-barcode');
 
 
 // GET: Mostrar el formulario de recepción hospitalaria
@@ -506,15 +494,26 @@ Route::put('/ventas/{venta}/pagos-financiamiento', [VentaController::class, 'upd
     ->name('ventas.pagosFinanciamiento.update');
 
 
+Route::prefix('checklists/{venta}')->middleware('auth')->group(function() {
+    Route::get('wizard',        [ChecklistController::class, 'wizard'])->name('checklists.wizard');
+    Route::get('ingenieria',    [ChecklistController::class, 'ingenieria'])->name('checklists.ingenieria');
+    Route::post('ingenieria',   [ChecklistController::class, 'guardarIngenieria'])->name('checklists.guardarIngenieria');
+    Route::get('embalaje',      [ChecklistController::class, 'embalaje'])->name('checklists.embalaje');
+    Route::post('embalaje',     [ChecklistController::class, 'guardarEmbalaje'])->name('checklists.guardarEmbalaje');
+    Route::get('entrega',       [ChecklistController::class, 'entrega'])->name('checklists.entrega');
+    Route::post('entrega',      [ChecklistController::class, 'guardarEntrega'])->name('checklists.guardarEntrega');
+});
+
+
 Route::get('/productos/create', [ProductoController::class, 'create'])->name('productos.create');
 Route::post('/productos', [ProductoController::class, 'store'])->name('productos.store');
 Route::get('/productos/cards', [ProductoController::class, 'cardsVista'])->name('productos.cards');
 Route::delete('/productos/{producto}', [ProductoController::class, 'destroy'])->name('productos.destroy');
 Route::get('/productos/{producto}/edit', [ProductoController::class, 'edit'])->name('productos.edit');
 Route::put('/productos/{producto}', [ProductoController::class, 'update'])->name('productos.update');
-Route::get('/ventas/{venta}/etiqueta', [VentaController::class, 'etiqueta'])->name('ventas.etiqueta');
 
-// routes/web.php
+
+
 // routes/web.php
 Route::resource('prestamos', PrestamoController::class); // incluye create/show/etc
 Route::post('registros/lookup', [PrestamoController::class, 'lookupBySerie'])->name('registros.lookup');
@@ -525,14 +524,64 @@ Route::get('prestamos/wizard', fn () => redirect()->route('prestamos.create'))
 // routes/web.php
 Route::get('prestamos/{id}/pdf', [PrestamoController::class, 'pdf'])->name('prestamos.pdf');
 
+
+
+Route::get('/ventas/{venta}/etiqueta', [VentaController::class, 'etiqueta'])->name('ventas.etiqueta');
+
+// routes/web.php
+Route::resource('prestamos', PrestamoController::class); // index/create/store/show/edit/update/destroy
+Route::post('registros/lookup', [PrestamoController::class, 'lookupBySerie'])->name('registros.lookup');
+Route::resource('envios-gastos', EnvioGastoController::class)
+        ->parameters(['envios-gastos' => 'envio']);
+// (Opcional) alias por si tienes enlaces viejos a 'prestamos.wizard'
+Route::get('prestamos/wizard', fn () => redirect()->route('prestamos.create'))
+     ->name('prestamos.wizard');
+
+// PDF del préstamo
+Route::get('prestamos/{id}/pdf', [PrestamoController::class, 'pdf'])->name('prestamos.pdf');
+
+
+/*
+|----------------------------------------------------------------------
+| Nueva página de escaneo (salida / devolución / vendido)
+|----------------------------------------------------------------------
+| UI moderna en /prestamos/{id}/scan con KPIs en vivo
+*/
+Route::get('prestamos/{prestamo}/scan', [PrestamoController::class, 'returnPage'])->name('prestamos.scan');
+Route::get('prestamos/{prestamo}/scan-resumen', [PrestamoController::class, 'returnResumen'])->name('prestamos.scan.resumen');
+
+Route::post('prestamos/{prestamo}/scan-salida', [PrestamoController::class, 'scanSalida'])->name('prestamos.scan.salida');
+Route::post('prestamos/{prestamo}/scan-devolucion', [PrestamoController::class, 'scanDevolucion'])->name('prestamos.scan.devolucion');
+Route::post('prestamos/{prestamo}/scan-vendido', [PrestamoController::class, 'scanVendido'])->name('prestamos.scan.vendido');
+
+
+/*
+|----------------------------------------------------------------------
+| Compatibilidad con rutas antiguas (/return/*)
+|----------------------------------------------------------------------
+| Mantén tus enlaces viejos funcionando. Redirigimos a la UI nueva
+| y conservamos el POST de "return/scan" que ahora reutiliza la lógica
+| de scanDevolucion dentro del controlador.
+*/
+Route::get('prestamos/{prestamo}/return', function ($prestamo) {
+    return redirect()->route('prestamos.scan', $prestamo);
+})->name('prestamos.return.page');
+
+Route::get('prestamos/{prestamo}/return/resumen', function ($prestamo) {
+    return redirect()->route('prestamos.scan.resumen', $prestamo);
+})->name('prestamos.return.resumen');
+
+// Alias legacy: sigue aceptando POST a /return/scan (marca DEVOLUCIÓN)
+Route::post('prestamos/{prestamo}/return/scan', [PrestamoController::class, 'returnScan'])->name('prestamos.return.scan');
+
 Route::middleware(['auth'])->group(function () {
-// Compatibilidad con rutas viejas "direct"
-Route::get('/promos/whatsapp/direct', [WhatsappPromotionController::class, 'directCreate'])
-    ->name('promos.whatsapp.direct.create');
+    // Formulario + filtros
+    Route::get('/promos/whatsapp/direct', [WhatsappPromotionController::class, 'directCreate'])
+        ->name('promos.whatsapp.direct.create');
 
-Route::post('/promos/whatsapp/direct', [WhatsappPromotionController::class, 'directSend'])
-    ->name('promos.whatsapp.direct.send');
-
+    // Envío
+    Route::post('/promos/whatsapp/direct', [WhatsappPromotionController::class, 'directSend'])
+        ->name('promos.whatsapp.direct.send');
         // ->middleware('throttle:wa-promos'); // <- opcional si quieres limitar la tasa
 });
 
@@ -552,6 +601,7 @@ Route::post('/ventas/{venta}/whatsapp/plantilla', [VentaController::class, 'send
     ->name('ventas.whatsapp.plantilla');
 
 
+
 // ✅ Chat interno (requiere auth)
 Route::middleware('auth')->group(function () {
     Route::get ('/whatsapp/inbox', [WhatsappInboxController::class, 'index'])->name('wa.inbox');
@@ -561,11 +611,13 @@ Route::middleware('auth')->group(function () {
     Route::get ('/whatsapp/chat/{msisdn}/fetch', [WhatsappInboxController::class, 'fetch'])->name('wa.chat.fetch');
     Route::get('/whatsapp/media/{mediaId}', [WhatsappMediaController::class, 'show'])
         ->name('wa.media');
+        // routes/web.php (acciones desde tu panel)
     Route::post('/whatsapp/claim/{msisdn}', [WhatsappWebhookController::class, 'claimByAgent'])
         ->name('wa.claim');
     Route::post('/whatsapp/close/{msisdn}', [WhatsappWebhookController::class, 'closeByAgent'])
         ->name('wa.close');
 });
+
 Route::middleware(['auth'])->group(function () { 
     Route::get('/transactions',        [CashTransactionController::class,'index'])->name('transactions.index');
     Route::get('/transactions/create', [CashTransactionController::class,'create'])->name('transactions.create');
@@ -592,10 +644,508 @@ Route::middleware(['auth'])->group(function () {
 // Rutas públicas para el celular del usuario (sin login)
 Route::get('/qr/{token}',  [CashTransactionController::class, 'showQrForm'])->name('transactions.qr.show');
 Route::post('/qr/{token}', [CashTransactionController::class, 'ackDisbursementWithQr'])->name('transactions.qr.ack');
+
 Route::middleware(['auth']) // opcional
     ->prefix('promos')
     ->group(function () {
         Route::get('/promo-todo', [PromoController::class,'create'])->name('promos.promo_todo.form');
         Route::post('/promo-todo', [PromoController::class,'send'])->name('promos.promo_todo.send');
     });
-        Route::resource('paquetes', PaqueteController::class);
+ Route::resource('paquetes', PaqueteController::class);
+
+Route::middleware(['auth'])->group(function () {
+
+    /* =========================
+     * GUIAS (SPA + JSON AJAX)
+     * ========================= */
+    Route::prefix('guias')->name('guias.')->controller(GuiaController::class)->group(function () {
+        Route::get('/',            'create')->name('create');         // Vista SPA
+        Route::post('/',           'store')->name('store');           // Crear guía (AJAX o normal)
+        Route::get('/disponibles', 'disponibles')->name('disponibles'); // JSON: guías sin entrega (cards)
+        Route::get('/search',      'getGuias')->name('search');       // JSON: buscador (q/suggest/per_page/solo_disponibles)
+    });
+
+    /* ==================================
+     * ENTREGAS (vista + JSON para tabla)
+     * ================================== */
+    // Formulario de captura (mantienes /entrega como en tus vistas)
+    Route::get('/entrega', [EntregaGuiaController::class, 'create'])->name('entrega.create');
+
+    // Listado + acciones
+    Route::prefix('entregas')->name('entregas.')->controller(EntregaGuiaController::class)->group(function () {
+        Route::get('/',     'index')->name('index');     // Vista listado (tabla custom)
+        Route::post('/',    'store')->name('store');     // Registrar entrega (AJAX o normal)
+
+        // JSON para tabla custom (la que usas en la vista con fetch a route('entregas.list'))
+        Route::get('/list', 'list')->name('list');       // q/page/per_page
+
+        // (Opcional) Compatibilidad con tu DataTable anterior
+        Route::get('/data', 'data')->name('data');
+    });
+});
+// routes/web.php
+Route::get('/guias/resumen', [\App\Http\Controllers\GuiaController::class, 'resumen'])
+    ->name('guias.resumen');   // <-- NUEVO
+Route::middleware(['auth'])->group(function () {
+
+    // YA EXISTENTES
+    Route::get('/registros/create', [RegistroController::class, 'create'])->name('registros.create');
+    Route::post('/registros/guardar', [RegistroController::class, 'guardarRegistro'])->name('registros.guardar');
+
+    Route::get('/registros', [RegistroController::class, 'index'])->name('registros.index');
+    Route::get('/registros/{id}/detalles', [RegistroController::class, 'obtenerDetalles'])->name('registros.detalles');
+    Route::get('/registros/{id}/barcode', [RegistroController::class, 'imprimirBarcode'])->name('registros.imprimir-barcode');
+
+    // Opcionales
+    Route::get('/inventario/buscar', [RegistroController::class, 'vistaBuscar'])->name('inventario.buscar');
+    Route::post('/inventario/buscar', [RegistroController::class, 'buscarSubmit'])->name('inventario.buscar.submit');
+    Route::get('/inventario/detalle/{id}', [RegistroController::class, 'mostrarProductoDetalle'])->name('inventario.detalle');
+
+    /* ====== NUEVAS RUTAS: EDITAR / ACTUALIZAR / ELIMINAR ====== */
+
+    // Editar (formulario)
+    Route::get('/registros/{id}/edit', [RegistroController::class, 'edit'])->name('registros.edit');
+
+    // Actualizar (PUT/PATCH desde el form de edit)
+    Route::match(['put', 'patch'], '/registros/{id}', [RegistroController::class, 'update'])->name('registros.update');
+
+    // Eliminar (usa @method('DELETE') en el form)
+    Route::delete('/registros/{id}', [RegistroController::class, 'eliminarRegistro'])->name('registros.destroy');
+
+    /* ====== ALIAS OPCIONALES (por compatibilidad con lo que ya tenías en las vistas) ====== */
+
+    // Alias para editar (si en alguna vista usas route('inventario.editar', $id))
+    Route::get('/inventario/editar/{id}', [RegistroController::class, 'edit'])->name('inventario.editar');
+
+    // Alias para eliminar (si en alguna vista usas route('registros.eliminar', $id))
+    Route::delete('/registros/eliminar/{id}', [RegistroController::class, 'eliminarRegistro'])->name('registros.eliminar');
+
+    // Alias antiguo para actualizar vía POST (si lo usabas)
+    Route::post('/registros/{id}/actualizar', [RegistroController::class, 'actualizarRegistro'])->name('registros.actualizar');
+});
+Route::get('/inv-kits', [InvKitController::class,'index']);
+Route::get('/inv-kits/{slug}', [InvKitController::class,'show']);
+
+Route::get('/procesos/{id}/stock', function ($id) {
+    return view('procesos.stock', ['id' => $id]);
+})->name('proceso.stock');
+
+
+Route::get('/envios-gastos',        [EnvioGastoController::class, 'index'])->name('envios-gastos.index');
+Route::get('/envios-gastos/create', [EnvioGastoController::class, 'create'])->name('envios-gastos.create');
+Route::post('/envios-gastos',       [EnvioGastoController::class, 'store'])->name('envios-gastos.store');
+Route::post('/clientes/check-telefono', [ClienteController::class, 'checkTelefono'])
+    ->name('clientes.checkTelefono');
+        Route::delete('/ventas/{venta}', [VentaController::class, 'destroy'])->name('ventas.destroy');
+        
+Route::get('/ventas/{venta}/pdf-alt', [VentaController::class, 'pdfAlt'])
+     ->middleware('auth')
+     ->name('ventas.pdf.alt');
+
+Route::get('/ventas/{venta}/pdf-alt/preview', [VentaController::class, 'previewPdfAlt'])
+     ->middleware('auth')
+     ->name('ventas.pdf.alt.preview');
+     
+     Route::get('/inventarioservicio', [InventarioServicioController::class, 'index'])->name('inventarioservicio');
+
+
+
+Route::middleware('auth')->group(function () {
+    // CRUD
+    Route::get('/tickets',                 [TicketController::class, 'index'])->name('tickets.index');
+    Route::get('/tickets/create',          [TicketController::class, 'create'])->name('tickets.create');
+    Route::post('/tickets',                [TicketController::class, 'store'])->name('tickets.store');
+    Route::get('/tickets/{ticket}',        [TicketController::class, 'show'])->name('tickets.show');
+    Route::get('/tickets/{ticket}/edit',   [TicketController::class, 'edit'])->name('tickets.edit');
+    Route::put('/tickets/{ticket}',        [TicketController::class, 'update'])->name('tickets.update');
+    Route::delete('/tickets/{ticket}',     [TicketController::class, 'destroy'])->name('tickets.destroy');
+
+    // Acciones
+    Route::post('/tickets/{ticket}/status',    [TicketController::class, 'changeStatus'])->name('tickets.status');
+
+    // Watchers (dos rutas porque tus blades llaman a .sync y a .update)
+    Route::post('/tickets/{ticket}/watchers',  [TicketController::class, 'syncWatchers'])->name('tickets.watchers.sync');
+    Route::put('/tickets/{ticket}/watchers',   [TicketController::class, 'updateWatchers'])->name('tickets.watchers.update');
+
+    // Comentarios
+    Route::post('/tickets/{ticket}/comments',  [TicketController::class, 'storeComment'])->name('tickets.comments.store');
+});
+
+Route::post('/ai/checklist', [AiChecklistController::class, 'suggest'])->name('ai.checklist');
+
+// IA – buscador de clientes
+Route::get('/clientes/search', [ClienteController::class, 'search'])
+    ->name('clientes.search')
+    ->middleware('auth'); // opcional según tu proyecto
+   Route::resource('ordenes', OrdenController::class)->names('ordenes');
+Route::get('ordenes/{orden}/pdf', [OrdenController::class, 'pdf'])->name('ordenes.pdf');
+Route::post('/ordenes/ai-checklist', [OrdenController::class, 'aiChecklist'])->name('ordenes.aiChecklist');
+Route::get('/ordenes/{orden}/remision-pdf', [OrdenController::class, 'remisionPdf'])
+    ->name('ordenes.remision.pdf');
+    
+
+Route::middleware(['web','auth'])->group(function () {
+    // Eliminar pagos PENDIENTES y SIN financiamiento
+    Route::delete('/pagos/{pago}', [PagoController::class, 'destroy'])
+        ->name('pagos.destroy');
+});
+    
+Route::get('/venta/{venta}/pagos-global-pdf', [VentaController::class, 'pagosGlobalPdf'])
+    ->name('venta.pagos-global.pdf');
+
+// Crear
+// Crear (RUTA FIJA primero)
+Route::get('/paquetes/crear', [PaqueteController::class, 'create'])
+    ->name('paquetes.create');
+
+Route::post('/paquetes', [PaqueteController::class, 'store'])
+    ->name('paquetes.store');
+
+// Ver detalle de un paquete (show) – SOLO números
+Route::get('/paquetes/{paquete}', [PaqueteController::class, 'show'])
+    ->whereNumber('paquete')
+    ->name('paquetes.show');
+
+// Editar
+Route::get('/paquetes/{paquete}/editar', [PaqueteController::class, 'edit'])
+    ->whereNumber('paquete')
+    ->name('paquetes.edit');
+
+Route::put('/paquetes/{paquete}', [PaqueteController::class, 'update'])
+    ->whereNumber('paquete')
+    ->name('paquetes.update');
+
+// Eliminar
+Route::delete('/paquetes/{paquete}', [PaqueteController::class, 'destroy'])
+    ->whereNumber('paquete')
+    ->name('paquetes.destroy');
+    
+    // Mostrar la ficha completa del equipo
+Route::get('/servicios/{servicio}', [App\Http\Controllers\ServicioController::class, 'show'])
+    ->name('servicios.show');
+// Listado (Mantenimiento interno)
+Route::get('/mantenimiento-interno', [App\Http\Controllers\ServicioController::class, 'index'])
+    ->name('servicios.index');
+    
+    
+   Route::put('/perfil/password', [PerfilController::class, 'updatePassword'])
+        ->name('perfil.updatePassword');
+
+
+        Route::middleware('auth')->group(function () {
+    Route::post('/notificaciones/read', [NotificationController::class, 'markAsRead'])
+        ->name('notifications.read');
+
+    Route::post('/notificaciones/read-all', [NotificationController::class, 'markAllAsRead'])
+        ->name('notifications.readAll');
+});
+
+Route::get('/cron/eventos/reminders', function (Request $request) {
+    // 1) Seguridad por token
+    if ($request->query('token') !== config('services.agenda_cron.token')) {
+        abort(403, 'Token inválido');
+    }
+
+    // 2) Ejecutamos el comando agenda:run
+    //    Puedes ajustar limit y window si quieres
+    Artisan::call('agenda:run', [
+        '--limit'  => 200,
+        '--window' => 5,    // minutos hacia atrás para considerar next_reminder_at
+    ]);
+
+    return response()->json([
+        'ok'   => true,
+        'cmd'  => 'agenda:run',
+        'out'  => Artisan::output(), // lo que imprime el comando (debug)
+    ]);
+});
+
+Route::middleware('auth')->group(function () {
+
+    // ✅ Página de agenda (la vista)
+    Route::view('/agenda', 'agenda')->name('agenda');
+
+    // ✅ Feed JSON para FullCalendar
+    Route::get('/agenda/events', [EventoController::class, 'index'])->name('agenda.events');
+
+    // 🔔 Notificaciones
+    Route::get('/notifications/poll', [NotificationsController::class, 'poll'])->name('notifications.poll');
+    Route::post('/notifications/read', [NotificationsController::class, 'read'])->name('notifications.read');
+    Route::post('/notifications/read-all', [NotificationsController::class, 'readAll'])->name('notifications.readAll');
+});
+
+
+    Route::post('/financiamientos/notificar/{pagoId}', [\App\Http\Controllers\VentaController::class, 'notificarPagoFinanciamiento'])
+    ->middleware('auth');
+    Route::post('/financiamientos/notificar/{pagoId}', [VentaController::class, 'notificarPagoFinanciamiento'])
+    ->middleware('auth');
+
+Route::post('/financiamientos/notificar-pendientes', [VentaController::class, 'notificarPagosPendientesHoyYAtrasados'])
+    ->middleware('auth');
+
+Route::get('/cron/financiamientos/notificar', [CronPublicController::class, 'financiamientosNotificar'])
+    ->middleware('throttle:10,1'); // ✅ anti-spam
+
+    
+    
+     // ✅ Importar Excel (1 o 2 archivos)
+    Route::post('/asistencias/importar-excel', [AsistenciaController::class, 'importarExcel'])
+        ->name('asistencias.importarExcel');
+
+    // Verificar si ya tiene entrada (para cambiar a salida)
+    Route::get('/asistencia/verificar', [AsistenciaController::class, 'verificarAsistencia'])
+        ->name('asistencias.verificar');
+
+Route::get('/asistencias/historial', [AsistenciaController::class, 'historialHorizontal'])
+    ->name('asistencias.horizontal');
+    
+Route::get('/remisions/{remision}/ticket', [RemisionController::class, 'ticketMantenimiento'])
+  ->name('remisions.ticketMantenimiento');
+
+Route::get('/remisions/{remision}/ticket-pdf', [RemisionController::class, 'ticketMantenimientoPdf'])
+  ->name('remisions.ticketMantenimientoPdf');
+Route::get('/public/remision/{remision}/ticket-mantenimiento', [PublicRemisionPdfController::class, 'ticketMantenimiento'])
+    ->name('public.remision.ticket_mantenimiento')
+    ->middleware('signed'); // ✅ opcional si ya validas hasValidSignature() dentro
+    
+    
+Route::post('/registros/check-series', [RegistroController::class, 'checkSeries'])
+  ->name('registros.check-series');
+
+Route::get('/registros/export/pdf', [RegistroController::class, 'exportPdf'])
+  ->name('registros.export.pdf');
+
+  // EXCEL (CSV) – mismos filtros que PDF
+Route::get('/inventario/export/excel', [RegistroController::class, 'exportExcel'])
+    ->name('registros.exportExcel');
+    
+    
+  // EXCEL (CSV) – mismos filtros que PDF
+Route::get('/inventario/export/excel', [RegistroController::class, 'exportExcel'])
+    ->name('registros.exportExcel');
+
+    Route::get('/catalogo/export/pdf', [ProductoController::class, 'exportPdf'])->name('catalogo.export.pdf');
+Route::get('/catalogo/export/xlsx', [ProductoController::class, 'exportXlsx'])->name('catalogo.export.xlsx');
+Route::middleware(['web','auth'])->group(function () {
+    // Eliminar pagos PENDIENTES y SIN financiamiento
+    Route::delete('/pagos/{pago}', [PagoController::class, 'destroy'])
+        ->name('pagos.destroy');
+        
+});
+
+Route::put('/pagos/{id}/revertir', [\App\Http\Controllers\PagoController::class, 'revertirAPendiente'])
+  ->name('pagos.revertir');
+
+  
+Route::get('/ordenes/{orden}/pagos', [PagoController::class, 'indexPorOrden'])
+    ->name('ordenes.pagos.index');
+
+Route::post('/ordenes/{orden}/pagos', [PagoController::class, 'storePorOrden'])
+    ->name('ordenes.pagos.store');
+
+Route::post('/ordenes/pagos/{pago}/aprobar', [PagoController::class, 'aprobarPagoOrden'])
+    ->name('ordenes.pagos.aprobar');
+
+Route::post('/ordenes/pagos/{pago}/revertir', [PagoController::class, 'revertirPagoOrden'])
+    ->name('ordenes.pagos.revertir');
+
+Route::delete('/ordenes/pagos/{pago}', [PagoController::class, 'destroyPagoOrden'])
+    ->name('ordenes.pagos.destroy');
+
+
+Route::prefix('registros/{registro}')->group(function () {
+    // Borrar un proceso específico
+    Route::delete('procesos/{proceso}', [ProcesoEquipoController::class, 'eliminarProceso'])
+        ->name('procesos.eliminar');
+
+    // Regresar el flujo a un estado (borra los procesos posteriores)
+    Route::post('procesos/rollback', [ProcesoEquipoController::class, 'rollbackEstado'])
+        ->name('procesos.rollback');
+
+    // (Opcional) Borrar TODOS los procesos del registro (reset completo)
+    Route::delete('procesos', [ProcesoEquipoController::class, 'resetProcesos'])
+        ->name('procesos.reset');
+});
+
+Route::delete('/registros/{registro}/procesos/{proceso}', [ProcesoEquipoController::class, 'eliminarProceso'])
+    ->name('procesos.eliminar');
+    
+    
+Route::middleware(['auth'])->group(function () {
+
+  // =========================
+  // Internal Assets / Inventory (EN)
+  // =========================
+  Route::get('/internal-assets', [InventoryController::class, 'index'])->name('assets.index');
+
+  Route::get('/internal-assets/create', [InventoryController::class, 'create'])->name('assets.create');
+  Route::post('/internal-assets', [InventoryController::class, 'store'])->name('assets.store');
+
+  Route::get('/internal-assets/{item}/edit', [InventoryController::class, 'edit'])->name('assets.edit');
+  Route::put('/internal-assets/{item}', [InventoryController::class, 'update'])->name('assets.update');
+
+  Route::delete('/internal-assets/{item}', [InventoryController::class, 'destroy'])->name('assets.destroy');
+
+  // Assign to user + signature + timestamp
+  Route::post('/internal-assets/assign', [InventoryController::class, 'assign'])->name('assets.assign');
+
+  // PDF report per user
+  Route::get('/internal-assets/users/{user}/pdf', [InventoryController::class, 'userPdf'])->name('assets.userPdf');
+
+});
+
+Route::post('/internal-assets/categories', [InventoryCategoryController::class, 'store'])
+  ->name('assets.categories.store');
+  
+  
+  Route::middleware('auth')->group(function () {
+    Route::post('/uploads', [UploadController::class, 'store'])->name('uploads.store');
+});
+Route::middleware(['auth'])->group(function () {
+    Route::post('/ai/tickets/checklist', [AiTicketController::class, 'checklist'])
+        ->name('ai.tickets.checklist');
+});
+Route::middleware('auth')->group(function () {
+    Route::post('/tickets/{ticket}/checklist/{item}/update', [TicketChecklistController::class, 'updateItem'])
+        ->name('tickets.checklist.updateItem');
+});
+
+
+
+Route::middleware(['auth'])->group(function () {
+
+    Route::resource('tickets', TicketController::class);
+
+    // NUEVAS VISTAS:
+    // - El creador ve avance / progreso
+    Route::get('/tickets/{ticket}/progress', [TicketController::class, 'progress'])
+        ->name('tickets.progress');
+
+    // - El asignado / watchers trabajan el checklist
+    Route::get('/tickets/{ticket}/work', [TicketController::class, 'work'])
+        ->name('tickets.work');
+
+    // - Guardar avance del checklist (trabajo)
+    Route::post('/tickets/{ticket}/work', [TicketController::class, 'storeWork'])
+        ->name('tickets.work.store');
+});
+Route::delete('/clientes/{id}', [ClienteController::class, 'destroy'])->name('clientes.destroy');
+
+
+
+Route::get('/assets/board', [App\Http\Controllers\InventoryController::class, 'board'])->name('assets.board');
+use App\Http\Controllers\InventoryAssignmentController;
+
+Route::get('/internal-assets/assignments', [InventoryAssignmentController::class, 'index'])->name('assets.assignments.index');
+Route::post('/internal-assets/assignments', [InventoryAssignmentController::class, 'store'])->name('assets.assignments.store');
+Route::post('/internal-assets/assignments/{assignment}/return', [InventoryAssignmentController::class, 'returnAsset'])->name('assets.assignments.return');
+Route::get('/internal-assets/assignments/{assignment}/pdf', [InventoryAssignmentController::class, 'pdf'])->name('assets.assignments.pdf');
+
+
+Route::get('/servicio/{id}/proceso', [ServicioController::class, 'proceso'])
+    ->name('servicio.proceso');
+
+Route::post('/servicio/{id}/proceso', [ServicioController::class, 'avanzarProceso'])
+    ->name('servicio.proceso.avanzar');
+
+Route::get('/servicio/{id}/orden-servicio', [ServicioController::class, 'ordenServicioForm'])
+    ->name('servicio.os.form');
+
+Route::post('/servicio/{id}/orden-servicio', [ServicioController::class, 'ordenServicioValidar'])
+    ->name('servicio.os.validar');
+
+    Route::post('/ordenes/{orden}/vincular-servicio', [OrdenController::class, 'vincularServicio'])
+    ->name('ordenes.vincular_servicio');
+
+
+Route::post('/registros/{registro}/validar-pin-edicion', [App\Http\Controllers\RegistroController::class, 'validarPinEdicion'])
+    ->name('registros.validar-pin-edicion');
+
+    Route::get('/productos/exportar/woocommerce', [ProductoController::class, 'exportWooCommerceXlsx'])
+    ->name('productos.export.woocommerce');
+
+
+    Route::middleware(['auth'])->group(function () {
+    Route::get('/inventario/servicio/{id}/salida-externa/qr', [ServicioController::class, 'qrSalidaExterna'])
+        ->name('servicio.externo.salida.qr');
+});
+
+
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/inventario/servicio/{id}/salida-externa/qr', [ServicioController::class, 'qrSalidaExterna'])
+        ->name('servicio.externo.salida.qr');
+});
+
+Route::get('/servicios/externo/salida/acceso/{id}', [ServicioController::class, 'accesoSalidaExterna'])
+    ->name('servicio.externo.salida.access');
+
+Route::get('/servicios/externo/salida/{token}', [ServicioController::class, 'formSalidaExterna'])
+    ->name('servicio.externo.salida.form');
+
+Route::post('/servicios/externo/salida/{token}', [ServicioController::class, 'storeSalidaExterna'])
+    ->name('servicio.externo.salida.store');
+
+Route::get('/financiamientos/auditoria', [VentaController::class, 'auditoriaFinanciamientos'])
+    ->name('financiamientos.auditoria');
+
+Route::post('/financiamientos/auditoria/chat', [VentaController::class, 'auditoriaFinanciamientosChat'])
+    ->name('financiamientos.auditoria.chat');
+
+Route::post('/financiamientos/auditoria/pdf', [VentaController::class, 'auditoriaFinanciamientosPdf'])
+    ->name('financiamientos.auditoria.pdf');
+
+    Route::get('/inventario/servicio/{servicio}/externo/salida/qr/status', [ServicioController::class, 'qrSalidaExternaStatus'])
+    ->name('servicio.externo.salida.qr.status');
+
+Route::post('/financiamientos/auditoria/chat/stream', [VentaController::class, 'auditoriaFinanciamientosChatStream'])
+    ->name('financiamientos.auditoria.chat.stream');
+
+    Route::delete('/users/{id}', [App\Http\Controllers\UserController::class, 'destroy'])->name('users.destroy');
+    
+// Dashboard
+Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+
+// Equipos
+Route::resource('equipments', EquipmentController::class)->except(['create', 'edit', 'show']);
+
+// Componentes
+Route::resource('components', ComponentController::class);
+
+// Rentas
+Route::resource('rentals', RentalController::class);
+Route::post('/rentals/{rental}/status', [RentalController::class, 'changeStatus'])->name('rentals.status');
+Route::post('/rentals/{rental}/items', [RentalController::class, 'storeItem'])->name('rentals.items.store');
+Route::delete('/rentals/{rental}/items/{item}', [RentalController::class, 'destroyItem'])->name('rentals.items.destroy');
+Route::post('/rentals/{rental}/invoice/mark-paid', [RentalController::class, 'markInvoicePaid'])->name('rentals.invoice.markPaid');
+Route::post('/logistics/{logistic}/status', [RentalController::class, 'updateLogisticsStatus'])->name('rentals.logistics.status');
+
+// Logística
+Route::resource('logistics', LogisticsController::class);
+
+// Facturas
+Route::resource('invoices', InvoiceController::class);
+
+// Mantenimientos
+Route::resource('maintenances', MaintenanceController::class);
+
+// Compliance
+Route::resource('compliance_logs', ComplianceLogController::class);
+
+    
+    Route::get('/inventario/servicio/{id}/edit', [ServicioController::class, 'edit'])->name('servicio.edit');
+Route::put('/inventario/servicio/{id}', [ServicioController::class, 'update'])->name('servicio.update');
+
+
+Route::get('/bento', [BentoController::class, 'index'])->name('bento.index');
+
+Route::get('/servicios/{id}/edit', [ServicioController::class, 'edit'])->name('servicios.edit');
+Route::put('/servicios/{id}', [ServicioController::class, 'update'])->name('servicios.update');
+Route::delete('/servicios/{id}', [ServicioController::class, 'destroy'])->name('servicios.destroy');
+
+
+Route::post('/registros/{registro}/cambiar-estado', [RegistroController::class, 'cambiarEstado'])
+    ->name('registros.cambiar-estado');
+    
+Route::delete('/pedidos/{pedido}', [PedidoController::class, 'destroy'])->name('pedidos.destroy');

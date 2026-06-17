@@ -10,15 +10,19 @@ class Paquete extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['nombre', 'descripcion', 'imagen'];
+    // Solo nombre, porque ya quitamos descripción e imagen de la BD
+    protected $fillable = ['nombre'];
 
-    /**
-     * Relación muchos a muchos con Producto usando la pivote existente "paquete_producto".
-     * Ajusta withPivot/withTimestamps solo si tu pivote tiene esas columnas.
-     */
-public function productos()
-{
-    return $this->belongsToMany(Producto::class, 'paquete_producto', 'paquete_id', 'producto_id');
-}
-
+    public function productos(): BelongsToMany
+    {
+        return $this->belongsToMany(
+                Producto::class,
+                'paquete_producto',
+                'paquete_id',
+                'producto_id'
+            )
+            ->using(PaqueteProducto::class)       // usa el pivot custom
+            ->withPivot('orden')                 // 👈 solo ORDEN
+            ->orderBy('paquete_producto.orden'); // se muestran ordenados
+    }
 }

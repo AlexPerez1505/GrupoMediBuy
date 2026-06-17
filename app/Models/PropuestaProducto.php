@@ -12,7 +12,12 @@ class PropuestaProducto extends Model
         'cantidad',
         'precio_unitario',
         'subtotal',
-        'sobreprecio'
+        'sobreprecio',
+        'es_regalo',
+    ];
+
+    protected $casts = [
+        'es_regalo' => 'boolean',
     ];
 
     public function propuesta()

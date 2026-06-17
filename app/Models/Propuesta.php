@@ -17,7 +17,7 @@ class Propuesta extends Model
         'iva',
         'total',
         'plan',
-        'ficha_tecnica_id'
+        'ficha_tecnica_id',
     ];
 
     public function cliente()
@@ -47,12 +47,16 @@ class Propuesta extends Model
 
     public function pagosFinanciamiento()
     {
-        return $this->hasMany(\App\Models\PagoFinanciamientoPropuesta::class, 'propuesta_id');
+        return $this->hasMany(PagoFinanciamientoPropuesta::class, 'propuesta_id');
     }
-    // app/Models/Propuesta.php
-public function whatsappLogs()
-{
-    return $this->hasMany(\App\Models\WhatsAppLog::class)->latest();
-}
 
+    public function whatsappLogs()
+    {
+        return $this->hasMany(WhatsAppLog::class)->latest();
+    }
+
+    public function tradeins()
+    {
+        return $this->hasMany(PropuestaTradein::class, 'propuesta_id');
+    }
 }

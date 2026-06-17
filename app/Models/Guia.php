@@ -1,16 +1,19 @@
 <?php
+
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Guia extends Model {
-    use HasFactory;
+class Guia extends Model
+{
+    protected $fillable = [
+        'numero_rastreo', 'peso', 'fecha_recepcion',
+    ];
 
-    protected $fillable = ['numero_rastreo', 'peso', 'fecha_recepcion'];
+    // app/Models/Guia.php
+public function entrega()
+{
+    return $this->hasOne(\App\Models\EntregaGuia::class, 'guia_id');
+}
 
-    // Relación con el modelo EntregaGuia
-    public function entrega() {
-        return $this->hasOne(EntregaGuia::class, 'guia_id');
-    }
 }

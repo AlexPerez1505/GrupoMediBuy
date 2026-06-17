@@ -146,13 +146,31 @@ class PrestamoController extends Controller
     }
 
     /* ===================== CRUD ===================== */
+public function index(Request $request)
+{
+    $q = trim((string) $request->query('q', ''));
+    $estado = trim((string) $request->query('estado', ''));
 
-    public function index()
-    {
-        $prestamos = Prestamo::with(['registros', 'cliente'])->latest()->get();
-        return view('prestamos.index', compact('prestamos'));
+    $query = Prestamo::with(['registros', 'cliente'])->latest();
+
+    if ($q !== '') {
+        $query->where(function ($sub) use ($q) {
+            $sub->where('id', 'like', "%{$q}%")
+                ->orWhereHas('cliente', function ($qc) use ($q) {
+                    $qc->where('nombre', 'like', "%{$q}%");
+                });
+        });
     }
 
+    $estadosValidos = ['activo','devuelto','retrasado','cancelado','vendido'];
+    if ($estado !== '' && in_array($estado, $estadosValidos, true)) {
+        $query->where('estado', $estado);
+    }
+
+    $prestamos = $query->paginate(20);
+
+    return view('prestamos.index', compact('prestamos'));
+}
     public function create()
     {
         return view('prestamos.wizard');
@@ -485,32 +503,58 @@ class PrestamoController extends Controller
         }
     }
 
-    public function destroy($id)
-    {
-        $rid = (string) Str::uuid();
-        $ctx = ['rid' => $rid, 'prestamo_id' => $id];
+public function destroy(Request $request, $id)
+{
+    $rid = (string) Str::uuid();
+    $ctx = $this->ctx($request, $rid) + ['prestamo_id' => $id];
 
-        try {
-            $prestamo = Prestamo::with('registros')->findOrFail($id);
+    try {
+        // ✅ Validar PIN recibido
+        $request->validate([
+            'pin' => ['required', 'regex:/^[0-9]{6}$/'],
+        ], [
+            'pin.required' => 'Debes capturar el PIN.',
+            'pin.regex'    => 'El PIN debe tener exactamente 6 dígitos.',
+        ]);
 
-            DB::transaction(function () use ($prestamo) {
-                $prestamo->registros()->detach();
-                $prestamo->delete();
-            });
-
-            Log::info('[prestamos.destroy] OK', $ctx);
-            session()->flash('rid', $rid);
-            return redirect()->route('prestamos.index')->with('success', 'Préstamo eliminado. RID: '.$rid);
-        } catch (Throwable $e) {
-            Log::error('[prestamos.destroy] ERROR', $ctx + [
-                'message' => $e->getMessage(),
-                'trace'   => substr($e->getTraceAsString(), 0, 2000),
-            ]);
-            session()->flash('rid', $rid);
-            return back()->withErrors(['server' => 'No se pudo eliminar. RID: '.$rid]);
+        $expected = (string) config('aprobacion.aprobacion_pin');
+        if ($expected === '') {
+            Log::warning('[prestamos.destroy] PIN no configurado', $ctx);
+            return back()->with('error', 'No se pudo eliminar: PIN no configurado. RID: '.$rid);
         }
-    }
 
+        $pin = trim((string) $request->input('pin'));
+
+        if (!hash_equals($expected, $pin)) {
+            Log::warning('[prestamos.destroy] PIN inválido', $ctx + ['pin_len' => strlen($pin)]);
+            return back()->with('error', 'PIN incorrecto. No se eliminó. RID: '.$rid);
+        }
+
+        $prestamo = Prestamo::with('registros')->findOrFail($id);
+
+        DB::transaction(function () use ($prestamo) {
+            $prestamo->registros()->detach();
+            $prestamo->delete();
+        });
+
+        Log::info('[prestamos.destroy] OK', $ctx);
+        session()->flash('rid', $rid);
+
+        return redirect()->route('prestamos.index')->with('success', 'Préstamo eliminado. RID: '.$rid);
+
+    } catch (ValidationException $ve) {
+        Log::warning('[prestamos.destroy] VALIDATION', $ctx + ['errors' => $ve->errors()]);
+        session()->flash('rid', $rid);
+        return back()->withErrors($ve->errors());
+    } catch (Throwable $e) {
+        Log::error('[prestamos.destroy] ERROR', $ctx + [
+            'message' => $e->getMessage(),
+            'trace'   => substr($e->getTraceAsString(), 0, 2000),
+        ]);
+        session()->flash('rid', $rid);
+        return back()->with('error', 'No se pudo eliminar. RID: '.$rid);
+    }
+}
     public function lookupBySerie(Request $request)
     {
         $rid = (string) Str::uuid();

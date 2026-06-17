@@ -17,10 +17,6 @@
     font-weight: bold;
     text-transform: capitalize;
 }
-#tablaPrestamos td {
-    text-transform: uppercase;
-}
-
 
 .card-table th, .card-table td {
     padding: 12px 16px;
@@ -429,4 +425,7 @@ tr.estado-vendido {
 }
 .btn-custom-cancel:hover {
     background-color: #C82333; /* Gris un poco más oscuro */
+}
+#tablaPrestamos td {
+    text-transform: uppercase;
 }

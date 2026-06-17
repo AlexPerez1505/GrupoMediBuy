@@ -16,23 +16,25 @@ class CuentaController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'lugar' => 'required|string|min:2',
-            'casetas' => 'required|numeric',
-            'gasolina' => 'required|numeric',
-            'viaticos' => 'required|numeric',
-            'adicional' => 'nullable|numeric',
-            'descripcion' => 'nullable|string',
-            'total' => 'required|numeric',
+            'lugar'      => 'required|string|min:2',
+            'camioneta'  => 'required|string|min:1', // 👈 nuevo
+            'casetas'    => 'required|numeric',
+            'gasolina'   => 'required|numeric',
+            'viaticos'   => 'required|numeric',
+            'adicional'  => 'nullable|numeric',
+            'descripcion'=> 'nullable|string',
+            'total'      => 'required|numeric',
         ]);
 
         Cuenta::create([
-            'lugar' => $request->lugar,
-            'casetas' => $request->casetas,
-            'gasolina' => $request->gasolina,
-            'viaticos' => $request->viaticos,
-            'adicional' => $request->adicional ?? 0,
+            'lugar'       => $request->lugar,
+            'camioneta'   => $request->camioneta, // 👈 nuevo
+            'casetas'     => $request->casetas,
+            'gasolina'    => $request->gasolina,
+            'viaticos'    => $request->viaticos,
+            'adicional'   => $request->adicional ?? 0,
             'descripcion' => $request->descripcion ?? '',
-            'total' => $request->total,
+            'total'       => $request->total,
         ]);
 
         return redirect()->route('cuentas.index')->with('success', 'Cuenta registrada correctamente.');
@@ -52,13 +54,17 @@ class CuentaController extends Controller
         return redirect()->route('cuentas.index')->with('success', 'Cuenta eliminada correctamente.');
     }
 
-    public function exportarPDF()
-    {
-        $cuentas = Cuenta::orderBy('created_at', 'desc')->get();
-        $pdf = PDF::loadView('cuentas.pdf', compact('cuentas'));
-        return $pdf->download('cuentas.pdf');
-    }
+    public function exportarPdf(Request $request)
+{
+    $cuentas = Cuenta::all();
+    $chartLugar     = $request->input('chart_lugar');
+    $chartCamioneta = $request->input('chart_camioneta');
 
+    $pdf = Pdf::loadView('cuentas.pdf', compact('cuentas', 'chartLugar', 'chartCamioneta'))
+              ->setPaper('a4', 'landscape');
+
+    return $pdf->download('reporte-cuentas.pdf');
+}
     public function edit($id)
     {
         $cuenta = Cuenta::findOrFail($id);
@@ -68,23 +74,31 @@ class CuentaController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'lugar' => 'required|string|min:2',
-            'casetas' => 'required|numeric|min:0',
-            'gasolina' => 'required|numeric|min:0',
-            'viaticos' => 'required|numeric|min:0',
-            'adicional' => 'nullable|numeric|min:0',
+            'lugar'       => 'required|string|min:2',
+            'camioneta'   => 'required|string|min:1', // 👈 nuevo
+            'casetas'     => 'required|numeric|min:0',
+            'gasolina'    => 'required|numeric|min:0',
+            'viaticos'    => 'required|numeric|min:0',
+            'adicional'   => 'nullable|numeric|min:0',
             'descripcion' => 'nullable|string|max:500',
         ]);
 
         $cuenta = Cuenta::findOrFail($id);
 
-        $cuenta->lugar = $request->lugar;
-        $cuenta->casetas = $request->casetas;
-        $cuenta->gasolina = $request->gasolina;
-        $cuenta->viaticos = $request->viaticos;
-        $cuenta->adicional = $request->adicional ?? 0;
+        $cuenta->lugar       = $request->lugar;
+        $cuenta->camioneta   = $request->camioneta; // 👈 nuevo
+        $cuenta->casetas     = $request->casetas;
+        $cuenta->gasolina    = $request->gasolina;
+        $cuenta->viaticos    = $request->viaticos;
+        $cuenta->adicional   = $request->adicional ?? 0;
         $cuenta->descripcion = $request->descripcion ?? '';
-        $cuenta->total = $request->casetas + $request->gasolina + $request->viaticos + ($request->adicional ?? 0) + 500;
+
+        // Mantengo tu lógica actual del total
+        $cuenta->total = $request->casetas
+                        + $request->gasolina
+                        + $request->viaticos
+                        + ($request->adicional ?? 0)
+                        + 500;
 
         $cuenta->save();
 

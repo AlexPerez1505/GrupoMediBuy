@@ -25,9 +25,4 @@ class ItemRemision extends Model
     {
         return $this->belongsTo(Remision::class);
     }
-    public function pagos()
-{
-    return $this->hasMany(Pago::class);
-}
-
 }

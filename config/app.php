@@ -174,5 +174,6 @@ return [
         'PDF' => Barryvdh\DomPDF\Facade::class, // <-- Agregado para DomPDF
 
     ],
+    'aprobacion_pin' => env('APROBACION_PIN'),
 
 ];

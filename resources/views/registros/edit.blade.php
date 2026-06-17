@@ -1,0 +1,1478 @@
+@extends('layouts.app')
+@section('title','Editar producto')
+@section('titulo','Editar')
+
+@section('content')
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+@php
+  $router = app('router');
+
+  $updateUrl = $router->has('registros.update')
+    ? route('registros.update', $registro->id)
+    : url('/registros/'.$registro->id);
+
+  if (!isset($componentes)) {
+    $componentes = \Illuminate\Support\Facades\DB::table('inv_registro_componentes')
+      ->where('registro_id', $registro->id)
+      ->select('nombre_cache as nombre', 'cantidad', 'incluido')
+      ->orderBy('nombre_cache')->get();
+  }
+
+  $initial = [
+    'tipo'    => $registro->tipo_equipo,
+    'subtipo' => $registro->subtipo_equipo,
+    'marca'   => $registro->marca,
+    'modelo'  => $registro->modelo,
+    'serie'   => $registro->numero_serie,
+    'anio'    => $registro->anio,
+    'descripcion' => $registro->descripcion,
+    'fecha'   => optional($registro->fecha_adquisicion)->format('Y-m-d'),
+    'observaciones' => $registro->observaciones,
+
+    'evid1' => $registro->evidencia1,
+    'evid2' => $registro->evidencia2,
+    'evid3' => $registro->evidencia3,
+    'video' => $registro->video,
+    'firma' => $registro->firma_digital,
+
+    'componentes' => $componentes->map(fn($c)=>[
+      'nombre'=>$c->nombre, 'cantidad'=>(int)$c->cantidad, 'incluido'=>(int)$c->incluido
+    ])->values(),
+  ];
+@endphp
+
+<style>
+:root{ --bg:#f6f8fb; --ink:#0f172a; --muted:#6b7280; --line:#e7ebf0; --brand:#cfeee7; --brand-ink:#145b56; }
+body{ background:var(--bg); font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif }
+.card-soft{ background:#fff; border:1px solid var(--line); border-radius:16px; box-shadow:0 12px 40px rgba(17,24,39,.06) }
+.heading-xl{ font-weight:800; font-size:clamp(22px,3vw,30px); color:var(--ink) }
+.text-muted-ux{ color:var(--muted) }
+.btn-pastel{ border:none; border-radius:12px; padding:.7rem 1.1rem; font-weight:700; color:#0b3634; background:var(--brand) }
+.btn-ghost{ border-radius:12px; border:1px solid var(--line); background:#fff; color:var(--ink); font-weight:700 }
+
+.form-control,.form-select{ border-radius:12px; border:1px solid var(--line); padding:.9rem 1rem }
+.form-control:focus,.form-select:focus{ border-color:var(--brand-ink); box-shadow:none }
+
+.ux-float{ position:relative }
+.ux-float .form-control,.ux-float .form-select{ padding:1.25rem 1rem .55rem }
+.ux-float label{
+  position:absolute; left:12px; top:50%; transform:translateY(-50%);
+  font-weight:600; color:#93a1b2; pointer-events:none; transition:all .16s ease
+}
+.ux-float:focus-within label, .ux-float.has-value label,
+.ux-float .form-control:not(:placeholder-shown)+label{
+  top:.45rem; transform:none; font-size:.75rem; color:var(--brand-ink)
+}
+.ux-float textarea.form-control{ min-height:110px; padding-top:1.6rem }
+
+/* Zona evidencias */
+.upload-zone{ border:1px dashed var(--line); border-radius:14px; padding:1rem; background:#fff }
+.tile{
+  position:relative; width:100%; aspect-ratio:1/1; border:1px solid var(--line);
+  border-radius:12px; background:#fafcff; display:grid; place-items:center; overflow:hidden;
+  cursor:pointer; transition:transform .08s ease, box-shadow .08s ease;
+}
+.tile:active{ transform:scale(.995) }
+.tile:hover{ box-shadow:0 8px 24px rgba(17,24,39,.06) }
+.tile img,.tile video{ width:100%; height:100%; object-fit:cover; pointer-events:none }
+.tile-hint{
+  position:absolute; inset:auto 8px 8px auto; background:#ffffffd9; border:1px solid var(--line);
+  border-radius:999px; padding:.2rem .6rem; font-size:.75rem; font-weight:700; color:var(--brand-ink)
+}
+.tile-empty{ display:flex; flex-direction:column; align-items:center; gap:.35rem; color:#94a3b8; font-weight:600; font-size:.95rem }
+.tile-empty i{ font-size:1.25rem }
+
+/* Componentes */
+.badge-soft{ background:#e9fbf7; color:var(--brand-ink); border-radius:999px; padding:.25rem .55rem; font-weight:700; font-size:.75rem }
+.comp-card{ border:1px solid var(--line); border-radius:12px; background:#fff; padding:.7rem }
+.comp-name{ font-weight:700; color:var(--ink) }
+.comp-note{ font-size:.85rem; color:var(--muted) }
+
+/* Toasts + bottom sheet */
+#toastPlace{ position:fixed; top:1rem; right:1rem; z-index:1080 }
+.offcanvas-bottom{ border-top-left-radius:16px; border-top-right-radius:16px }
+.offcanvas .offcanvas-header h5{ color:var(--brand-ink); font-weight:800 }
+#componentesSheet{ padding-bottom: env(safe-area-inset-bottom); transition: height .2s ease; max-height: 90dvh; }
+</style>
+
+<div
+  class="container py-4"
+  x-data="EditarUI({{ json_encode($initial, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES) }}, '{{ $updateUrl }}', '{{ csrf_token() }}')"
+  x-init="boot()"
+>
+  <div class="card-soft p-3 p-md-4">
+    <div class="d-flex align-items-center justify-content-between pb-3 border-bottom">
+      <div>
+        <div class="heading-xl">Editar producto</div>
+        <div class="text-muted-ux">Actualiza los datos, evidencias, componentes y firma.</div>
+      </div>
+      <a href="{{ url()->previous() }}" class="btn btn-ghost d-flex align-items-center gap-2">
+        <i class="bi bi-arrow-left"></i> Volver
+      </a>
+    </div>
+
+    <form id="frmEdit" class="mt-4" enctype="multipart/form-data" @submit.prevent="submit">
+      @csrf
+      @method('PUT')
+      <input type="hidden" name="firmaDigital" x-model="firmaData">
+
+      <div class="row g-4">
+        {{-- IZQUIERDA --}}
+        <div class="col-lg-8">
+          <div class="row g-3">
+            {{-- Tipo --}}
+            <div class="col-md-6">
+              <div class="ux-float" :class="{'has-value': tipoSel}">
+                <select
+                  class="form-select"
+                  name="Tipo_de_Equipo"
+                  id="eq_tipo"
+                  x-model="tipoSel"
+                  @change="onTipoChange(true)"
+                  required
+                >
+                  <option value="" hidden></option>
+                  <template x-for="t in tiposKeys" :key="'t-'+t">
+                    <option :value="t" x-text="titleCase(t)"></option>
+                  </template>
+                </select>
+                <label for="eq_tipo">Tipo de equipo *</label>
+              </div>
+            </div>
+
+            {{-- Subtipo --}}
+            <div class="col-md-6">
+              <div class="ux-float" :class="{'has-value': subtipoSel}">
+                <select
+                  class="form-select"
+                  name="Subtipo_de_Equipo"
+                  id="eq_sub"
+                  x-model="subtipoSel"
+                  @change="onSubtipoChange(true)"
+                  :disabled="!tipoSel"
+                  required
+                >
+                  <option value="" hidden></option>
+                  <template x-for="s in subtiposArr" :key="'s-'+s">
+                    <option :value="s" x-text="s"></option>
+                  </template>
+                </select>
+                <label for="eq_sub">Subtipo *</label>
+              </div>
+            </div>
+
+            {{-- Marca --}}
+            <div class="col-md-6">
+              <div class="ux-float" :class="{'has-value': marcaSel}">
+                <select
+                  class="form-select"
+                  name="Marca"
+                  id="eq_marca"
+                  x-model="marcaSel"
+                  @change="onMarcaChange"
+                  :disabled="!tipoSel || !subtipoSel"
+                  required
+                >
+                  <option value="" hidden></option>
+                  <template x-for="m in marcasArr" :key="'m-'+m">
+                    <option :value="m" x-text="m"></option>
+                  </template>
+                </select>
+                <label for="eq_marca">Marca *</label>
+              </div>
+              <small class="text-muted-ux d-block mt-1"
+                     x-show="tipoSel && subtipoSel && !marcasArr.length && !marcaSel">
+                No hay marcas configuradas para este subtipo.
+              </small>
+            </div>
+
+            {{-- Modelo --}}
+            <div class="col-md-6">
+              <div class="ux-float" :class="{'has-value': modeloSel}">
+                <select
+                  class="form-select"
+                  name="Modelo"
+                  id="eq_modelo"
+                  x-model="modeloSel"
+                  :disabled="!marcaSel"
+                  required
+                >
+                  <option value="" hidden></option>
+                  <template x-for="mo in modelosArr" :key="'mo-'+mo">
+                    <option :value="mo" x-text="mo"></option>
+                  </template>
+                </select>
+                <label for="eq_modelo">Modelo *</label>
+              </div>
+              <small class="text-muted-ux d-block mt-1"
+                     x-show="marcaSel && !modelosArr.length && !modeloSel">
+                No hay modelos configurados para esta marca.
+              </small>
+            </div>
+
+            {{-- Serie, año, descripción, fecha, observaciones --}}
+            <div class="col-md-6">
+              <div class="ux-float">
+                <input class="form-control" type="text" name="Numero_de_Serie" id="eq_serie" placeholder=" " x-model="form.serie" required>
+                <label for="eq_serie">Número de serie *</label>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="ux-float">
+                <input class="form-control" type="text" name="Año" id="eq_anio" placeholder=" " x-model="form.anio" inputmode="numeric" pattern="[0-9]{4}">
+                <label for="eq_anio">Año</label>
+              </div>
+            </div>
+
+            <div class="col-12">
+              <div class="ux-float">
+                <textarea class="form-control" name="descripcion" id="eq_desc" placeholder=" " x-model="form.descripcion" required></textarea>
+                <label for="eq_desc">Descripción *</label>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="ux-float">
+                <input class="form-control" type="date" name="fecha_inicial" id="eq_fecha" placeholder=" " x-model="form.fecha" required>
+                <label for="eq_fecha">Fecha de adquisición *</label>
+              </div>
+            </div>
+
+            <div class="col-12">
+              <div class="ux-float">
+                <input class="form-control" type="text" name="observaciones" id="eq_obs" placeholder=" " x-model="form.observaciones">
+                <label for="eq_obs">Observaciones</label>
+              </div>
+            </div>
+          </div>
+
+          {{-- Evidencias --}}
+          <div class="upload-zone mt-4">
+            <div class="row g-3">
+              <div class="col-6 col-md-3">
+                <div class="tile" role="button" tabindex="0"
+                     @click="$refs.img0.click()" @keydown.enter.prevent="$refs.img0.click()" @keydown.space.prevent="$refs.img0.click()">
+                  <input type="file" class="d-none" accept="image/*" name="evidencia1" x-ref="img0" @change="previewImg($event,0)">
+                  <template x-if="previews[0]"><img :src="previews[0]"></template>
+                  <template x-if="!previews[0]">
+                    <div class="tile-empty"><i class="bi bi-image"></i><span>Imagen 1</span><small class="text-muted">Toca para subir</small></div>
+                  </template>
+                  <span class="tile-hint" x-show="previews[0]">Cambiar</span>
+                </div>
+              </div>
+
+              <div class="col-6 col-md-3">
+                <div class="tile" role="button" tabindex="0"
+                     @click="$refs.img1.click()" @keydown.enter.prevent="$refs.img1.click()" @keydown.space.prevent="$refs.img1.click()">
+                  <input type="file" class="d-none" accept="image/*" name="evidencia2" x-ref="img1" @change="previewImg($event,1)">
+                  <template x-if="previews[1]"><img :src="previews[1]"></template>
+                  <template x-if="!previews[1]">
+                    <div class="tile-empty"><i class="bi bi-image"></i><span>Imagen 2</span><small class="text-muted">Toca para subir</small></div>
+                  </template>
+                  <span class="tile-hint" x-show="previews[1]">Cambiar</span>
+                </div>
+              </div>
+
+              <div class="col-6 col-md-3">
+                <div class="tile" role="button" tabindex="0"
+                     @click="$refs.img2.click()" @keydown.enter.prevent="$refs.img2.click()" @keydown.space.prevent="$refs.img2.click()">
+                  <input type="file" class="d-none" accept="image/*" name="evidencia3" x-ref="img2" @change="previewImg($event,2)">
+                  <template x-if="previews[2]"><img :src="previews[2]"></template>
+                  <template x-if="!previews[2]">
+                    <div class="tile-empty"><i class="bi bi-image"></i><span>Imagen 3</span><small class="text-muted">Toca para subir</small></div>
+                  </template>
+                  <span class="tile-hint" x-show="previews[2]">Cambiar</span>
+                </div>
+              </div>
+
+              <div class="col-6 col-md-3">
+                <div class="tile" role="button" tabindex="0"
+                     @click="$refs.vid.click()" @keydown.enter.prevent="$refs.vid.click()" @keydown.space.prevent="$refs.vid.click()">
+                  <input type="file" class="d-none" accept="video/*" name="video-evidencia" x-ref="vid" @change="previewVideo($event)">
+                  <template x-if="videoUrl"><video :src="videoUrl" muted autoplay loop playsinline></video></template>
+                  <template x-if="!videoUrl">
+                    <div class="tile-empty"><i class="bi bi-play-btn"></i><span>Video</span><small class="text-muted">Toca para subir</small></div>
+                  </template>
+                  <span class="tile-hint" x-show="videoUrl">Cambiar</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {{-- Firma --}}
+          <div class="mt-4">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <label class="form-label fw-semibold mb-0">Firma digital *</label>
+              <span class="badge-soft" x-show="isDrawing">dibujando…</span>
+            </div>
+
+            <template x-if="!reFirmar && firmaExistente">
+              <div class="border rounded-3 p-2">
+                <img :src="firmaExistente" alt="Firma actual" style="max-height:170px; width:100%; object-fit:contain">
+              </div>
+            </template>
+
+            <template x-if="reFirmar || !firmaExistente">
+              <div>
+                <div class="border rounded-3 p-2">
+                  <canvas x-ref="canvas" style="width:100%; height:170px; display:block"></canvas>
+                </div>
+                <div class="mt-2 d-flex gap-2">
+                  <button type="button" class="btn btn-ghost" @click="clearSig()">Limpiar</button>
+                </div>
+              </div>
+            </template>
+
+            <div class="mt-2">
+              <button type="button" class="btn btn-pastel" @click="toggleFirma()"
+                x-text="reFirmar ? 'Conservar firma actual' : 'Reemplazar firma'"></button>
+              <small class="text-muted-ux ms-2">Si no reemplazas, se conservará la firma actual.</small>
+            </div>
+          </div>
+
+          {{-- Móvil: ver componentes --}}
+          <div class="d-md-none mt-4">
+            <button type="button" class="btn btn-pastel w-100" data-bs-toggle="offcanvas" data-bs-target="#componentesSheet">
+              Ver componentes del subtipo
+            </button>
+          </div>
+        </div>
+
+        {{-- DERECHA: Componentes --}}
+        <div class="col-lg-4 d-none d-md-block">
+          <div class="card-soft p-3">
+            <div class="fw-bold" style="color:var(--brand-ink)">Componentes del subtipo</div>
+            <small class="text-muted-ux">Se generan por <b>Subtipo</b> y ya incluyen lo guardado. Desmarca si “no viene”.</small>
+
+            <div class="mt-3" x-show="!sheet.lista.length">
+              <div class="text-muted-ux">Selecciona un <b>Subtipo</b> para ver los componentes.</div>
+            </div>
+
+            <div class="mt-3" x-show="sheet.lista.length">
+              <template x-for="(c, idx) in sheet.lista" :key="'desk-'+idx">
+                <div class="comp-card mb-2">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <div class="comp-name" x-text="c.nombre"></div>
+                      <div class="comp-note">Esperado/Guardado</div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                      <div class="input-group input-group-sm" style="width:110px">
+                        <button class="btn btn-ghost" type="button" @click="dec(idx)">−</button>
+                        <input type="number" class="form-control text-center" min="0" x-model.number="c.cantidad" @input="syncSeleccion">
+                        <button class="btn btn-ghost" type="button" @click="inc(idx)">+</button>
+                      </div>
+                      <div class="form-check form-switch m-0">
+                        <input class="form-check-input" type="checkbox" x-model="c.incluido" @change="syncSeleccion">
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </template>
+
+              <div class="d-flex justify-content-end gap-2 mt-2">
+                <button type="button" class="btn btn-ghost" @click="restaurarPlantilla">Restaurar plantilla</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {{-- Hidden componentes --}}
+      <template x-for="(row, i) in seleccion" :key="'hid-'+i">
+        <div>
+          <input type="hidden" :name="`componentes[${i}][nombre]`"   :value="row.nombre">
+          <input type="hidden" :name="`componentes[${i}][cantidad]`" :value="row.cantidad">
+          <input type="hidden" :name="`componentes[${i}][incluido]`" :value="row.incluido ? 1 : 0">
+        </div>
+      </template>
+
+      <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+        <a href="{{ url()->previous() }}" class="btn btn-ghost">Cancelar</a>
+        <button type="submit" class="btn btn-pastel">Actualizar</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="toastPlace" class="toast-container position-fixed"></div>
+
+  {{-- Bottom sheet móvil --}}
+  <div id="componentesSheet" class="offcanvas offcanvas-bottom" tabindex="-1" :style="{ height: sheetHeight }">
+    <div class="offcanvas-header">
+      <h5 class="offcanvas-title">Componentes del subtipo</h5>
+      <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body small">
+      <p class="text-muted-ux mb-2">Desmarca si “no viene”.</p>
+
+      <template x-for="(c, idx) in sheet.lista" :key="'m-'+idx">
+        <div class="comp-card mb-2">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <div class="comp-name" x-text="c.nombre"></div>
+              <div class="comp-note">Esperado/Guardado</div>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <div class="input-group input-group-sm" style="width:110px">
+                <button class="btn btn-ghost" type="button" @click="dec(idx)">−</button>
+                <input type="number" class="form-control text-center" min="0" x-model.number="c.cantidad" @input="syncSeleccion">
+                <button class="btn btn-ghost" type="button" @click="inc(idx)">+</button>
+              </div>
+              <div class="form-check form-switch m-0">
+                <input class="form-check-input" type="checkbox" x-model="c.incluido" @change="syncSeleccion">
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <div class="d-flex justify-content-end gap-2 mt-2">
+        <button type="button" class="btn btn-ghost" @click="restaurarPlantilla">Restaurar plantilla</button>
+        <button type="button" class="btn btn-pastel" data-bs-dismiss="offcanvas">Listo</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const setState = el => el.closest('.ux-float')?.classList.toggle('has-value', !!el.value);
+  document.querySelectorAll('.ux-float .form-control, .ux-float .form-select').forEach(el => {
+    setState(el);
+    el.addEventListener('input', () => setState(el));
+    el.addEventListener('change', () => setState(el));
+    setTimeout(() => setState(el), 250);
+  });
+});
+</script>
+<script>
+function EditarUI(initial, updateUrl, csrf){
+  return {
+    /* ===== TIPOS → SUBTIPOS ===== */
+    tiposEquipos: {
+     ENDOSCOPIA: [
+        "Adaptador","Argón Plasma","Bomba de Irrigación","Balance de Blancos","Bomba de Secreción","Bomba de CO2","Broncoscopio","Cable","Cable Bipolar","Cable Monopolar","Capturador de Video","Capuchón Distal","Carro","Cepillo de Limpieza","Colonoscopio","Conjunto de Irrigación","Contenedor de líquidos","Convertidor de Video","Duodenoscopio","Eliminador","Focos","Fuente de Luz","Gastroscopio","Grabador","Interfaz","Interfaz Monopolar para Erbe","Kit de Limpieza","Línea de Irrigación","Monitor","Mouse","Multicontacto","PC SIIMED Análogo","PC SIIMED HD","Pedal","Pilas","Pigtail","Pinzas de Endoscopia","Probador de Fuga","Procesador","Protector Bucal de Endoscopio","Protector de Punta de Endoscopio","Regulador de Argón de Endoscopia","Refaccionamiento de Endoscopios","Sonda Para Argon","Sistema Endoscopia","Tapon de Biopsia","Tapon-ETO","Tanque de Argón","Teclado","Transductor para USG-400","Remoto para Endoscopios","Valvúlas desechables","Valvúlas Reusables","Yugo Para Argón"
+      ],
+      LAPAROSCOPIA: [
+        "Adaptador","Cabezal","Cable Interfaz 1688","Cable Interfaz USB 1588","Cable Bipolar","Cámara","Case de Transporte","Charola de Esterilización","Clarity","Clips para Monitor","Eliminador","Fibra de Luz","Fuente de Luz","Funda para Cámara","Grabador","Instrumental de Laparoscopia","Insuflador","Lente","Manguera de Insuflación","Manguera para Bomba de Agua","Monitor Grado Médico","Parche para Electrocauterio","Pedestal","Pieza de Mano","Pinza","Porta tanque","Transmisor","Trocar","Receptor","Video Carro","Video Grabador","Remotos"
+      ],
+      QUIRÓFANO: [
+        "Adaptador","Adaptador para Ligasure","Adaptador para Armonico","Armónico Gen11","Bipap","Brazalete Pani","Bomba de Infusion","Cable Para Pinza Bipolar","Cable Trocal ECG","Cable Interfaz","Carro para Electrocauterio","Carro Rojo Emergencias","CharoLa de Esterilizacion","Desfribilador","Electrocauterio","Eliminador","Evacuador de Humo","Lámpara de Quirófano","Lapíz para Electrocauterio","Ligasure LS8","Línea de Muestreo de CO2","Laringoscopio","Máquina de Anestesia","Mesa de Cirugía","Monitor Signos Vitales","Oximetro","Pedal Bipolar","Pedal Ligasure","Pedal Monopolar","Pieza de Mano Para Gen11","Placa para Electrocauterio","Sensor de ECG","Sensor de SPO2","Sensor PANI","Sensor de Temperatura","Vaporizador"
+      ],
+      HOSPITALIZACIÓN: [
+        "Aspirador","Cama Hospitalaria Eléctrica","Camilla","Cuna Térmica","Incubadora","Mesa de Exploración","Ventilador"
+      ],
+      MATERIAL: [
+        "Limpiador y Desengrasante", "Playon"
+      ],
+      OTORRINOLARINGOLOGIA: [
+          "Microdebrilador","Pedal Microdebrilador","Pieza de Mano","Electrocirugia","Pedal"
+      ],
+      RADIOLOGÍA: ["Arco en C","Batería","Chasis","Flat Panel","Rayos X Rodable","Rayos X Portatil"],
+      UROLOGÍA: ["Cistoscopio","Histeroscopio","Resectoscopio","Ureteroscopio Flexible", "Ureteroscopio Rigido"],
+      ARTROSCOPIA: [
+        "Artroscopio","Bomba de Irrigación","Camisa","Opturador","Cable para pieza de mano","Charola de Esterilización","Endogia","Hoja de Sierra Sagital","Pieza de Mano","Pedal","Puntas de Radio Frecuencia",
+        "Puntas de Serfas de radiofrecuencia","Rasurador Shaver", "Radio Frecuencia Serfas",
+        "Set de Taladros de Artroscopia System 4","Set de Taladros de Artroscopia System 7","Set de Taladros de Artroscopia System 8","Set de Taladros Electrico Core Azul","Set de Taladros Electrico Core Negro",
+        "Transmisores", "Set de Cirugia Para Tobillo y Muñeca", "Set de Cirugía de Rodilla",
+        "Meditronic","Linea de irrigacion"
+      ],
+ 
+      CEYE: ["Autoclave de cámara 95 L ","Monitor"],
+      GINECOLOGÍA: ["Camilla Ginecologíca","Mesa de Exploración","Ultrasonido","Impresora"]
+    },
+
+    /* ===== MARCAS → MODELOS ===== */
+    marcasModelosPorSubtipo: {
+     laparoscopia: {
+        'Camara': {
+          'Stryker': ['1188','1288','Precision','1488','1588','1688','1788'],
+          'Karl Storz': ['IMAGE1 S', 'IMAGE1 HUB', 'Spies']
+        },
+        'Cable Interfaz 1688':{
+            'Stryker': ['1688']
+        },
+        'Insuflador': {
+          'Stryker': ['High Flow 40L','PneumoSure 45L','PneumoClear 50L'],
+          'Karl Storz': ['Endoflator 50', 'Endoflator 264320 20'],
+        },
+        'Fuente de luz': {
+          'Stryker': ['X8000', 'L9000', 'L10', 'L11'],
+          'Karl Storz': ['Xenon 300', 'Power LED 300']
+        },
+        'Monitor grado medico': {
+          'Stryker': ['Vision Elect HDTV', 'VisionPro LED 26"', 'VisionPro SYNK LED 26"', '4K LED 32"', '4K 32" OLED', 'Wise HD 26"'],
+        },
+        'Cabezal': {
+          'Stryker': ['1188', '1288', 'Precision', '1488', '1588','1688 AIM 4K', '1788 Platform']
+        },
+         'Cable Bipolar': {
+          'Olympus': ['WA00014A para ESG-400']
+        },
+        'Clarificador de video': { 'Stryker': ['clarity'] },
+        'Grabador': { 'Stryker': ['SDC Ultra','SDC3','Connected OR HUB'] },
+        'Lente': {
+          'Stryker': ['30-5mm Azul','30-5mm AIM','30-5mm Precision','30-10mm Precision','30-10mm AIM','30-10mm Azul','0°-10 Precision','30° 10mm Ideal Eyes','30° 5mm Ideal Eyes','30° 5.5mm Precision','30° 5.4mm AIM'],
+          'Novadac': ['30°-5mm'],
+        },
+         'funda para Cámara': {
+            'Stema': ['Funda para Cabezales'],
+        },
+        'Fibra de luz': {
+          'Stryker' : ['X8000 Gris','L9000 Blanca','L10 y L11 Verde', 'L12 Verde','Kit Ureteral IRIS'],
+          'Karl Storz': ['Xenon 8000']
+        },
+        'Video carro': {
+          'Stryker': ['Standar','Connected OR'],
+        },
+        'Transmisor': {
+          'Stryker': ['4K SYNK Wireless','4K SYNK Wireless Receiver','VisionPro SYNK Wireless','Wise HDTV Wireless']
+        },
+        'Trocar': {
+            'Ethicon': ['11mm X 100mm','12mm X 100mm 2D12-T','12mm X 100mm 2CB12LT'],
+            'GM': ['KIT Trocares GYTR L KIT A','KIT TROCARES GYTR-LLL KIT A']
+        },
+        'Receptor':{
+            'stryker':['4k']
+        },
+        'Pedestal': {
+            'Stryker': ['Pedestal']
+        },
+         'Porta tanque': {'GM':['Porta tanque']
+        },
+        'Eliminador': { 
+            'Stryker': [ 'Para Monitor VisionPRO-WISE HD-4K'],
+            'GM': [ 'Para Monitor VisionPRO-WISEHD-4K'],
+        },
+        'Instrumental de laparoscopia': { 
+            'AMRCN': ['Clips Hemolok Morado', 'Clips Hemolok Verde'],
+          'Ethicon': ['100mm x 12mm','Clips Titanio LT300'],
+          'GM': ['Aguja de Veress','Baja Nudos','Cable Bipolar','Cable monopolar','Clips Hemolok Dorado','Clips Hemolok Morado','Clips Hemolok Verde','Clips Titanio OC300','Clips Titanio OC400','Conjunto de Irrigacion y Succion desechable','Engrapadora Articulada','Engrapadora Hemolok Amarillo','Engrapadora Hemolok Dorado','Engrapadora Hemolok Morado','Engrapadora Hemolok Verde','Engrapadora Titanio LT300','Engrapadora Titanio LT400','Espatula','Gancho En L','Pinza Sectorial','Pinza Alligator','Pinza Babcock','Pinza Babcock Grasper 5mm 330mm','Pinza Babcock Grasper 10mm 330mm','Pinza Cobra','Pinza Colecistectomia','Pinza De Curva','Pinza De Disección','Pinza De Tijera Recta','Pinza Disectora','Pinza Extractora De Litos','Pinza Fenestrada','Pinza Grasper','Pinza Maryland Curva','Porta agujas 5mm 300mm','Mango Aislado con Cremallera','Mango Aislado Sin Cremallera','Retractor','Tijera Metzenbaum Doble Acción Curva 5mm* 330mm','Tubo de Irrigacion y Succion Reusable' ],
+          'Covidien': ['Engrapadora Endogia Articulada 45mm Morado','Engrapadora Endogia Articulada 60mm Morado','Engrapadora Endogia Articulada 45mm Vascular Dorado','Engrapadora Endogia Articulada 60mm Vascular Dorado','Engrapadora Endogia ultra 12mm','Engrapadora Endoclip 10mm M/L','Engrapadora Tri-Staple Extra 60mm Negro'],
+          'Storz': ['Pinza Grasper'],
+        },
+        'Manguera de insuflacion': { 
+            'stryker': ['manguera','yugo CO2','Linea de Insuflacion con Adaptador Desechables','Linea de Insuflacion con Filtro Desechables']
+        },
+        'Pinza': {
+          'Covidien': ['Blunt Tip 5mm-37cm','Impact 36mm-18cm', 'Maryland 5mm-37cm','Maryland 5mm-23cm','Small Jam 16.5mm-19cm','Exact Dissector 20.6mm-21cm'],
+          'Ethicon': [ 'Pinza Har23','Pinza Har36',' Engrapadora Circular Curva y Recta 33mm'],
+           'STRYKER': [' Blunt Tip 5mm-37cm']
+        },
+        'Adaptador': { 
+            'stryker': ['Adaptador cople de lente','Adaptador frontal de Insuflador','Adaptador Trasero de Insuflador'],
+        },
+        'Case de transporte': {
+            'GM': [ 'Camara y Fuente L9000','Camara 1688 y Fuente L11','Grabador e Insuflador','Monitor Vision Pro led','Monitor 4K Stryker','Monitor 4K SONY']
+        },
+        'Remotos': {
+            'GM': [ 'Para Grabador SDC3 y Connected']
+        },
+        'Charola de esterilizacion': {
+          'Stryker': ['Charola para Camara IAM','Charola para Lente de Laparoscopia'],
+          'Storz': ['Charola para Lente de Laparoscopia'],
+          'Artrhex': ['Charola para Lente de Laparoscopia'],
+          'Olympus': ['Charola para Lente de Laparoscopia'],
+          'GM': ['Charola para Instrumental'],
+          'Richard Wolf':['Charola para Lente de Laparoscopia'],
+        },
+        'Clips para monitor': {
+            'GM':[ 'Porta Monitor']},
+      },
+
+       endoscopia: {
+        'procesador': {
+          'Olympus': ['CV-160','CV-170','CV-180','CV-190','EVIS X1'],
+          'Fujifilm': ['VP-4400','VP-4440HD','EP-6000','EP-7000'],
+          'Pentax': ['EPK-i','EPK-i7010'],
+        },
+        'fuente de luz': {
+          'Olympus': ['CLV-160','CLV-180','CLV-190'],
+          'Fujifilm': ['XL-4400','XL-4450','BL-7000'],
+          'Pentax': ['Prueba']
+        },
+        'broncoscopio': { 'Olympus': ['BF-XP160F','BF-1T190'] },
+        'colonoscopio': {
+          'Olympus': ['CF-Q160L','CF-H180AL','CF-Q180AL','CF-HQ190L','CF-EZ1500'],
+          'Fujinon': ['EC-250HL5','EC-600HL','EC-760R-V/L'],
+          'Pentax': ['EC-3890LI'],
+        },
+        'duodenoscopio': { 
+          'Olympus': ['JF-140F','TJF-160F','TJF-160VF','TJF-Q180V','TJF-Q180','TJF-Q90V'],
+          'Fujinon': ['ED-530XT'],
+          'Pentax': ['ED-34-I10T2'],
+        },
+        'gastroscopio': {
+          'Olympus': ['GIF-Q160','GIF-XP160','GIF-1TQ160','GIF-2T160','GIF-180','GIF-H180','GIF-H180J','GIF-H170','GIF-HQ190','GIF-EZ1500'],
+          'Fujinon': ['EG-530N','EG-530WR','EG-600WR','EG-6400N','EG-760R'],
+          'Pentax': ['EG-2990i'],
+        },
+        'argon plasma': { 'Erbe': ['ICC200','ICC300','VIO 300D','APC300', 'APC'] },
+        'bomba de co2': { 
+            'Fujinon': ['GW-100','Linea de CO2 para GW-100'], 
+            'Olympus': ['UCR','Linea de CO2 para UCR'], 
+        },
+        'bomba de irrigacion': {
+          'Olympus': ['OFP','OFP2'],
+          'Medivators': ['Endogator EGP-100','Stratus EGA-500'],
+          'Erbe': ['EIP 2'],
+        },
+         'Sonda Para Argon': {
+             'Erbe': [ 'FiaPC 2.3mm x L2.2mm Frontal','FiaPC 2.3mm x L2.2mm Circular','Sonda Jet Flexible 1.3mm x 2.2m']
+         },
+        'bomba de secrecion': { 'Infusomat': ['Braun Sumalfit'] },
+        'capturador de video': { 
+            'Ugreen': ['HDMI'],
+            'Steren': ['RCA/S-VIDEO'] 
+        },
+        'convertidor de video': { 'GM': ['X003'] },
+        'monitor': {
+          'Fujinon': ['LCD 19"'],
+          'Olympus': ['OEV 262H','OEV 191H'],
+          'Storz': ['4k 32"','Led 26"'],
+          'Sony': ['HD 19"','4k 55"'],
+        },
+        'Adaptador': {
+        'Valleylab': [ 'Adapatador Bipolar Azul Active Only'],
+        'Erbe': [ 'Adaptador Bipolar ICC 200 ','Adaptador para Sonda ICC200 ICC300 VIO 300D','Sonda Circular'],
+        'GM': ['Adaptador para el canal de Biopsia'],
+        'Cerofrict': [ ' Conector de Agua Auxiliar para Serie fujinon 700'],
+        },
+        'grabador': { 
+            'KingMa':['KM-YK980']
+        },
+        'interfaz monopolar para erbe': { 
+            'Erbe': ['Cable interfaz']
+        },
+        'interfaz': { 
+            'Olympus': ['MAJ-1411 Serie 180'],
+            'Fujinon': ['Serie 6000 y 7000']
+        },
+        'Balance de Blancos':{
+            'Olympus': ['MH-155 W/B','MAJ-960 Porta W/B']
+        },
+        'eliminador': { 
+            'Storz': ['4k 32"','Led 26"','XP POWER'],
+            'Sony': ['HD 19"','4k 55"'],
+            'GM': ['Image Stream str'],
+        },
+        'focos': {
+          'Excelitas': ['PE300BFA para 180-160-4400-4450-Xenon 300','PE150AF para Fujinon-2200', 'Y1882 para EPK-i','PE300C-10FS para EPK-i','Y1964 para EPK-5010 y EPKI-7010','Y1911 para EPK-5010 y EPKI-7010'],
+          'Olympus':[ 'MAJ-1817 para 180-160-4400-4450-Xenon 300'],
+        },
+        'Carro': { 
+            'Olympus': ['Para sistema 160 o 180','Para sistema 190'],
+            'Fujinon': ['Carro Original'],
+            'GM':['Carro GM'],
+        },
+        'kit de limpieza': { 
+            'Olympus':  ['MH-946 para 160 180 y 190','MAJ-885 Linea de Irrigacion Jet Auxiliar','MAJ-MH-856 Adaptador de Limpieza por Aspiracion','MAJ-222 Adaptador de Limpieza para Broncoscopio','MH-948 Valvula de Limpieza','MH-944 Conector de canal y valvulas'],
+            'Fujinon': ['WA-007 para 760','SA-503 para 530-600'],
+             'Pentax': ['Serie K-I'],
+        },
+        'linea de irrigacion': {
+            'GM': ['Genericas'],
+            'Medivators': ['100611 OFP-OFP 2-Stratus','200230 EGP-100, Olimpus OFP y ERBE' ],
+            'Endo Smartcap': ['100145CO2EXT Olympus 140,140,180 y 190 con Co2','100145CO2 Olympus 140,140,180 y 190','100160 Adaptador para Pentax','100551 Tubo de CO2'],
+            'Boston Scientific': ['SIT-576 para Olympus'],
+            'Olympus': ['Para Olympus'],
+            },
+        'contenedor de liquidos': {
+            'Olympus': ['Serie 100','160','180','190 Para UCR MAJ-902','190 MAJ-901'],
+            'Fujinon': [ 'Serie 500 y 600','760 WT 04','760 para Insuflador'],
+            'Pentax': ['Serie 7010'],
+        },
+        'Pedal':{
+            'Medivators':['Endogator'],
+            'Olympus':['OFP'],
+            'Erbe':['OFP2'],
+        },
+        'Pilas': {
+             'Olympus': [' Pilas para Sistema Serie 160-180-190'],
+        },
+        'Pinzas de Endoscopia': {
+        'Olympus': ['Pinza de biopsia 2.0mm x 1150mm','pinza de Polipectomia hot 2.8mm x 2300mm','pinza de Extraccion 2.0mm','pinza de Extraccion 2.8mm'],
+        'GM': ['Pinza de biopsia 2.8mm','Pinza de biopsia 2.0mm','Pinza de canasta de 4 Hilos 2.8/3.2 mm x 1600mm','Pinza de canasta de 4 Hilos 2.0 mm x 1800mm','Pinza de extraccion Mixta 2.0 x 1800mm','Pinza de extraccion Mixta 2.8 x 1600mm','Pinza de polipectomia 2.4 x 1600mm'],
+        'Micro-Tech': ['Pinza de Caiman 2.8mm x 1800mm','Pinza de Caiman 2.8mm x 2300mm','Pinza de extraccion Mixta 2.8mm x 2300mm','Pinza de extraccion Mixta 2.0mm x 1800mm','Pinza de Red 2.8mm x 2300mm'],
+        'Cook': ['Inyector de varices Desechable 2.8mm x 2400mm']
+        },
+        'Probador de fuga': { 
+            'Olympus': ['Serie 160 180 190'],
+            'Fujinon': [ 'Serie 500 y 600','Serie 760'],
+            'Pentax': ['Serie 90i'],
+        },
+        'transductor para usg-400':{
+            'Olympus': ['Thunderbeat TD-TB400','Sonicbeat'],
+        },
+        'Protector bucal de endoscopio': {'Olympus': ['MB-142 Olympus'],
+            },
+        'Protector de punta de endoscopio': {
+            'GM': ['Protector Azul']
+        },
+        'Remoto para Endoscopios': {
+            'GM': ['Para Olympus 160','Para Olympus 180 y 190','Para Pentax','Para Fujinon'],
+        },
+        'Tapon de biopsia': {
+            'GM': ['GM'],
+        },
+        'Tapon-eto': {
+            'Olympus': ['MH-553','ETO CAP MB-156'],
+            'Pentax': [' Serie 90i']
+        },    
+        'Tanque de Argón':{
+            'GM': ['Tanque de Argón'],
+        },
+        'Valvulas desechables': {
+            'Olympus': [ 'ScopeValet'],
+        },
+        'Valvulas reusables': {
+            'Fujinon': [ 'Serie 760','Serie 530 y 600'],
+            'Olympus': [ 'Serie 160-180-190'],
+            'Pentax': [ 'Serie 90i','Serie 90k'],
+        },
+        'Yugo para Argon': {
+            'Erbe': ['ICC200','ICC300','VIO 300D','APC300', 'APC'],
+          },
+        'Teclado': { 
+           'Olympus': ['Serie 100','160','180','190'],
+            'Fujinon': [ 'Serie 500 y 600','760'],
+            'Pentax': ['Serie 7010'],
+        },
+        'Mouse': {
+            'GM': ['GM'],
+            },
+        'Multicontacto': { 
+            'Adir':['Para carros GM'],
+        },
+         'Manguera de insuflacion': { 
+            'Olympus': ['manguera de CO2','yugo CO2']
+        },
+         'pc siimed analogo': {
+            'Dell': [ 'PC SIIMED para 4400-160-180']
+        },
+        'pc siimed hd': {
+            'Dell': [ 'PC SIIMED para 4450-190-EPKi-EPKi-7010']
+        },
+        'Pigtail': { 
+            'Olympus': ['Sistema 160-Maj-843','Sistema 180-190-Maj-1430'],
+        },
+        'Refaccionamiento de Endoscopios': { 
+            'Fujinon': ['Fibra de luz EG-530WR'],
+            'Olympus': ['Boton 1'],
+            'Pentax': ['Prueba'],
+        },
+        'Cable': {
+            'GM': [ 'Cable de Video HDMI','Cable de Video Coaxial','Cable de Video SDI'] },
+        'Cable bipolar': {
+            'Olympus':[ 'Punta verde MH-969']},
+        'Cepillo de limpieza': {
+            'Olympus':[ '2mm-4.2'],
+            'Storz':[ 'Cepillo 1.2mm-1.8mm'],
+            'GM':[ 'Cepillo 2.8mm-1600mm'],
+            },
+        'Capuchon distal': {
+            'Olympus': ['Protector Distal para Duodenoscopio MAJ-2315']},
+      },
+
+      quirofano: {
+        'adaptador': {
+             'Valleylab': [ 'Adapatador Bipolar Azul Active Only'],
+        },
+        'adaptador para ligasure': {
+            'Cad':['LS8','Force FX','Force 2','Adaptador Bipolar LS8'],
+        },     
+        'adaptador para armonico': {
+            'Ethicon':['Enseal HGA11','Harmonic HGA11','Adaptador de Conmutacion HSA07','Adaptador para cambio rapido de Pinzas','Adaptador para Prueba de Pieza de Mano'],
+        },
+        'ligasure ls8': { 'Valleylab': ['LS8'] },
+        'electrocauterio': {
+          'Valleylab': ['Force 2','Force FX','ForceTriad','FT10'],
+          'Ellman': ['Surgitron 4.0 Dual'],
+          'Erbe': ['ICC 200','ICC 300','VIO 300D'],
+          'Olympus': ['ESG-400',],
+          'GM': ['CITADEL 300'],
+          'Conmed': ['Sabre Genesis'],
+        },
+        'brazalete pani': { 
+           'Datex-Ohmeda': ['Cardiocap5'],
+            'Drager': ['Delta Infinity'],
+            'Phillips': ['MP50 Intellivue','MP70 Intellivue','Heartstart MRX'],
+            'Mindray': ['V12'],
+            'Datascope':['Accutor Plus'],
+            'GM':['Adultos','Pediatrico']
+        },
+        'Bomba de Infusion': {
+            'Dre Med':[ 'NTx3 Plus'],
+        },
+        'Cable Interfaz': {
+            'Covidien o Valleylab': ['Evacuador de Humo' ],
+        },
+         'Evacuador de Humo': {
+            'Covidien o Valleylab':[' RapidVac']
+        },
+        'maquina de anestesia': {
+            'Datex-Ohmeda': ['Aestiva','Avance','Aisys','Aespire'],
+            'Narkomed': ['GS'],
+            'Dräger':['Fabius MRI'],
+        },
+        'mesa de cirugia': {
+            'Amsco': ['2080 Semielectrica y SemiTraslucida' ,'3080 Electrica y Traslucida'],
+            'Maquet':['Alphamaxx']
+      },
+        'lampara de quirofano': {
+            'Stryker': ['Vision 2'],
+            'Skytron': ['Aurora'],
+      },
+      'laringoscopio': {
+         'Aswad': ['Mango con 4 hojas'],
+         'Surgical Appliances': ['Mango con 4 hojas'],
+    },
+        'monitor signos vitales': {
+            'Datex-Ohmeda': ['Cardiocap5'],
+            'Drager': ['Delta Infinity'],
+            'Phillips': ['MP50 Intellivue sin capnografia','MP50 Intellivue con capnografia','MP70 Intellivue'],
+            'Mindray': ['V12'],
+            'DataScope':['Accutor Plus'],
+        },
+        'desfribilador': {
+            'Phillips': ['Heartstart MRX'],
+            'Zoll': ['AED plus'],
+            },
+        'bipap': {
+            'Phillips':['Ventilador Respironics Nuevo']},
+        'vaporizador': { 
+            'Datex-Ohmeda': ['Tec 7 Aestiva-Aespire','Casette Aisys'],
+        },
+        'CharoLa de esterilizacion': {
+            'Ethicon': ['Endo Surgery para Pieza de Mano'],
+        },
+        'oximetro': {
+            'Masimo': ['Radical 7'],
+        },
+        'sensor de ecg': {
+            'Phillips': ['Heartstart MRX','MP70 Intellivue','MP50 Intellivue'],
+            'Drager': ['Delta Infinity'],
+            'Datex Ohmeda':['Cardiocap5'],
+            'Mindray': ['V12']
+        },
+        'sensor de spo2': {
+            'GM': ['Contec CMS 9200 Plus'],
+            'Phillips': ['Heartstart MRX','MP70 Intellivue','MP50 Intellivue'],
+            'Drager': ['Delta Infinity'],
+            'Datex Ohmeda':['Cardiocap5'],
+            'Mindray': ['V12'],
+            'DataScope':['Accutor Plus'],
+            'Masimo':['Radical 7'],
+        },
+        'sensor pani': {
+            'Phillips': ['Heartstart MRX','MP70 Intellivue','MP50 Intellivue'],
+            'Drager': ['Delta Infinity'],
+            'Datex Ohmeda':['Cardiocap5'],
+            'Mindray': ['V12'],
+            'Datascope':['Accutor Plus']
+        },
+        'sensor de temperatura': {
+            'Phillips': ['Heartstart MRX','MP70 Intellivue','MP50 Intellivue'],
+            'Drager': ['Delta Infinity'],
+            'Datex Ohmeda':['Cardiocap5'],
+            'Mindray': ['V12'],
+            'Orantech': [ 'Cardiocap5'],
+        },
+        'pedal bipolar': {
+            'Valleylab': ['Force 2','Force FX','ForceTriad','FT10'],
+            'Conmed': ['Sabre Genesis'],
+        },
+        'pedal monopolar': { 
+            'Valleylab': ['Force 2','Force FX','ForceTriad','FT10'],
+            'Conmed': ['Sabre Genesis'],
+            'Olympus': ['ESG-400'],
+            'Ellman': ['Electrocauterio Ellman']
+        },
+        'pedal ligasure': { 
+            'Covidien':[ 'Pedal Bipolar Morado','Pedal Bipolar Anaranjado','Pedal Bipolar Doble']
+        },
+        'placa para electrocauterio': {
+            'OBS':['Placa desechable']},
+        'lapiz para electrocauterio': {
+            'Avante':['Placa desechable'],
+            'OBS':['Placa desechable'],
+            'Covidien': [ 'Placa desechable'],
+            'Conmed':['Placa desechable'],
+            'Smith&Nephew':['Placa desechable']
+        },
+        'Línea de Muestreo de CO2': {
+            'Datex Ohmeda':['Aisys','Avance' ,'Cardiocap5'],
+            'Phillips': ['Heartstart MRX'],
+        },
+        'cable para pinza bipolar': {
+            'Covidien': [ 'Pinza Bipolar']},
+        'cable trocal ecg': { 
+            'Drager': ['Delta Infinity'],
+        },
+        'carro para electrocauterio': { 
+            'Erbe': [ 'Para ERBE'],
+            'Covidien': ['Force 2','Force FX','ForceTriad','FT10'],
+        },
+        'carro rojo Emergencias': {
+            'Lifeline': [ 'Carro de Emergencias'],
+            'GM': [ 'Carro de Emergencias NUEVO'],
+        },
+        'eliminador': {
+            'Phillips': ['Fuente de poder Desfibrilador MRX'],
+            'Drager': ['Infinity Delta']
+            },
+        'pieza de mano para gen11': {
+            'Ethicon':[ 'Pieza Gris con 4 usos HP054','Pieza Gris con 70 usos HP054','Pieza Gris con 87 usos HP054','Pieza Gris con 92 usos HP054', 'Pieza Azul HPBLUE']},
+        'armonico gen11': { 
+            'Ethicon':[ 'Armonico GEN11','Pedal Gen11']
+        },
+      },
+
+      hospitalizacion: {
+        'aspirador': {
+            'Hergon': ['7E-A NUEVO']
+        },
+        'cama hospitalaria electrica': {
+            'Hill Roon':['Versacare',],
+            'stryker':['MPS Secure II','S3']
+        },
+        'camilla': { 
+            'Hill Roon':['P8000'],
+            'Stryker':['Prime Series','1015 Stretcher'],
+        },
+        'cuna termica': {
+            'GE Healthcare':[' Panda Warmer']},
+        'incubadora': {
+            'GE': [' Giraffe'],
+        },
+        'mesa de exploracion': { },
+        'ventilador': {
+            'Nellcor': ['Puritan Benett 840']
+        },
+      },
+
+      radiologia: {
+        'arco en c': { 
+            'Phillips': ['BV Pulsera 2008'],
+        },
+        'bateria': { },
+        'chasis': { },
+        'flat panel': { },
+        'rayos x rodable': { },
+        'rayos x portatil': { },
+      },
+      urologia: {
+        'cistoscopio': { 
+        },
+        'histeroscopio': {
+              'Storz': ['Lente 2.9mm-30°-30cm largo 26120BA','Pinza Grasper Semirrigida 227-029-533','pinza de biopsia Semirrigida 227-029-560','tijeras de cirugia Semirrigida 227-029-514', 'vaina de histeroscopio 5mm 26153EA','fibra de luz Gris AA-496']
+        },
+        'resectoscopio': { 
+            'stryker': ['Lente Precision 4mm-30°-30cm 0502-990-030','Elemento de Trabajo Pasivo tipo Inglesas 502-880-401','Obturador Timberlake 502-880-003','Obturador Estandar 502-880-001','Obturador Visual de 24/26 fr 502-880-002','Vaina Exterior de Flujo Continuo 502-880-426', 'Adaptador Interno para evacuador Ellik 502-880-602', 'Adapatador de Jeringa 502-880-006', 'Cable Monopolar GM','Fibra de Luz Gris GM','Electrodo de Bucle de corte recto 0504-880-500','Electrodo de bola Vaporizadora con Hoyuelos 0504-880-600','Electrodo de bola Rodante de 3mm 0504-880-200','Electrodo de Cuchillo 0540-880-800'],
+        },
+        'ureteroscopio flexible': { 
+              'Richard Wolf': ['7305.006'],
+        },
+        
+        'ureteroscopio rigido': { },
+      },
+
+      artroscopia: {
+        'rasurador shaver': { 
+            'Stryker': ['Core','Crossfire','Crossfire2']
+        },
+        'radio frecuencia serfas': {
+            'Stryker': ['Serfas Energy 90S 4.0mm X 135mm']
+        },
+        'puntas de radio frecuencia': {
+          'Stryker': ['Cortadora Agresiva Plus 3.5mm x 80mm Amarillo','Cortadora Agresiva Plus 5.0mm x 125mm Azul','Cortadora Angular 4.0mm x 125mm Rojo','Cortadora Angular 5.0mm x 125mm Azul','Cortadora Resector 3.5mm x 125mm Amarillo','Cortadora XL Agresiva 4.0mm x 180mm Rojo','Fresa 5mm x 125mm Azul','Fresa de Abrasion 2.0mm x 80mm Morado','Fresa Redonda de 12 filos 5.5mm x 125mm Café','Fresa de Barril de 12 hilos 5.5mm x 125mm Cafe'],
+        },
+        'puntas de serfas de radiofrecuencia': { 
+            'Stryker': ['90-S 4.0mm x 135mm Rojo','50-S 3.5mm x 135mm Amarillo']
+        },
+        'bomba de irrigacion': {
+            'Stryker': ['Flow Control']
+        },
+         'Hoja de Sierra Sagital':{
+            'Stryker': ['90191.2','90221.2'],
+            'GM': ['Prueba']   
+         },
+        'artroscopio': { 
+            'Stryker': ['4mm-30°Ideal eyes','4mm-30°Precision','4mm-30° de rosca Precision','4mm-0 Precision°','2.7mm-30°'],
+            'Artrhex': ['2.7mm-30°'],
+            'Storz': ['1.9mm-30°'],
+        },
+        'transmisores': { },
+        'pedal': {
+            'Arthocare': ['Coblator II'],
+            'Stryker': [' serfas'],
+        },
+        'set de taladros de artroscopia System 4': {
+          'Stryker': [ 'System 4 Mandril con llave 1/4','System 4 Llave Larga','System 4 Llave Corta','System 4 Taladro Con Mandril 5/32','System 4 Taladro Con Mandril 1/4','System 4 Taladro Pequeño','System 4 Destornillador CD4 Gatillo Doble','System 4 Pinza de Alambre','System 4 Pinza de Sujecion','System 4 Sierra Sagital Sabo 2','System 4 Baterias','System 4 Cargador de Baterias']
+        },
+        'set de taladros de artroscopia System 7': {
+         'Stryker': [ 'System 7 Mandril con llave 1/4','System 7 Mandril con llave 5/32','System 7 Llave Larga','System 7 Llave Corta','System 7 Taladro pequeño','System 7 Pinza de Pasador de Gatillo Doble',
+            'System 7 Porta Pines de Doble Gatillo','System 7 Hudsom','System 7 Hudsom Modificada Trinkle','System 7 Escoreador Largo','System 7 Trinkle','System 7 Pinza de Alambre' ,'System 7 Mandril de Bloqueo Sin Llave 1/4',
+            'System 7 Taladro Rotatoria de Doble Gatillo','System 7 Sierra Reciproca','System 7 Sierra Ocilatoria',
+            'System 7 Baterias','System 7 Sierra Sagital','Cargador de Baterias']
+        },
+      'set de taladros de artroscopia System 8': {
+       'Stryker' :['System 8 Mandril llave 1/4','System 8 Llave Larga','System 8 Mandril con llave 5/32','System 8 Taladro pequeño','System 8 Llave Corta','System 8 Pinza de Pasador de Gatillo Doble',
+            'System 8 Porta Pines de Doble Gatillo','System 8 Hudsom','System 8 Hudsom Modificada Trinkle','System 8 Escoreador Largo','System 8 Trinkle','System 8 Pinza de Alambre','System 8 Mandril de Bloqueo Sin Llave 1/4',
+            'System 8 Pieza de Mano Rotatoria de Doble Gatillo','System 8 Sierra Reciproca','System 8 Sierra Ocilatoria',
+            'System 8 Baterias','System 8 Sierra Sagital','Cargador de Baterias']
+          },
+           'Set de Taladros Electrico Core Azul': {
+              'Stryker': [ 'Micro Taladro Electrico 6400-015-000','Sierra Sagital Electrica 6400-034-000','Sierra Ocilatoria Electrica 6400-031-000','Sierra Reciproca Electrica 6400-037-000','Taladro de Mandrin 5/32 4100-132-000','Taladro de Mandril 1/4 4100-131-000','Hudsom/Taladro Trinkle Modificado 4100-135-000','Taladro Pequeño AO 4100-110-000',' Micro Taladro Recto 5100-015-250',' Pinza de Alfiler 4100-125-000','Pinza de Alambre 4100-062-000', ' Controlador Universal 6400-099-000','Destornillador de Cable Elecrtico 6400-062-000','Cable para TPS-CORE 5100-004-000','Interuptor Manual 6400-9','Llave Corta','Llave Larga'],
+          },
+         'Set de Taladros Electrico Core Negro': { 
+             'Stryker': [ 'Micro Taladro Electrico 5400-15','Sierra Sagital Electrica 5400-34 ','Escoreador Largo 4100-210-000','Sierra Ocilatoria Electrica ','Sierra Reciproca Electrica ','Taladro de Mandril con Llave 5/32 4100-132 ','Taladro de Mandril con llave 1/4 4100-131','Hudsom/Taladro Trinkle Modificado ','Taladro Pequeño AO-4100-110 ',' Micro Taladro Recto 5100-15-250',' Pinza de Alfiler  4100-125','Pinza de Alambre 4100-62', ' Controlador Universal 6400-099-000 ','Destornillador de Cable Elecrtico ','Cable para TPS-CORE 5100-004-000 ','Interuptor Manual 6400-9'],
+         },
+        'camisa': {
+            'Artrhex': ['Camisa 2.7mm-4mm'],
+            'Stryker': ['Camisa 2.7mm-4mm'],
+        },
+        'opturador': {
+            'Artrhex': ['Opturador 2.7mm'],
+            'Stryker': ['Opturador 2.7mm'],
+        },
+        'pieza de mano': {
+            'Stryker': ['Formula Core Negra','Formula 180 Azul']
+            },
+        'cable para pieza de mano': { },
+        'charola de esterilizacion': {
+           'Stryker': [ 'Set de Taladro System 4','Set de Taladro System 7','Set de Taladro System 8','Set de Taladros Electrico Core Azul','Set de Taladros Electrico Core Negro','Set de cirugia para hombro y tobillo','Set de cirugia de rodilla'],
+           'Arthrex': [ 'AR-3100'],
+            'GM': [ 'GM'],
+        },
+        'meditronic': { },
+        'set de cirugia para tobillo y muñeca': { 
+            'Stryker': ['Nariz Roma hacia Arriba de 2.7mm 242-100-013','Nariz Recta 242-100-012','Pinza Grasper hacia Arriba 2.1mm 242-100-006','Pinza Grasper de 2.5mm 242-100-008','Nariz Recta Punzon de Articulacion Pequeña 242-100-002','Grasper Nariz hacia Abajo 242-100-005','Nariz derecha Punzon en Articulacion Pequeña 242-100-003','Nariz Izquierda Pequeño Golpe en la Articulacion 2.1mm 242-100-004','Tijeras para Juntas Pequeñas 242-100-007','Sonda de Articulacion Pequeña Recta 242-100-014','Sonda para Articulaciones Pequeñas de 90° 242-100-015','Sonda para Articulaciones pequeñas de 30° 242-100-016']
+        },
+        'set de cirugia de rodilla': {
+            'Stryker': [ 'Pinza de Mordida Grande hacia Arriba 3.4mm 15°','Morida Grande del Eje Ascendente Recto','Punzon de Mordida Grande de 3.4mm Recto','Pinzas para Tejidos Blandos de 3.4mm X 120mm','Micro Punzon de Tijera Recto 3.4mm','Mordedor de Punta Derecha 3.4mm x 45°','Mordedor de Punta Izquierda de 3.4mm 45°','Punzon Rotatorio de 3.4 mm y 90° a la Derecha','Sonda con Mango en Forma de Anillo','Opturador','Sonda','Aguja de Negra','Opturador de Punta Roma para Canula de Entrada / Salida 5.8mm','Palpador Switching Stick Pequeño', ' Canula de 100mm','Mango de Bisturi'],
+            'V.MUELLER': [ 'Tijeras de Diseccion Inoxidables','Porta agujas','Pinzas para la Arteria de Kelly','Pinza ADSON 1X2 Dientes'],
+            'KONIG': ['Pinza Quirurgica/Tolla','Pinza para Arteria de Crile- 1/2" de Largo'],
+      },
+      },
+      
+      ceye: {
+        'autoclave de camara 95 l': { },
+        'monitor': { },
+      },
+
+      ginecologia: {
+        'Camilla Ginecologíca': 
+        { 'Stryker': ['Geynnie'] 
+        },
+        'Ultrasonido': { 
+            'GE': [ 'Logic P3']
+         },
+        'mesa de exploracion': { 'Midmark': ['Modelo 404',' Ritte 622'] ,
+        },
+        'Ultrasonido': {
+                'GE': [ 'Logic P3'],
+        },
+         'Impresora': {
+                'Sony': [ 'UP-D897'],
+        },
+        'mesa de exploracion': { 
+            'Midmark': ['Modelo 404',' Ritte 622']},
+      },
+      otorrinolaringologia: {
+        'Microdebrilador': {
+            'Meditronic': ['XPS 3000'],
+        },
+        'Pedal Microdebrilador': {
+            'Meditronic': ['Xomed para XPS 3000'],
+        },
+        'Pieza de mano': {
+            'Meditronic': ['Magnum ii'],
+      },
+      'Electrocirugia': {
+            'Arthrocare': ['Coblator II'],
+      },
+       'Pedal': {
+            'Arthrocare': ['Pedal para Coblator Aquiline'],
+       },
+    },
+      material: {
+          'Limpiador y Desengrasante': {
+            'Steren': ['Desengrasante Y Limpiador'],
+      },
+      'Playon': {
+            'GM': ['GM']
+     }
+    },
+    },
+    
+
+    /* ===== PLANTILLAS COMPONENTES ===== */
+    plantillasPorSubtipo: {
+      'camara': ["Cable de alimentación","Cable de video", "couple", "cabezal"],
+      'fuente de luz': ["Cable de alimentación","Fibra de luz"],
+      'insuflador pnemosure 45 lts': ["consola","Manguera","Yugo","Adaptador trasero de CO2", "adaptador frontal", "cable de poder"],
+      'insuflador core 40 lts': ["consola","Manguera","Yugo","Adaptador trasero de CO2","cable de poder"],
+      'grabador': ["Cable de alimentación","Cable de video","Remotos"],
+      'monitor': ["Cable de alimentación","Eliminador"],
+      'lente de laparoscopia': ["Barril", "barril de clip", "caja de carton", "charola para esterilizacion"],
+
+      /* ✅ FIX ARTROSCOPIA: tu subtipo es "Lente", no "Lente de artroscopia" */
+      'lente': ["Barril de cuerda", "barril de clip", "caja de carton", "charola para esterilizacion", "camisa o canula", "punzon"],
+      'lente de artroscopia': ["Barril de cuerda", "barril de clip", "caja de carton", "charola para esterilizacion", "camisa o canula", "punzon"],
+
+      'clarity': ["Cable de alimentación","Cable de video"],
+      'transmisores': ["Cable de alimentación","Cable de video", "llave azul"],
+      'crossfire2': ["Cable delinea de agua","cable de poder"],
+      'videocarro': ["brazo","soporte","2 puertas de acrilico", "4 charolas", "cajon", "llave para puerta", "multicontacto", "cable de poder"],
+      'sistema 7 pequeños fragmentos': ["taladro","sierra sagital","pinza de pasador", "taladro pequeño", "mandril 1/4", "mandril 5/32", "llave corta", "llave larga", "cargador 2 puertos", "2 baterias"],
+      'core': ["Cable de alimentación fórmula Core","Charola de sierras y taladros (opcional)"],
+      'ligasura s8': ["Cable de alimentación","Adaptador para pinzas"],
+      'force triad': ["Cable de alimentación","Pedal monopolar","Lápiz","Placa"],
+      'gen11': ["Cable de alimentación","Adaptador Harmónico","Pieza de mano gris"],
+      'cama': ["Cable de poder","colchon","Control para paciente"],
+      'camillas': ["Colchon","Frenos","Llantas"],
+      'mesa de cirugia': ["Colchon","Frenos","Pierneras", "Portapierneras"],
+      'ventilador': ["camara","celda de oxigeno","compresor", "cable de poder", "circuito"],
+      'fuente de luz l9000': ["consola","fibra de luz blanca","fuente de luz gris"],
+      'fuente de luz l10': ["consola","fibra de luz verde", "adaptador para fibra", "cable de interfaz usb a ccu azul", "cable de poder "],
+      'fuente de luz l11': ["consola","fibra de luz verde", "adaptador para fibra", "cable de interfaz usb a ccu azul", "cable de poder "],
+      'arco en c': ["equipo en c","disparador","gabineta de pantallas", "impresora", "cable de poder", "baterias", "frenos"],
+      'desfibrilador': ["consola","sensor spo2","sensor de temperatura", "sensor de co2", "trampa de agua de co2", "cable de poder", "baterias","palas para desfibrilar"],
+      'maquina de anestesia': ["vaporizador","Frenos","Pierneras", "Portapierneras", "control","bateria", "cable de poder"],
+      'mesa de cirugia 3080': ["Colchon","Frenos","Pierneras", "Portapierneras", "control","bateria", "cable de poder"],
+      'cunas termicas': ["Colchon","sensor de temperatura","Llantas", "acrilicos"],
+      'electrocauterios': []
+    },
+
+    // ===== Helpers de UI =====
+    get tiposKeys(){ return Object.keys(this.tiposEquipos); },
+    get subtiposArr(){ return this.tipoSel ? (this.tiposEquipos[this.tipoSel] || []) : []; },
+
+    /* ✅ FIX CLAVE: buscar subKey por slug (ya no truena por "System" vs "system") */
+    findKeyBySlug(obj, wantedSlug){
+      if (!obj || typeof obj !== 'object') return null;
+      const keys = Object.keys(obj);
+      return keys.find(k => this.slug(k) === wantedSlug) || null;
+    },
+    getNodeBySlug(tipoKey, subKey){
+      const tipoObj = this.marcasModelosPorSubtipo?.[tipoKey];
+      if (!tipoObj) return {};
+      const realSubKey = this.findKeyBySlug(tipoObj, subKey);
+      return realSubKey ? (tipoObj[realSubKey] || {}) : {};
+    },
+
+    get marcasArr(){
+      if (!this.tipoSel || !this.subtipoSel) return [];
+      const tipoKey = this.slug(this.tipoSel);
+      const subKey  = this.slug(this.subtipoSel);
+      const node    = this.getNodeBySlug(tipoKey, subKey);
+      let list      = Object.keys(node);
+      if (this.marcaSel && !list.includes(this.marcaSel)) list.unshift(this.marcaSel);
+      return list;
+    },
+
+    get modelosArr(){
+      if (!this.tipoSel || !this.subtipoSel || !this.marcaSel) return [];
+      const tipoKey = this.slug(this.tipoSel);
+      const subKey  = this.slug(this.subtipoSel);
+      const node    = this.getNodeBySlug(tipoKey, subKey);
+      let arr = [];
+
+      if (node) {
+        if (node[this.marcaSel]) {
+          arr = node[this.marcaSel];
+        } else {
+          const brandKey = Object.keys(node).find(
+            b => b.toLowerCase() === String(this.marcaSel).toLowerCase()
+          );
+          if (brandKey) arr = node[brandKey];
+        }
+      }
+
+      if (this.modeloSel && !arr.includes(this.modeloSel)) arr.unshift(this.modeloSel);
+      return arr;
+    },
+
+    get sheetHeight(){
+      const n = this.sheet?.lista?.length || 0;
+      if (n <= 1) return '25dvh';
+      if (n <= 3) return '50dvh';
+      return '75dvh';
+    },
+
+    // Estado
+    tipoSel:'', subtipoSel:'',
+    marcaSel:'', modeloSel:'',
+    form:{ serie:'', anio:'', descripcion:'', fecha:'', observaciones:'' },
+
+    previews:[null,null,null], videoUrl:null,
+    firmaExistente:'', reFirmar:false, firmaData:'', isDrawing:false,
+
+    sheet:{ lista:[] }, seleccion:[],
+
+    _initial: initial, _updateUrl: updateUrl, _csrf: csrf,
+
+    titleCase(s){
+      return (s||'').toString().toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+    },
+
+    slug(s){
+      return (s||'').toString().toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+        .replace(/\s+/g,' ').trim();
+    },
+
+    boot(){
+      console.log('DEBUG EDIT - initial desde Blade:', this._initial);
+
+      // === Tipo ===
+      const tipoSlug  = this.slug(this._initial.tipo);
+      const tipoMatch = this.tiposKeys.find(k => this.slug(k) === tipoSlug);
+      this.tipoSel    = tipoMatch || (this._initial.tipo || '').trim();
+
+      // === Subtipo ===
+      const subtipoSlug = this.slug(this._initial.subtipo);
+      const subArr      = this.subtiposArr || [];
+      const subMatch    = subArr.find(s => this.slug(s) === subtipoSlug);
+      this.subtipoSel   = subMatch || (this._initial.subtipo || '').trim();
+
+      // === Marca (usando node por slug) ===
+      const marcaSlug = this.slug(this._initial.marca);
+      const tipoKey   = this.slug(this.tipoSel);
+      const subKey    = this.slug(this.subtipoSel);
+
+      const nodeMarca = this.getNodeBySlug(tipoKey, subKey);
+      const brandsArr = Object.keys(nodeMarca);
+      let marcaMatch  = brandsArr.find(m => this.slug(m) === marcaSlug);
+      this.marcaSel   = marcaMatch || (this._initial.marca || '').trim();
+
+      // === Modelo ===
+      const nodeModel = this.getNodeBySlug(tipoKey, subKey);
+      let modelos     = [];
+      if (nodeModel) {
+        if (nodeModel[this.marcaSel]) {
+          modelos = nodeModel[this.marcaSel];
+        } else {
+          const brandKey = Object.keys(nodeModel).find(
+            b => b.toLowerCase() === String(this.marcaSel).toLowerCase()
+          );
+          if (brandKey) modelos = nodeModel[brandKey];
+        }
+      }
+      const modeloSlug = this.slug(this._initial.modelo);
+      let modeloMatch  = (modelos || []).find(mo => this.slug(mo) === modeloSlug);
+      this.modeloSel   = modeloMatch || (this._initial.modelo || '').trim();
+
+      console.log('DEBUG boot() después de normalizar:', {
+        tipoSel: this.tipoSel,
+        subtipoSel: this.subtipoSel,
+        marcaSel: this.marcaSel,
+        modeloSel: this.modeloSel,
+        subtiposArr: this.subtiposArr,
+        marcasArr: this.marcasArr,
+        modelosArr: this.modelosArr,
+        tipoKey, subKey
+      });
+
+      // Campos de texto
+      this.form.serie         = this._initial.serie || '';
+      this.form.anio          = this._initial.anio || '';
+      this.form.descripcion   = this._initial.descripcion || '';
+      this.form.fecha         = this._initial.fecha || '';
+      this.form.observaciones = this._initial.observaciones || '';
+
+      // Evidencias y firma
+      this.previews = [
+        this._initial.evid1 || null,
+        this._initial.evid2 || null,
+        this._initial.evid3 || null
+      ];
+      this.videoUrl       = this._initial.video || null;
+      this.firmaExistente = this._initial.firma || '';
+      this.firmaData      = '';
+
+      // Componentes según subtipo (sin resetear marca/modelo)
+      if (this.subtipoSel) {
+        this.onSubtipoChange(false);
+      }
+
+      if (!this.firmaExistente) {
+        this.$nextTick(() => this.initCanvas());
+      }
+
+      // Fallback MANUAL: asegurar que los selects DOM tengan el valor correcto
+      this.$nextTick(() => {
+        console.log('DEBUG boot() – fallback manual a selects DOM');
+
+        const ensureSelect = (id, value, text) => {
+          if (!value) return;
+          const el = document.getElementById(id);
+          if (!el) return;
+
+          let opt = Array.from(el.options).find(o => o.value === value);
+          if (!opt) {
+            opt = new Option(text || value, value, true, true);
+            el.add(opt);
+          }
+          el.value = value;
+        };
+
+        ensureSelect('eq_tipo',   this.tipoSel,    this.tipoSel);
+        ensureSelect('eq_sub',    this.subtipoSel, this.subtipoSel);
+        ensureSelect('eq_marca',  this.marcaSel,   this.marcaSel);
+        ensureSelect('eq_modelo', this.modeloSel,  this.modeloSel);
+
+        ['eq_tipo','eq_sub','eq_marca','eq_modelo'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.dispatchEvent(new Event('change', {bubbles:true}));
+        });
+      });
+    },
+
+    onTipoChange(resetSub=true){
+      if (resetSub) {
+        this.subtipoSel='';
+        this.marcaSel='';
+        this.modeloSel='';
+      }
+      this.sheet.lista=[]; this.syncSeleccion();
+    },
+
+    onSubtipoChange(merge = true){
+      if (merge) {
+        this.marcaSel='';
+        this.modeloSel='';
+      }
+      const key = this.slug(this.subtipoSel);
+
+      // ✅ usa slug para buscar plantilla real (por si un día pones mayúsculas/acentos)
+      const plantillaKey = this.findKeyBySlug(this.plantillasPorSubtipo, key) || key;
+      const base = this.plantillasPorSubtipo[plantillaKey] || [];
+
+      this.sheet.lista = base.map(n => ({ nombre:n, cantidad:1, incluido:true }));
+      if (merge) this.mergeExistentes();
+      this.syncSeleccion();
+    },
+
+    onMarcaChange(){ this.modeloSel = ''; },
+
+    mergeExistentes(){
+      const exMap = new Map((this._initial.componentes || []).map(c => [this.slug(c.nombre), c]));
+      this.sheet.lista = this.sheet.lista.map(it => {
+        const ex = exMap.get(this.slug(it.nombre));
+        return ex ? { nombre: it.nombre, cantidad: Number(ex.cantidad)||1, incluido: !!(+ex.incluido) } : it;
+      });
+      exMap.forEach((ex, key) => {
+        if (!this.sheet.lista.some(it => this.slug(it.nombre) === key)) {
+          this.sheet.lista.push({ nombre: ex.nombre, cantidad: Number(ex.cantidad)||1, incluido: !!(+ex.incluido) });
+        }
+      });
+    },
+
+    syncSeleccion(){
+      this.seleccion = this.sheet.lista
+        .filter(x => x.cantidad > 0)
+        .map(x => ({ nombre:x.nombre, cantidad:x.cantidad, incluido:!!x.incluido }));
+    },
+    restaurarPlantilla(){ this.onSubtipoChange(false); this.syncSeleccion(); },
+
+    previewImg(e, i){
+      const f = e.target.files?.[0]; if(!f){ return; }
+      const rd = new FileReader(); rd.onload = ev => this.previews.splice(i,1,ev.target.result); rd.readAsDataURL(f);
+    },
+    previewVideo(e){
+      const f = e.target.files?.[0];
+      if(this.videoUrl && this.videoUrl.startsWith('blob:')) URL.revokeObjectURL(this.videoUrl);
+      this.videoUrl = f ? URL.createObjectURL(f) : this._initial.video || null;
+    },
+
+    toggleFirma(){
+      this.reFirmar = !this.reFirmar;
+      if (this.reFirmar) this.$nextTick(()=>this.initCanvas());
+      if (!this.reFirmar) this.firmaData = '';
+    },
+    initCanvas(){
+      const canvas=this.$refs.canvas; if(!canvas) return;
+      const dpr=window.devicePixelRatio||1, rect=canvas.getBoundingClientRect();
+      canvas.width=rect.width*dpr; canvas.height=170*dpr; canvas.style.width=rect.width+'px'; canvas.style.height='170px';
+      const ctx=canvas.getContext('2d'); ctx.scale(dpr,dpr); ctx.lineWidth=2; ctx.lineCap='round'; ctx.strokeStyle='#1d4d4f';
+      let draw=false, last=null;
+      const pos=e=>{ const b=canvas.getBoundingClientRect(); const x=(e.touches?e.touches[0].clientX:e.clientX)-b.left; const y=(e.touches?e.touches[0].clientY:e.clientY)-b.top; return {x,y}; };
+      const start=e=>{ draw=true; last=pos(e); this.isDrawing=true; e.preventDefault(); };
+      const move=e=>{ if(!draw) return; const p=pos(e); ctx.beginPath(); ctx.moveTo(last.x,last.y); ctx.lineTo(p.x,p.y); ctx.stroke(); last=p; e.preventDefault(); };
+      const end=()=>{ draw=false; this.isDrawing=false; this.firmaData=canvas.toDataURL('image/png'); };
+      ctx.fillStyle='#fff'; ctx.fillRect(0,0,canvas.width,canvas.height);
+      canvas.addEventListener('mousedown',start); canvas.addEventListener('mousemove',move); window.addEventListener('mouseup',end);
+      canvas.addEventListener('touchstart',start,{passive:false}); canvas.addEventListener('touchmove',move,{passive:false}); canvas.addEventListener('touchend',end);
+    },
+    clearSig(){ const c=this.$refs.canvas; if(!c) return; const ctx=c.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,c.width,c.height); this.firmaData=c.toDataURL('image/png'); },
+
+    inc(i){ this.sheet.lista[i].cantidad=(this.sheet.lista[i].cantidad||0)+1; this.syncSeleccion(); },
+    dec(i){ this.sheet.lista[i].cantidad=Math.max(0,(this.sheet.lista[i].cantidad||0)-1); this.syncSeleccion(); },
+
+    async submit(){
+      const fd = new FormData(document.getElementById('frmEdit'));
+
+      fd.set('Tipo_de_Equipo', this.tipoSel || '');
+      fd.set('Subtipo_de_Equipo', this.subtipoSel || '');
+
+      this.syncSeleccion();
+      this.seleccion.forEach((r,i)=>{
+        fd.set(`componentes[${i}][nombre]`, r.nombre);
+        fd.set(`componentes[${i}][cantidad]`, r.cantidad);
+        fd.set(`componentes[${i}][incluido]`, r.incluido ? 1 : 0);
+      });
+
+      if (!this.reFirmar) { fd.set('firmaDigital', ''); }
+
+      try{
+        const res = await fetch(this._updateUrl, {
+          method: 'POST',
+          headers: {
+            'X-Requested-With':'XMLHttpRequest',
+            'X-CSRF-TOKEN': this._csrf,
+            'X-HTTP-Method-Override':'PUT',
+            'Accept':'application/json'
+          },
+          body: fd
+        });
+        const json = await res.json().catch(()=>({}));
+        if(!res.ok || json.success === false){
+          this.toast(json?.error || 'No se pudo actualizar', false);
+          return;
+        }
+        this.toast('Actualizado correctamente', true);
+        setTimeout(()=>{ window.location = "{{ url()->previous() }}"; }, 900);
+      }catch(e){
+        this.toast('Error de red/servidor', false);
+      }
+    },
+
+    toast(msg, ok=true){
+      const id='t'+Date.now();
+      const el=document.createElement('div');
+      el.className='toast align-items-center border-0 shadow-sm'; el.id=id;
+      el.setAttribute('role','alert'); el.setAttribute('aria-live','assertive'); el.setAttribute('aria-atomic','true');
+      el.innerHTML=`
+        <div class="d-flex ${ok?'bg-success-subtle text-success-emphasis':'bg-danger-subtle text-danger-emphasis'} rounded-3 px-3 py-2">
+          <div class="toast-body">${this.escape(msg)}</div>
+          <button type="button" class="btn-close ms-auto m-1" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>`;
+      document.getElementById('toastPlace').appendChild(el);
+      const t=new bootstrap.Toast(el,{delay:2200}); t.show();
+      el.addEventListener('hidden.bs.toast',()=>el.remove());
+    },
+    escape(s){ return (s||'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+  }
+}
+</script>
+
+@endsection

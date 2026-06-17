@@ -33,7 +33,7 @@ class MovimientoController extends Controller
     }
             $validator = Validator::make($request->all(), [
                 'descripcion' => 'required|string',
-                'evidencia1' => 'nullable|image|mimes:jpg,jpeg,png,gif,webp,heic,heif',
+  'evidencia1' => 'nullable|image|mimes:jpg,jpeg,png,gif,webp,heic,heif',
                 'evidencia2' => 'nullable|image|mimes:jpg,jpeg,png,gif,webp,heic,heif',
                 'evidencia3' => 'nullable|image|mimes:jpg,jpeg,png,gif,webp,heic,heif',
                 'video-evidencia' => 'nullable|file|mimetypes:video/mp4,video/avi,video/mpeg,video/webm,video/quicktime,video/x-msvideo,video/x-flv,video/3gpp,video/3gpp2,video/x-matroska,video/x-ms-wmv,video/hevc,video/h265,video/mp2t,video/ogg,video/x-matroska,video/mkv',

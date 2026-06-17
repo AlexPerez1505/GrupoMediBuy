@@ -3,9 +3,13 @@
 @section('titulo', 'Compras')
 @section('content')
 <link rel="stylesheet" href="{{ asset('css/compras.css') }}?v={{ time() }}">
-
-<div class="container mt-5">
-    <h2 class="mb-4">📦 Crear Nuevo Pedido</h2>
+<style>
+    .container{
+        margin-top:20px!important;
+    }
+</style>
+<div class="container mt-5" >
+    <h2 class="mb-4">📦 Crear Nueva Compra</h2>
     @if(session('success'))
         <div class="alert alert-success">{{ session('success') }}</div>
     @endif

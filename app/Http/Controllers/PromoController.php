@@ -58,23 +58,40 @@ class PromoController extends Controller
     public function send(Request $request, WhatsAppService $wa)
     {
         $data = $request->validate([
-            'header_image'       => ['required','image','mimes:jpg,jpeg,png','max:4096'],
-            'frase'              => ['required','string','max:500'],
-            'mode'               => ['required','in:selected,all_filtered'],
-            'ids'                => ['array'],         // cuando mode=selected
+            // ✅ CUALQUIER IMAGEN + SIN LIMITE EN VALIDACIÓN LARAVEL
+            // (ojo: tu servidor puede bloquear por php.ini y WhatsApp puede rechazar tamaños enormes)
+            'header_image'       => ['required', 'file', 'mimetypes:image/*'],
+
+            'frase'              => ['required', 'string', 'max:500'],
+            'mode'               => ['required', 'in:selected,all_filtered'],
+
+            // cuando mode=selected (ids[])
+            'ids'                => ['array'],
             'ids.*'              => ['integer'],
-            // filtros que reusamos para mode=all_filtered
-            'q'                  => ['nullable','string','max:255'],
-            'solo_con_telefono'  => ['nullable','in:0,1'],
+
+            // filtros para mode=all_filtered
+            'q'                  => ['nullable', 'string', 'max:255'],
+            'solo_con_telefono'  => ['nullable', 'in:0,1'],
         ]);
 
         // 1) Subir imagen a /media
-        $upload = $wa->uploadMedia($request->file('header_image'));
-        if (!$upload->ok()) {
-            Log::error('WA_MEDIA_UPLOAD_FAIL', ['resp'=>$upload->json()]);
-            return back()->withErrors(['header_image'=>'No se pudo subir la imagen al API de WhatsApp.'])->withInput();
+        try {
+            $upload = $wa->uploadMedia($request->file('header_image'));
+        } catch (\Throwable $e) {
+            Log::error('WA_MEDIA_UPLOAD_EXCEPTION', ['e' => $e->getMessage()]);
+            return back()->withErrors(['header_image' => 'No se pudo subir la imagen (excepción).'])->withInput();
         }
+
+        if (!$upload || !$upload->ok()) {
+            Log::error('WA_MEDIA_UPLOAD_FAIL', ['resp' => $upload?->json()]);
+            return back()->withErrors(['header_image' => 'No se pudo subir la imagen al API de WhatsApp.'])->withInput();
+        }
+
         $mediaId = data_get($upload->json(), 'id');
+        if (!$mediaId) {
+            Log::error('WA_MEDIA_UPLOAD_NO_ID', ['resp' => $upload->json()]);
+            return back()->withErrors(['header_image' => 'WhatsApp no regresó media_id.'])->withInput();
+        }
 
         // 2) Resolver destinatarios
         $rows = collect();
@@ -82,7 +99,7 @@ class PromoController extends Controller
         if ($data['mode'] === 'selected') {
             $ids = collect($data['ids'] ?? [])->filter()->unique();
             if ($ids->isEmpty()) {
-                return back()->withErrors(['ids'=>'Selecciona al menos un cliente.'])->withInput();
+                return back()->withErrors(['ids' => 'Selecciona al menos un cliente.'])->withInput();
             }
             $rows = Cliente::whereIn('id', $ids)->get();
         } else { // all_filtered
@@ -90,6 +107,7 @@ class PromoController extends Controller
             $soloConTel = ($data['solo_con_telefono'] ?? '1') === '1';
 
             $base = Cliente::query();
+
             if ($q !== '') {
                 $base->where(function ($w) use ($q) {
                     $w->where('nombre', 'like', "%{$q}%")
@@ -98,13 +116,16 @@ class PromoController extends Controller
                       ->orWhere('email', 'like', "%{$q}%");
                 });
             }
+
             if ($soloConTel) {
                 $base->whereNotNull('telefono')
                      ->whereRaw("REGEXP_REPLACE(telefono, '[^0-9]', '') REGEXP '^[0-9]{10,}$'");
             }
+
             $rows = $base->get();
+
             if ($rows->isEmpty()) {
-                return back()->withErrors(['ids'=>'No hay clientes en el filtro actual.'])->withInput();
+                return back()->withErrors(['ids' => 'No hay clientes en el filtro actual.'])->withInput();
             }
         }
 
@@ -119,7 +140,8 @@ class PromoController extends Controller
 
             // Normaliza a E.164 (MX)
             $to = WhatsAppService::normalizeMsisdn($rawTel);
-            if (!preg_match('/^\d{11,14}$/', $to)) { // validación básica
+
+            if (!preg_match('/^\d{11,14}$/', $to)) {
                 $sinTelefono++;
                 $results[] = [
                     'to'     => $rawTel,
@@ -127,14 +149,15 @@ class PromoController extends Controller
                     'ok'     => false,
                     'status' => 0,
                     'wamid'  => null,
-                    'resp'   => ['error'=>'Teléfono inválido/insuficiente'],
+                    'resp'   => ['error' => 'Teléfono inválido/insuficiente'],
                 ];
                 continue;
             }
 
             $res = $wa->sendPromoTodo($to, $mediaId, $nombre, $data['frase']);
-            $ok  += $res->successful() ? 1 : 0;
-            $fail+= $res->successful() ? 0 : 1;
+
+            $ok   += $res->successful() ? 1 : 0;
+            $fail += $res->successful() ? 0 : 1;
 
             $json  = $res->json();
             $wamid = data_get($json, 'messages.0.id');
@@ -150,10 +173,10 @@ class PromoController extends Controller
         }
 
         Log::info('PROMO_TODO_RESULTS', [
-            'total'        => count($results),
-            'ok'           => $ok,
-            'fail'         => $fail,
-            'sinTelefono'  => $sinTelefono,
+            'total'       => count($results),
+            'ok'          => $ok,
+            'fail'        => $fail,
+            'sinTelefono' => $sinTelefono,
         ]);
 
         $msg = "Envíos OK: {$ok} | Fallidos: {$fail}";

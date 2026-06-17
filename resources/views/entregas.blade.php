@@ -1,164 +1,360 @@
 @extends('layouts.app')
-@section('title', 'Lista de Entregas de Guías')
-@section('titulo', 'Lista de Entregas de Guías')
+@section('title', 'Guías')
+@section('titulo', 'Guías')
+
 @section('content')
 <style>
-    body{
-        background: #F5FAFF;
-    }
-</style>
-<body>
-<div class="form-container-lower">
-    <div class="table-responsive">
-        <table id="entregasTable" class="stripe row-border order-column" style="width:100%">
-            <thead>
-                <tr>
-                    <th>Guía</th>
-                    <th>Contenido</th>
-                    <th>Serie</th>
-                    <th>Destinatario</th>
-                    <th>Observaciones</th>
-                    <th>Fecha de Entrega</th>
-                    <th>Entregado Por</th>
-                    <th>Imagen</th> <!-- Nueva columna para la imagen -->
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($entregas as $entrega)
-                    <tr>
-                        <td>{{ $entrega->guia->numero_rastreo }}</td>
-                        <td>{{ $entrega->contenido }}</td>
-                        <td>{{ $entrega->numero_serie }}</td>
-                        <td>{{ $entrega->destinatario }}</td>
-                        <td>{{ $entrega->observaciones }}</td>
-                        <td>{{ \Carbon\Carbon::parse($entrega->fecha_entrega)->format('d/m/Y') }}</td>
-                        <td>{{ $entrega->entregado_por }}</td>
-                        <td>
-                            @if($entrega->imagen)
-                                <a href="{{ asset('storage/' . $entrega->imagen) }}" target="_blank" class="btn btn-primary btn-sm">Ver Imagen</a>
-                            @else
-                                No disponible
-                            @endif
-                        </td>
-                    </tr>
-                @endforeach
-            </tbody>
-            <tfoot>
-                <tr>
-                    <th><input type="text" placeholder="Buscar Guía" /></th>
-                    <th><input type="text" placeholder="Buscar Contenido" /></th>
-                    <th><input type="text" placeholder="Buscar Serie" /></th>
-                    <th><input type="text" placeholder="Buscar Destinatario" /></th>
-                    <th><input type="text" placeholder="Buscar Observaciones" /></th>
-                    <th><input type="text" placeholder="Buscar Fecha de Entrega" /></th>
-                    <th><input type="text" placeholder="Buscar Entregado Por" /></th>
-                    <th></th> <!-- Espacio para la imagen -->
-                </tr>
-            </tfoot>
-        </table>
-    </div>
-</div>
-@endsection
+  :root{
+    --bg:#eaebec; --panel:#ffffff; --text:#0f172a; --muted:#667085; --border:#e7eaf0;
+    --pblue:#dbeafe; --pblue-700:#1d4ed8; --pgreen:#dcfce7;
+    --shadow:0 10px 30px rgba(2,6,23,.06); --radius:22px;
+  }
+  *,*::before,*::after{ box-sizing:border-box; }
+  body{ background:var(--bg); color:var(--text); }
+  .page-wrap{ max-width:1160px; margin:0 auto; padding:0 16px; overflow-x:hidden; }
 
-@section('scripts')
-<!-- Cargar jQuery y DataTables -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+  /* HERO */
+  .hero{
+    background:
+      radial-gradient(1200px 150px at 0% 0%, rgba(96,165,250,.18), transparent 40%),
+      radial-gradient(1200px 150px at 100% 0%, rgba(14,165,233,.14), transparent 40%),
+      #fff;
+    border:1px solid var(--border); border-radius:18px; padding:16px 18px;
+    box-shadow:var(--shadow);
+    display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+    margin:18px 0;
+    overflow:hidden;
+     position: sticky;
+     top: 100 px; 
+  }
+  .hero .chip{ width:56px; height:56px; border-radius:16px; display:inline-flex; align-items:center; justify-content:center; background:#fff; border:1px solid #dce7ff; }
+  .hero h1{ margin:0; font-weight:800; letter-spacing:-.02em; }
+  .subtle{ color:var(--muted); }
+  .hero-actions{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; width:100%; }
+  .search{ position:relative; flex:1 1 420px; min-width:0; width:auto; background:#fff; border:1px solid var(--border); border-radius:14px; padding-left:42px; }
+  .search input{ border:none; outline:none; background:transparent; padding:12px 14px; width:100%; color:#111827; }
+  .search .ico{ position:absolute; left:12px; top:50%; transform:translateY(-50%); font-size:18px; color:var(--pblue-700); opacity:.9; }
+  .btn{ display:inline-flex; align-items:center; gap:.45rem; padding:12px 14px; border-radius:14px; border:1px solid var(--border); background:#fff; color:#334155; font-weight:800; text-decoration:none; cursor:pointer; }
+  .btn-blue{ background:var(--pblue); color:#0b2a4a; border-color:rgba(96,165,250,.45); }
+  .btn-green{ background:var(--pgreen); color:#064e3b; border-color:rgba(52,211,153,.45); }
+
+  /* TABLA */
+  /* TABLA - Versión mejorada */
+.table-wrap {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  scroll-margin-top: 100px;
+}
+.table-scroll {
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+}
+.entregas-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 800px; /* Garantiza scroll horizontal en pantallas muy pequeñas */
+  font-size: 14px;
+}
+.entregas-table .th,
+.entregas-table .td {
+  padding: 14px 12px;
+  text-align: left;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--border);
+  word-break: break-word;
+  white-space: normal;
+}
+
+.entregas-table .th {
+  color: #1f2937;
+  font-weight: 700;
+  background: #f8fafc;
+  white-space: nowrap; /* Los encabezados pueden ser más largos pero no se parten */
+}
+.entregas-table tr.trow:hover {
+  background: #fafcff;
+}
+/* Ya no usamos colgroup con anchos fijos, dejamos que el contenido fluya */
+.cell-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+.chip-state {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 12px;
+  background: #dcfce7;
+  color: #166534;
+  white-space: nowrap;
+}
+/* Ajuste para pantallas medianas (entre 768px y 1024px) */
+@media (max-width: 1024px) and (min-width: 768px) {
+  .entregas-table .th,
+  .entregas-table .td {
+    padding: 12px 8px;
+  }
+}
+/* Móviles*/
+@media (max-width: 767px) {
+  .entregas-table {
+    min-width: auto;
+  }
+  .entregas-table.is-stacked thead {
+    display: none;
+  }
+  .entregas-table.is-stacked,
+  .entregas-table.is-stacked tbody,
+  .entregas-table.is-stacked tr.trow,
+  .entregas-table.is-stacked td.td {
+    display: block;
+    width: 100%;
+  }
+  .entregas-table.is-stacked tr.trow {
+    padding: 12px;
+    margin-bottom: 12px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: #fff;
+  }
+  .entregas-table.is-stacked tr.trow + tr.trow {
+    margin-top: 12px;
+    border-top: 1px solid var(--border);
+  }
+  .entregas-table.is-stacked td.td {
+    padding: 8px 0;
+    display: grid;
+    grid-template-columns: 110px 1fr;
+    gap: 12px;
+    align-items: baseline;
+    border: none;
+  }
+  .entregas-table.is-stacked td.td::before {
+    content: attr(data-label);
+    font-weight: 700;
+    color: #4b5563;
+    font-size: 0.85rem;
+  }
+  .entregas-table.is-stacked td.td[data-label="ACCIONES"] {
+    grid-template-columns: 1fr;
+  }
+  .cell-actions {
+    justify-content: flex-start;
+    margin-top: 4px;
+  }
+  .chip-state {
+    white-space: normal;
+    text-align: center;
+    justify-content: center;
+  }
+}
+  .footer{ display:flex; justify-content:space-between; align-items:center; gap:10px; padding:16px 18px; background:#fafafa; border-top:1px solid var(--border); }
+  .pager{ display:flex; gap:10px; align-items:center; min-width:0; }
+  .pager .btn{ border-radius:18px; box-shadow:0 4px 12px rgba(2,6,23,.04); padding:10px 12px; }
+
+  /* Móvil */
+  @media (max-width:576px){
+    .hero-actions .search{ flex-basis:100%; width:100%; }
+    .hero-actions .btn-utility{ display:none; }
+
+    .entregas-table.is-stacked thead{ display:none; }
+    .entregas-table.is-stacked,
+    .entregas-table.is-stacked tbody,
+    .entregas-table.is-stacked tr.trow,
+    .entregas-table.is-stacked td.td{ display:block; width:100%; }
+    .entregas-table.is-stacked tr.trow{ padding:12px 14px; }
+    .entregas-table.is-stacked tr.trow + tr.trow{ border-top:1px solid var(--border); }
+    .entregas-table.is-stacked td.td{
+      border:none; padding:10px 0;
+      display:grid; grid-template-columns:minmax(96px,40%) 1fr; gap:8px; align-items:flex-start;
+      word-wrap:break-word;
+    }
+    .entregas-table.is-stacked td.td::before{ content:attr(data-label); font-weight:700; color:#6b7280; }
+    .entregas-table.is-stacked td.td[data-label="ACCIONES"]{ grid-template-columns:1fr; }
+    .entregas-table.is-stacked .cell-actions{ justify-content:flex-start; }
+  }
+
+  /* FAB + Bottom sheet */
+  .fab{ position:fixed; right:16px; bottom:18px; z-index:60; display:none; }
+  .fab button{ border:none; border-radius:999px; padding:.9rem 1.05rem; font-weight:800; cursor:pointer; background:#2563eb; color:#fff; box-shadow:0 12px 28px rgba(29,78,216,.28); }
+  @media (max-width:860px){ .fab{ display:block; } }
+  .sheet-backdrop{ position:fixed; inset:0; background:rgba(15,23,42,.35); backdrop-filter: blur(8px) saturate(1.05); opacity:0; pointer-events:none; transition:opacity .2s ease; z-index:70; }
+  .sheet-backdrop.show{ opacity:1; pointer-events:auto; }
+  .sheet{ position:fixed; left:0; right:0; bottom:-100%; z-index:80; background:#fff; border-radius:18px 18px 0 0; box-shadow:0 -20px 40px rgba(2,6,23,.16); padding:16px; transition:bottom .28s ease; will-change:bottom; }
+  .sheet .grab{ width:60px; height:6px; background:#e5e7eb; border-radius:999px; margin:6px auto 12px; }
+  .sheet .grid{ display:grid; gap:12px; }
+  .sheet .link{ display:flex; align-items:center; gap:10px; padding:14px; border:1px solid #efe9ff; border-radius:14px; background:#fafaff; color:#4c1d95; font-weight:700; text-decoration:none; }
+  body.sheet-open .page-wrap{ filter: blur(6px); transform: scale(.995); }
+  body.sheet-open{ overflow:hidden; }
+
+.page-wrap {
+  overflow: visible !important;
+  height: auto !important;
+}
+.hero {
+  position: sticky;
+  z-index: 50;
+  background: #fff; /* para que no se vea transparente */
+  backdrop-filter: none;
+  top:80px;
+}
+/* Si el navbar de la app tiene position fixed, ajusta el top para que no se solape */
+.tabla-scroll{overflow-x:auto;max-height:70vh;}
+
+</style>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+<div class="page-wrap">
+  <div class="hero">
+
+    <div class="d-flex align-items-center gap-3">
+      <div class="chip"><i class="bi bi-clipboard-check" style="font-size:1.25rem;color:var(--pblue-700)"></i></div>
+      <div>
+        <h1 class="h4 mb-0">Entregas de guías</h1>
+        <div class="small subtle">Consulta y gestiona tus entregas en tiempo real.</div>
+      </div>
+    </div>
+
+    <div class="hero-actions">
+      <div class="search">
+        <i class="ico bi bi-search"></i>
+        <input id="q" type="search" placeholder="Buscar por rastreo, contenido, serie, destinatario…">
+      </div>
+      <button id="refreshBtn" class="btn btn-utility">Actualizar</button>
+      <a href="{{ url('/entrega') }}" class="btn btn-blue btn-utility"><i class="bi bi-list-ul"></i> Entregas</a>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <div class="tabla-scroll">
+      <table class="entregas-table" id="entregasTable">
+        <thead>
+          <tr>
+            <th class="th">RASTREO</th>
+            <th class="th">CONTENIDO</th>
+            <th class="th">ESTADO</th>
+            <th class="th">FECHA</th>
+            <th class="th">SERIE</th>
+            <th class="th">DESTINATARIO</th>
+            <th class="th">INTERNACIONAL</th>
+            <th class="th">USUARIO</th>
+            <th class="th" style="text-align:right;">ACCIONES</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+
+    <div class="footer">
+      <div class="count" id="count">—</div>
+      <div class="pager">
+        <button class="btn" id="prevBtn">Anterior</button>
+        <span id="pageInfo" class="count">Página 1 de 1</span>
+        <button class="btn" id="nextBtn">Siguiente</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="fab"><button id="openSheet">Menú</button></div>
+<div class="sheet-backdrop" id="sheetBackdrop"></div>
+<div class="sheet" id="sheet">
+  <div class="grab"></div>
+  <div style="text-align:center; font-weight:800; color:#111827; margin-bottom:6px;">Navegación rápida</div>
+  <div class="grid">
+    <a class="link" href="{{ route('guias.create') }}">📦 Guías</a>
+    <a class="link" href="{{ url('/entrega') }}">🧾 Entregas</a>
+  </div>
+</div>
 
 <script>
-$(document).ready(function () {
-    function initDataTable() {
-        $('#entregasTable tfoot th').each(function (i) {
-            const title = $('#entregasTable thead th').eq($(this).index()).text();
-            $(this).html(`<input type="text" placeholder="Buscar ${title}" data-index="${i}" />`);
-        });
+  const routes = { list: '{{ route('entregas.list') }}' };
+  let page = 1, lastPage = 1, q = '', total = 0, perPage = 12;
 
-        var table = $('#entregasTable').DataTable({
-            language: {
-                sProcessing: "Procesando...",
-                sLengthMenu: "Mostrar _MENU_ registros",
-                sZeroRecords: "No se encontraron resultados",
-                sEmptyTable: "Ningún dato disponible en esta tabla",
-                sInfo: "Mostrando registros del _START_ al _END_ de un total de _TOTAL_ registros",
-                sInfoEmpty: "Mostrando registros del 0 al 0 de un total de 0 registros",
-                sInfoFiltered: "(filtrado de un total de _MAX_ registros)",
-                sSearch: "Buscar:",
-                oPaginate: {
-                    sFirst: "Primero",
-                    sLast: "Último",
-                    sNext: "Siguiente",
-                    sPrevious: "Anterior"
-                }
-            },
-            dom: '<"top d-flex align-items-center"lB>frtip',
-            buttons: [
-                {
-                    extend: 'excelHtml5',
-                    text: '<span class="button-icon"><img src="{{ asset('images/excel.png') }}" alt="Excel" height="20"></span><span class="button-text">Excel</span>',
-                    className: 'btn-excel',
-                    title: 'Lista de Entregas de Guías',
-                    exportOptions: {
-                        columns: ':visible',
-                        format: {
-                            body: function (data, row, column, node) {
-                                if ($(node).find('select').length) {
-                                    return $(node).find('select option:selected').text();
-                                }
-                                return data;
-                            }
-                        }
-                    }
-                },
-                {
-                    extend: 'csvHtml5',
-                    text: '<span class="button-icon"><img src="{{ asset('images/csv.png') }}" alt="CSV" height="20"></span><span class="button-text">CSV</span>',
-                    className: 'btn-csv',
-                    title: 'Lista de Entregas de Guías',
-                    exportOptions: {
-                        columns: ':visible',
-                        format: {
-                            body: function (data, row, column, node) {
-                                if ($(node).find('select').length) {
-                                    return $(node).find('select option:selected').text();
-                                }
-                                return data;
-                            }
-                        }
-                    }
-                },
-                {
-                    extend: 'pdfHtml5',
-                    text: '<span class="button-icon"><img src="{{ asset('images/pdf.png') }}" alt="PDF" height="20"></span><span class="button-text">PDF</span>',
-                    className: 'btn-pdf',
-                    title: 'Lista de Entregas de Guías',
-                    exportOptions: {
-                        columns: ':visible',
-                        format: {
-                            body: function (data, row, column, node) {
-                                if ($(node).find('select').length) {
-                                    return $(node).find('select option:selected').text();
-                                }
-                                return data;
-                            }
-                        }
-                    }
-                }
-            ]
-        });
+  const tableEl = document.getElementById('entregasTable');
+  function toggleStack(){
+    const isPhone = window.matchMedia('(max-width: 576px)').matches;
+    tableEl.classList.toggle('is-stacked', isPhone);
+  }
+  window.addEventListener('resize', toggleStack);
+  toggleStack();
 
-        $('#entregasTable tfoot input').on('keyup change', function () {
-            var index = $(this).data('index');
-            table.column(index).search(this.value).draw();
-        });
+  function renderRow(item){
+    return `
+      <tr class="trow">
+        <td class="td" data-label="RASTREO">${item.rastreo || '—'}</td>
+        <td class="td" data-label="CONTENIDO">${item.contenido || '—'}</td>
+        <td class="td" data-label="ESTADO"><span class="chip-state">${item.estado || 'Entregado'}</span></td>
+        <td class="td" data-label="FECHA">${item.fecha || '—'}</td>
+        <td class="td" data-label="SERIE">${item.serie || '—'}</td>
+        <td class="td" data-label="DESTINATARIO">${item.destinatario || '—'}</td>
+        <td class="td" data-label="DESTINATARIO">${item.internacional || '—'}</td>
+        <td class="td" data-label="USUARIO">${item.usuario || '—'}</td>
+        <td class="td" data-label="ACCIONES">
+          <div class="cell-actions">
+            ${item.imagen_url
+              ? `<a class="btn" style="padding:8px 10px" target="_blank" href="${item.imagen_url}" title="Ver evidencia"><i class="bi bi-eye"></i></a>`
+              : `<button class="btn" style="padding:8px 10px" disabled title="Sin imagen">—</button>`}
+          </div>
+        </td>
+      </tr>
+    `;
+  }
+
+  async function load(){
+    const url = new URL(routes.list, window.location.origin);
+    url.searchParams.set('page', page);
+    url.searchParams.set('per_page', perPage);
+    if(q.trim()) url.searchParams.set('q', q.trim());
+
+    const res  = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+    const json = await res.json();
+
+    const tbody = document.getElementById('tbody');
+    if (!json.data.length){
+      tbody.innerHTML = `<tr class="trow"><td class="td" colspan="8"><span class="no-results">Sin resultados</span></td></tr>`;
+    } else {
+      tbody.innerHTML = json.data.map((it)=> renderRow(it)).join('');
     }
 
-    initDataTable();
-});
+    lastPage = json.meta.last_page; total = json.meta.total;
+    document.getElementById('count').textContent = total ? `Total: ${total} entregas` : 'Sin resultados';
+    document.getElementById('pageInfo').textContent = `Página ${json.meta.page} de ${lastPage}`;
+    document.getElementById('prevBtn').disabled = page <= 1;
+    document.getElementById('nextBtn').disabled = page >= lastPage;
+  }
+
+  let t=null;
+  document.getElementById('q').addEventListener('input', (e)=>{
+    clearTimeout(t);
+    t = setTimeout(()=>{ q = e.target.value; page = 1; load(); }, 300);
+  });
+  document.getElementById('refreshBtn')?.addEventListener('click', ()=> load());
+  document.getElementById('prevBtn').addEventListener('click', ()=> { if(page>1){ page--; load(); }});
+  document.getElementById('nextBtn').addEventListener('click', ()=> { if(page<lastPage){ page++; load(); }});
+
+  const sheet = document.getElementById('sheet');
+  const backdrop = document.getElementById('sheetBackdrop');
+  const openSheet = document.getElementById('openSheet');
+  function showSheet(show){
+    sheet.style.bottom = show ? '0' : '-100%';
+    backdrop.classList.toggle('show', show);
+    document.body.classList.toggle('sheet-open', show);
+  }
+  openSheet.addEventListener('click', ()=> showSheet(true));
+  backdrop.addEventListener('click', ()=> showSheet(false));
+
+  load();
+
 </script>
-</body>
 @endsection

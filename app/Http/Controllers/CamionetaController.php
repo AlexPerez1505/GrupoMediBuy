@@ -1,251 +1,323 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\Camioneta;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 
 class CamionetaController extends Controller
 {
-    // Muestra el formulario para agregar una nueva camioneta
     public function create()
     {
         return view('camionetas.agregar_camionetas');
     }
 
-    // Guarda una nueva camioneta en la base de datos
-   // Guarda una nueva camioneta en la base de datos
-   public function store(Request $request)
-   {
-       // Validación de los datos del formulario
-       $validated = $request->validate([
-           'placa' => 'required|string|max:255',
-           'vin' => 'required|string|max:255',
-           'marca' => 'required|string|max:255',
-           'modelo' => 'required|string|max:255',
-           'anio' => 'required|integer|min:1900|max:'.date('Y'),
-           'color' => 'required|string|max:255',
-           'tipo_motor' => 'nullable|string|max:255',
-           'capacidad_carga' => 'nullable|string|max:255',
-           'tipo_combustible' => 'nullable|string|max:255',
-           'fecha_adquisicion' => 'nullable|date',
-           'ultimo_mantenimiento' => 'nullable|date',
-           'proximo_mantenimiento' => 'nullable|date',
-           'ultima_verificacion' => 'nullable|date',
-           'proxima_verificacion' => 'nullable|date',
-           'kilometraje' => 'nullable|integer',
-           'rendimiento_litro' => 'nullable|numeric',
-           'costo_llenado' => 'nullable|numeric',
-           'fotos' => 'nullable|array|max:4',
-           'fotos.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
-           'tarjeta_circulacion' => 'nullable|mimes:pdf|max:5120',
-           'verificacion' => 'nullable|mimes:pdf|max:5120',
-           'tenencia' => 'nullable|mimes:pdf|max:5120',
-           'seguro' => 'nullable|mimes:pdf|max:5120',
-       ]);
+    public function store(Request $request)
+    {
+        $validated = $this->validateCamioneta($request, false);
 
-   // Crear una nueva instancia del modelo Camioneta
-$camioneta = new Camioneta();
-$camioneta->placa = $validated['placa'];
-$camioneta->vin = $validated['vin'];
-$camioneta->marca = $validated['marca'];
-$camioneta->modelo = $validated['modelo'];
-$camioneta->anio = $validated['anio'];
-$camioneta->color = $validated['color'];
-$camioneta->tipo_motor = $validated['tipo_motor'];
-$camioneta->capacidad_carga = $validated['capacidad_carga'];
-$camioneta->tipo_combustible = $validated['tipo_combustible'];
-$camioneta->fecha_adquisicion = $validated['fecha_adquisicion'];
-$camioneta->ultimo_mantenimiento = $validated['ultimo_mantenimiento'];
-$camioneta->proximo_mantenimiento = $validated['proximo_mantenimiento'];
-$camioneta->ultima_verificacion = $validated['ultima_verificacion'];
-$camioneta->proxima_verificacion = $validated['proxima_verificacion'];
-$camioneta->kilometraje = $validated['kilometraje'];
-$camioneta->rendimiento_litro = $validated['rendimiento_litro'];
-$camioneta->costo_llenado = $validated['costo_llenado'];
+        try {
+            DB::beginTransaction();
 
+            $camioneta = new Camioneta();
+            $this->fillCamionetaFields($camioneta, $validated);
 
-       // Manejo de archivos de fotos
-       if ($request->hasFile('fotos')) {
-           $fotosPaths = [];
-           foreach ($request->file('fotos') as $foto) {
-               // Guardamos cada foto en 'public/fotos' y almacenamos la ruta
-               $fotosPaths[] = $foto->store('public/fotos');
-           }
-           $camioneta->fotos = json_encode($fotosPaths); // Guardamos las rutas de las fotos
-       }
+            $fotosPaths = [];
+            if ($request->hasFile('fotos')) {
+                foreach ($request->file('fotos') as $foto) {
+                    if ($foto) {
+                        $fotosPaths[] = $foto->store('public/fotos');
+                    }
+                }
+            }
+            $camioneta->fotos = !empty($fotosPaths) ? json_encode($fotosPaths) : null;
 
-       // Manejo de archivos PDF
-       try {
-           if ($request->hasFile('tarjeta_circulacion')) {
-               $camioneta->tarjeta_circulacion = $request->file('tarjeta_circulacion')->store('public/documentos');
-           }
-           if ($request->hasFile('verificacion')) {
-               $camioneta->verificacion = $request->file('verificacion')->store('public/documentos');
-           }
-           if ($request->hasFile('tenencia')) {
-               $camioneta->tenencia = $request->file('tenencia')->store('public/documentos');
-           }
-           if ($request->hasFile('seguro')) {
-               $camioneta->seguro = $request->file('seguro')->store('public/documentos');
-           }
-       } catch (\Exception $e) {
-           return redirect()->route('camionetas.index')->with('error', 'Error al subir los archivos: ' . $e->getMessage());
-       }
+            $this->storePdfIfExists($request, $camioneta, 'tarjeta_circulacion');
+            $this->storePdfIfExists($request, $camioneta, 'verificacion');
+            $this->storePdfIfExists($request, $camioneta, 'tenencia');
+            $this->storePdfIfExists($request, $camioneta, 'seguro');
 
-       // Guardamos la camioneta en la base de datos
-       $camioneta->save();
+            $camioneta->save();
 
-       // Redirigir con un mensaje de éxito
-       return redirect()->route('camionetas.index')->with('success', 'Camioneta registrada con éxito.');
-   }
+            DB::commit();
 
-    // Mostrar todas las camionetas
+            return redirect()->route('camionetas.index')->with('success', 'Camioneta registrada con éxito.');
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            Log::error('Error al registrar camioneta', [
+                'message' => $e->getMessage(),
+                'trace'   => $e->getTraceAsString(),
+            ]);
+
+            return back()
+                ->withInput()
+                ->with('error', 'No se pudo registrar la camioneta.')
+                ->with('error_detalle', $e->getMessage());
+        }
+    }
+
     public function index()
     {
         $camionetas = Camioneta::all();
         return view('camionetas.index', compact('camionetas'));
     }
 
-    // Mostrar los detalles de una camioneta
     public function show($id)
     {
         $camioneta = Camioneta::findOrFail($id);
-        return view('camionetas.ver_camionetas', compact('camioneta')); 
+        return view('camionetas.ver_camionetas', compact('camioneta'));
     }
 
-    // Editar los datos de una camioneta
     public function edit($id)
     {
         $camioneta = Camioneta::findOrFail($id);
         return view('camionetas.edit', compact('camioneta'));
     }
 
-    // Actualizar los datos de la camioneta
-public function update(Request $request, $id)
-{
-    $camioneta = Camioneta::findOrFail($id);
+    public function update(Request $request, $id)
+    {
+        $camioneta = Camioneta::findOrFail($id);
+        $validated = $this->validateCamioneta($request, true);
 
-    // Validación de los datos (sin requerir los campos)
-    $validated = $request->validate([
-        'placa' => 'nullable|string|max:255',
-        'vin' => 'nullable|string|max:255',
-        'marca' => 'nullable|string|max:255',
-        'modelo' => 'nullable|string|max:255',
-        'anio' => 'nullable|integer|min:1900|max:' . date('Y'),
-        'color' => 'nullable|string|max:255',
-        'tipo_motor' => 'nullable|string|max:255',
-        'capacidad_carga' => 'nullable|string|max:255',
-        'tipo_combustible' => 'nullable|string|max:255',
-        'fecha_adquisicion' => 'nullable|date',
-        'ultimo_mantenimiento' => 'nullable|date',
-        'proximo_mantenimiento' => 'nullable|date',
-        'ultima_verificacion' => 'nullable|date',
-           'proxima_verificacion' => 'nullable|date',
-           'kilometraje' => 'nullable|integer',
-           'rendimiento_litro' => 'nullable|numeric',
-           'costo_llenado' => 'nullable|numeric',
-        'fotos' => 'nullable|array|max:4',
-        'fotos.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-        'tarjeta_circulacion' => 'nullable|mimes:pdf|max:5120',
-        'verificacion' => 'nullable|mimes:pdf|max:5120',
-        'tenencia' => 'nullable|mimes:pdf|max:5120',
-        'seguro' => 'nullable|mimes:pdf|max:5120',
-    ]);
+        try {
+            DB::beginTransaction();
 
-    // Actualizar los datos de la camioneta solo si están presentes
-   // Actualizar los datos de la camioneta solo si están presentes
-if ($request->has('placa')) {
-    $camioneta->placa = $validated['placa'];
-}
-if ($request->has('vin')) {
-    $camioneta->vin = $validated['vin'];
-}
-if ($request->has('marca')) {
-    $camioneta->marca = $validated['marca'];
-}
-if ($request->has('modelo')) {
-    $camioneta->modelo = $validated['modelo'];
-}
-if ($request->has('anio')) {
-    $camioneta->anio = $validated['anio'];
-}
-if ($request->has('color')) {
-    $camioneta->color = $validated['color'];
-}
-if ($request->has('tipo_motor')) {
-    $camioneta->tipo_motor = $validated['tipo_motor'];
-}
-if ($request->has('capacidad_carga')) {
-    $camioneta->capacidad_carga = $validated['capacidad_carga'];
-}
-if ($request->has('tipo_combustible')) {
-    $camioneta->tipo_combustible = $validated['tipo_combustible'];
-}
-if ($request->has('fecha_adquisicion')) {
-    $camioneta->fecha_adquisicion = $validated['fecha_adquisicion'];
-}
-if ($request->has('ultimo_mantenimiento')) {
-    $camioneta->ultimo_mantenimiento = $validated['ultimo_mantenimiento'];
-}
-if ($request->has('proximo_mantenimiento')) {
-    $camioneta->proximo_mantenimiento = $validated['proximo_mantenimiento'];
-}
-if ($request->has('ultima_verificacion')) {
-    $camioneta->ultima_verificacion = $validated['ultima_verificacion'];
-}
-if ($request->has('proxima_verificacion')) {
-    $camioneta->proxima_verificacion = $validated['proxima_verificacion'];
-}
-if ($request->has('kilometraje')) {
-    $camioneta->kilometraje = $validated['kilometraje'];
-}
-if ($request->has('rendimiento_litro')) {
-    $camioneta->rendimiento_litro = $validated['rendimiento_litro'];
-}
-if ($request->has('costo_llenado')) {
-    $camioneta->costo_llenado = $validated['costo_llenado'];
-}
+            $this->fillCamionetaFields($camioneta, $validated);
 
+            $this->syncFotos($request, $camioneta);
 
-    // Manejo de fotos nuevas
-    if ($request->hasFile('fotos')) {
-        $fotosPaths = [];
-        foreach ($request->file('fotos') as $foto) {
-            $fotosPaths[] = $foto->store('public/fotos');
+            $this->replacePdfIfExists($request, $camioneta, 'tarjeta_circulacion');
+            $this->replacePdfIfExists($request, $camioneta, 'verificacion');
+            $this->replacePdfIfExists($request, $camioneta, 'tenencia');
+            $this->replacePdfIfExists($request, $camioneta, 'seguro');
+
+            $camioneta->save();
+
+            DB::commit();
+
+            return redirect()->route('camionetas.index')->with('success', 'Camioneta actualizada con éxito.');
+        } catch (ValidationException $e) {
+            DB::rollBack();
+            throw $e;
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            Log::error('Error al actualizar camioneta', [
+                'camioneta_id' => $id,
+                'message'      => $e->getMessage(),
+                'trace'        => $e->getTraceAsString(),
+            ]);
+
+            return back()
+                ->withInput()
+                ->with('error', 'No se pudo actualizar la camioneta.')
+                ->with('error_detalle', $e->getMessage());
         }
-        $camioneta->fotos = json_encode($fotosPaths); // Guardamos las rutas de las fotos
     }
 
-    // Manejo de documentos PDF nuevos
-    if ($request->hasFile('tarjeta_circulacion')) {
-        $camioneta->tarjeta_circulacion = $request->file('tarjeta_circulacion')->store('public/documentos');
-    }
-    if ($request->hasFile('verificacion')) {
-        $camioneta->verificacion = $request->file('verificacion')->store('public/documentos');
-    }
-    if ($request->hasFile('tenencia')) {
-        $camioneta->tenencia = $request->file('tenencia')->store('public/documentos');
-    }
-    if ($request->hasFile('seguro')) {
-        $camioneta->seguro = $request->file('seguro')->store('public/documentos');
-    }
-
-    // Guardamos la camioneta actualizada
-    $camioneta->save();
-
-    // Redirigir con un mensaje de éxito
-    return redirect()->route('camionetas.index')->with('success', 'Camioneta actualizada con éxito.');
-}
-
-
-    // Eliminar una camioneta
     public function destroy($id)
     {
         $camioneta = Camioneta::findOrFail($id);
-        $camioneta->delete();
 
-        // Redirigir con un mensaje de éxito
-        return redirect()->route('camionetas.index')->with('success', 'Camioneta eliminada con éxito.');
+        try {
+            DB::beginTransaction();
+
+            foreach ($this->decodeFotos($camioneta->fotos) as $fotoPath) {
+                $this->deleteStoredFile($fotoPath);
+            }
+
+            $this->deleteStoredFile($camioneta->tarjeta_circulacion);
+            $this->deleteStoredFile($camioneta->verificacion);
+            $this->deleteStoredFile($camioneta->tenencia);
+            $this->deleteStoredFile($camioneta->seguro);
+
+            $camioneta->delete();
+
+            DB::commit();
+
+            return redirect()->route('camionetas.index')->with('success', 'Camioneta eliminada con éxito.');
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            Log::error('Error al eliminar camioneta', [
+                'camioneta_id' => $id,
+                'message'      => $e->getMessage(),
+            ]);
+
+            return back()
+                ->with('error', 'No se pudo eliminar la camioneta.')
+                ->with('error_detalle', $e->getMessage());
+        }
+    }
+
+    private function validateCamioneta(Request $request, bool $isUpdate = false): array
+    {
+        $yearMax = date('Y') + 1;
+
+        return $request->validate([
+            'placa'                 => 'required|string|max:255',
+            'vin'                   => 'required|string|max:255',
+            'marca'                 => 'required|string|max:255',
+            'modelo'                => 'required|string|max:255',
+            'anio'                  => 'required|integer|min:1900|max:' . $yearMax,
+            'color'                 => 'required|string|max:255',
+            'tipo_motor'            => 'nullable|string|max:255',
+            'capacidad_carga'       => 'nullable|string|max:255',
+            'tipo_combustible'      => 'nullable|string|max:255',
+            'fecha_adquisicion'     => 'nullable|date',
+            'ultimo_mantenimiento'  => 'nullable|date',
+            'proximo_mantenimiento' => 'nullable|date',
+            'ultima_verificacion'   => 'nullable|date',
+            'proxima_verificacion'  => 'nullable|date',
+            'kilometraje'           => 'nullable|integer|min:0',
+            'rendimiento_litro'     => 'nullable|numeric|min:0',
+            'costo_llenado'         => 'nullable|numeric|min:0',
+
+            'fotos'                 => 'nullable|array',
+            'fotos.*'               => 'nullable|image|mimes:jpeg,jpg,png,gif|max:2048',
+            'fotos_eliminadas'      => 'nullable|string',
+
+            'tarjeta_circulacion'   => 'nullable|mimes:pdf|max:5120',
+            'verificacion'          => 'nullable|mimes:pdf|max:5120',
+            'tenencia'              => 'nullable|mimes:pdf|max:5120',
+            'seguro'                => 'nullable|mimes:pdf|max:5120',
+        ]);
+    }
+
+    private function fillCamionetaFields(Camioneta $camioneta, array $validated): void
+    {
+        $fields = [
+            'placa',
+            'vin',
+            'marca',
+            'modelo',
+            'anio',
+            'color',
+            'tipo_motor',
+            'capacidad_carga',
+            'tipo_combustible',
+            'fecha_adquisicion',
+            'ultimo_mantenimiento',
+            'proximo_mantenimiento',
+            'ultima_verificacion',
+            'proxima_verificacion',
+            'kilometraje',
+            'rendimiento_litro',
+            'costo_llenado',
+        ];
+
+        foreach ($fields as $field) {
+            $camioneta->{$field} = $validated[$field] ?? null;
+        }
+    }
+
+    private function syncFotos(Request $request, Camioneta $camioneta): void
+    {
+        $currentPhotos = $this->decodeFotos($camioneta->fotos);
+
+        $deletedPhotos = json_decode($request->input('fotos_eliminadas', '[]'), true);
+        if (!is_array($deletedPhotos)) {
+            $deletedPhotos = [];
+        }
+
+        $deletedPhotos = array_values(array_filter($deletedPhotos, function ($path) {
+            return is_string($path) && trim($path) !== '';
+        }));
+
+        if (!empty($deletedPhotos)) {
+            foreach ($deletedPhotos as $pathToDelete) {
+                $this->deleteStoredFile($pathToDelete);
+            }
+
+            $currentPhotos = array_values(array_filter($currentPhotos, function ($photoPath) use ($deletedPhotos) {
+                return !in_array($photoPath, $deletedPhotos, true);
+            }));
+        }
+
+        $newFiles = $request->file('fotos', []);
+        $newFilesCount = is_array($newFiles) ? count($newFiles) : 0;
+
+        if ((count($currentPhotos) + $newFilesCount) > 4) {
+            throw ValidationException::withMessages([
+                'fotos' => 'Solo puedes tener hasta 4 imágenes en total, contando las ya guardadas.',
+            ]);
+        }
+
+        if ($request->hasFile('fotos')) {
+            foreach ($request->file('fotos') as $foto) {
+                if ($foto) {
+                    $currentPhotos[] = $foto->store('public/fotos');
+                }
+            }
+        }
+
+        $camioneta->fotos = !empty($currentPhotos) ? json_encode(array_values($currentPhotos)) : null;
+    }
+
+    private function storePdfIfExists(Request $request, Camioneta $camioneta, string $field): void
+    {
+        if ($request->hasFile($field)) {
+            $camioneta->{$field} = $request->file($field)->store('public/documentos');
+        }
+    }
+
+    private function replacePdfIfExists(Request $request, Camioneta $camioneta, string $field): void
+    {
+        if ($request->hasFile($field)) {
+            $newPath = $request->file($field)->store('public/documentos');
+            $oldPath = $camioneta->{$field};
+
+            $camioneta->{$field} = $newPath;
+
+            if ($oldPath && $oldPath !== $newPath) {
+                $this->deleteStoredFile($oldPath);
+            }
+        }
+    }
+
+    private function decodeFotos($fotos): array
+    {
+        if (empty($fotos)) {
+            return [];
+        }
+
+        if (is_array($fotos)) {
+            return array_values(array_filter($fotos));
+        }
+
+        $decoded = json_decode($fotos, true);
+
+        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+            return array_values(array_filter($decoded));
+        }
+
+        if (is_string($fotos) && trim($fotos) !== '') {
+            return [trim($fotos)];
+        }
+
+        return [];
+    }
+
+    private function deleteStoredFile(?string $path): void
+    {
+        if (!$path) {
+            return;
+        }
+
+        try {
+            if (Storage::exists($path)) {
+                Storage::delete($path);
+            }
+        } catch (\Throwable $e) {
+            Log::warning('No se pudo eliminar archivo del storage', [
+                'path'    => $path,
+                'message' => $e->getMessage(),
+            ]);
+        }
     }
 }

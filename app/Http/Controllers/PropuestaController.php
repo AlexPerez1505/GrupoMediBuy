@@ -8,11 +8,12 @@ use App\Models\Producto;
 use App\Models\Propuesta;
 use App\Models\PagoFinanciamientoPropuesta;
 use App\Models\FichaTecnica;
+use App\Models\PropuestaTradein;
 use PDF;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 use setasign\Fpdi\Fpdi;
 use Carbon\Carbon;
-use Illuminate\Support\Str;
 use App\Services\WhatsAppService;
 
 class PropuestaController extends Controller
@@ -50,16 +51,19 @@ class PropuestaController extends Controller
         \Log::info('Inicio método store - request recibido', $request->all());
 
         $request->validate([
-            'cliente_id'        => 'required|exists:clientes,id',
-            'subtotal'          => 'required|numeric',
-            'total'             => 'required|numeric',
-            'productos_json'    => 'required|json',
-            'pagos_json'        => 'nullable|json',
-            'ficha_tecnica_id'  => 'nullable|exists:fichas_tecnicas,id',
-            'lugar'             => 'required|string',
+            'cliente_id'          => 'required|exists:clientes,id',
+            'subtotal'            => 'required|numeric',
+            'total'               => 'required|numeric',
+            'productos_json'      => 'required|json',
+            'pagos_json'          => 'nullable|json',
+            'equipos_cuenta_json' => 'nullable|json',
+            'ficha_tecnica_id'    => 'nullable|exists:fichas_tecnicas,id',
+            'lugar'               => 'required|string',
         ]);
 
         try {
+            DB::beginTransaction();
+
             $propuesta = Propuesta::create([
                 'cliente_id'       => $request->cliente_id,
                 'lugar'            => $request->lugar,
@@ -76,22 +80,64 @@ class PropuestaController extends Controller
 
             \Log::info('Propuesta creada', ['id' => $propuesta->id]);
 
+            // ================== PRODUCTOS ==================
             $productos = json_decode($request->productos_json, true) ?: [];
             \Log::info('Productos decodificados', ['productos' => $productos]);
 
             foreach ($productos as $p) {
+                $productoId = (int)($p['producto_id'] ?? 0);
+                $cantidad   = max(1, (int)($p['cantidad'] ?? 1));
+
+                // ✅ booleano estricto
+                $esRegalo = (int)($p['es_regalo'] ?? 0) === 1;
+
+                $precioUnitInput  = (float)($p['precio_unitario'] ?? 0);
+                $sobreprecioInput = (float)($p['sobreprecio'] ?? 0);
+
+                // ✅ si es regalo todo en 0
+                // ✅ si NO es regalo calculamos subtotal correctamente aunque no venga subtotal en el JSON
+                $precioUnit  = $esRegalo ? 0.0 : $precioUnitInput;
+                $sobreprecio = $esRegalo ? 0.0 : $sobreprecioInput;
+                $subtotal    = $esRegalo ? 0.0 : ($cantidad * ($precioUnit + $sobreprecio));
+
                 $propuesta->productos()->create([
-                    'producto_id'     => $p['producto_id'],
-                    'cantidad'        => $p['cantidad'],
-                    'precio_unitario' => $p['precio_unitario'],
-                    'subtotal'        => $p['subtotal'],
-                    'sobreprecio'     => $p['sobreprecio'] ?? 0,
+                    'producto_id'     => $productoId,
+                    'cantidad'        => $cantidad,
+                    'precio_unitario' => $precioUnit,
+                    'subtotal'        => $subtotal,
+                    'sobreprecio'     => $sobreprecio,
+                    'es_regalo'       => $esRegalo ? 1 : 0,
                 ]);
             }
 
-            if ($request->filled('pagos_json')) {
+            // ================== PAGOS FINANCIAMIENTO ==================
+            $pf = $request->input('pagos_financiamiento');
+
+            if (is_array($pf)) {
+                foreach ($pf as $key => $row) {
+                    if (!is_array($row)) continue;
+
+                    $eliminar = (string)($row['eliminar'] ?? '0') === '1';
+                    if ($eliminar) continue;
+
+                    $descripcion = (string)($row['descripcion'] ?? '');
+                    $fecha       = (string)($row['fecha_pago'] ?? '');
+                    $monto       = (float)($row['monto'] ?? 0);
+
+                    if (!$fecha) continue;
+
+                    PagoFinanciamientoPropuesta::create([
+                        'propuesta_id' => $propuesta->id,
+                        'descripcion'  => $descripcion,
+                        'fecha_pago'   => Carbon::parse($fecha),
+                        'monto'        => $monto,
+                    ]);
+                }
+
+                \Log::info('Pagos guardados desde pagos_financiamiento (store)');
+            } elseif ($request->filled('pagos_json')) {
                 $pagos = json_decode($request->pagos_json, true);
-                \Log::info('Pagos decodificados', ['pagos' => $pagos]);
+                \Log::info('Pagos decodificados (fallback pagos_json)', ['pagos' => $pagos]);
 
                 if (is_array($pagos)) {
                     foreach ($pagos as $pago) {
@@ -99,11 +145,31 @@ class PropuestaController extends Controller
                             'propuesta_id' => $propuesta->id,
                             'descripcion'  => $pago['descripcion'] ?? '',
                             'fecha_pago'   => Carbon::parse($pago['mes']),
-                            'monto'        => $pago['cuota'] ?? 0,
+                            'monto'        => (float)($pago['cuota'] ?? 0),
                         ]);
                     }
                 }
             }
+
+            // ================== EQUIPOS A CUENTA ==================
+            if ($request->filled('equipos_cuenta_json')) {
+                $equiposCuenta = json_decode($request->equipos_cuenta_json, true) ?: [];
+                \Log::info('Equipos a cuenta decodificados', ['equipos_cuenta' => $equiposCuenta]);
+
+                if (is_array($equiposCuenta)) {
+                    foreach ($equiposCuenta as $eq) {
+                        $propuesta->tradeins()->create([
+                            'tipo_equipo'    => $eq['tipo_equipo']    ?? null,
+                            'marca'          => $eq['marca']          ?? null,
+                            'modelo'         => $eq['modelo']         ?? null,
+                            'numero_serie'   => $eq['numero_serie']   ?? null,
+                            'valor_a_cuenta' => $eq['valor_a_cuenta'] ?? 0,
+                        ]);
+                    }
+                }
+            }
+
+            DB::commit();
 
             \Log::info('Propuesta guardada', ['propuesta_id' => $propuesta->id]);
 
@@ -111,11 +177,14 @@ class PropuestaController extends Controller
                 ->route('propuestas.show', $propuesta->id)
                 ->with('success', 'Propuesta guardada exitosamente.');
         } catch (\Throwable $e) {
+            DB::rollBack();
+
             \Log::error('Error guardando propuesta', [
                 'error'   => $e->getMessage(),
                 'trace'   => $e->getTraceAsString(),
                 'request' => $request->all(),
             ]);
+
             return back()->withErrors('Ocurrió un error al guardar la propuesta.');
         }
     }
@@ -123,15 +192,21 @@ class PropuestaController extends Controller
     public function index()
     {
         $propuestas = Propuesta::with(['cliente', 'usuario'])
-            ->orderBy('created_at', 'desc')
-            ->get();
+                        ->latest('created_at')
+                        ->get();
 
         return view('propuesta.index', compact('propuestas'));
     }
 
     public function pdf(Propuesta $propuesta)
     {
-        $propuesta->load(['cliente', 'usuario', 'productos.producto', 'fichaTecnica']);
+        $propuesta->load([
+            'cliente',
+            'usuario',
+            'productos.producto',
+            'fichaTecnica',
+            'tradeins',
+        ]);
 
         $url = route('propuestas.show', $propuesta->id);
 
@@ -144,7 +219,6 @@ class PropuestaController extends Controller
         $pdfPropuesta = PDF::loadView('propuesta.pdf', compact('propuesta', 'qr'))
             ->setPaper('a4', 'portrait');
 
-        // Asegurar carpeta temp
         $dirTemp = storage_path("app/public/temp");
         if (!is_dir($dirTemp)) {
             @mkdir($dirTemp, 0775, true);
@@ -174,8 +248,6 @@ class PropuestaController extends Controller
             }
         }
 
-        $rutaFinal = "{$dirTemp}/final_propuesta_{\n$propuesta->id}.pdf";
-        // small fix: avoid newline by using braces properly
         $rutaFinal = "{$dirTemp}/final_propuesta_{$propuesta->id}.pdf";
         $pdf->Output($rutaFinal, 'F');
 
@@ -187,9 +259,14 @@ class PropuestaController extends Controller
 
     public function show(Propuesta $propuesta)
     {
-        $propuesta->load(['cliente', 'productos.producto', 'usuario', 'fichaTecnica']);
+        $propuesta->load([
+            'cliente',
+            'productos.producto',
+            'usuario',
+            'fichaTecnica',
+            'tradeins',
+        ]);
 
-        // Gráfico de tipo de equipo
         $agrupados = $propuesta->productos->groupBy(function ($item) {
             return optional($item->producto)->tipo_equipo ?? 'Sin tipo';
         });
@@ -197,7 +274,6 @@ class PropuestaController extends Controller
         $tiposEquipo = $agrupados->keys()->values()->all();
         $cantidades  = $agrupados->map->count()->values()->all();
 
-        // Gráfico de productos por subtotal (más caro a más barato)
         $productosOrdenados = $propuesta->productos
             ->sortByDesc(function ($item) {
                 return (float) ($item->subtotal ?? 0);
@@ -218,8 +294,15 @@ class PropuestaController extends Controller
 
     public function edit($id)
     {
-        $propuesta = Propuesta::with(['productos.producto', 'cliente', 'pagosFinanciamiento', 'fichaTecnica'])
+        $propuesta = Propuesta::with([
+                'productos.producto',
+                'cliente',
+                'pagosFinanciamiento',
+                'fichaTecnica',
+                'tradeins',
+            ])
             ->findOrFail($id);
+
         $productos = Producto::all();
         $fichas    = FichaTecnica::all();
         $clientes  = Cliente::all();
@@ -233,16 +316,19 @@ class PropuestaController extends Controller
         \Log::info('Valor de productos_json', ['productos_json' => $request->productos_json]);
 
         $request->validate([
-            'cliente_id'        => 'required|exists:clientes,id',
-            'subtotal'          => 'required|numeric',
-            'total'             => 'required|numeric',
-            'productos_json'    => 'required|json',
-            'pagos_json'        => 'nullable|json',
-            'ficha_tecnica_id'  => 'nullable|exists:fichas_tecnicas,id',
-            'lugar'             => 'required|string',
+            'cliente_id'          => 'required|exists:clientes,id',
+            'subtotal'            => 'required|numeric',
+            'total'               => 'required|numeric',
+            'productos_json'      => 'required|json',
+            'pagos_json'          => 'nullable|json',
+            'equipos_cuenta_json' => 'nullable|json',
+            'ficha_tecnica_id'    => 'nullable|exists:fichas_tecnicas,id',
+            'lugar'               => 'required|string',
         ]);
 
         try {
+            DB::beginTransaction();
+
             $propuesta = Propuesta::findOrFail($id);
 
             $propuesta->update([
@@ -260,32 +346,104 @@ class PropuestaController extends Controller
 
             \Log::info('Propuesta actualizada', ['id' => $propuesta->id]);
 
-            // Actualizar productos
+            // ================== PRODUCTOS ==================
             $propuesta->productos()->delete();
             $productos = json_decode($request->productos_json, true) ?: [];
             \Log::info('Productos decodificados', ['productos' => $productos]);
 
             foreach ($productos as $p) {
+                $productoId = (int)($p['producto_id'] ?? 0);
+                $cantidad   = max(1, (int)($p['cantidad'] ?? 1));
+
+                // ✅ booleano estricto
+                $esRegalo = (int)($p['es_regalo'] ?? 0) === 1;
+
+                $precioUnitInput  = (float)($p['precio_unitario'] ?? 0);
+                $sobreprecioInput = (float)($p['sobreprecio'] ?? 0);
+
+                // ✅ cálculo real, no depender de subtotal enviado por JS
+                $precioUnit  = $esRegalo ? 0.0 : $precioUnitInput;
+                $sobreprecio = $esRegalo ? 0.0 : $sobreprecioInput;
+                $subtotal    = $esRegalo ? 0.0 : ($cantidad * ($precioUnit + $sobreprecio));
+
                 $propuesta->productos()->create([
-                    'producto_id'     => $p['producto_id'],
-                    'cantidad'        => $p['cantidad'],
-                    'precio_unitario' => $p['precio_unitario'],
-                    'subtotal'        => $p['subtotal'],
-                    'sobreprecio'     => $p['sobreprecio'] ?? 0,
+                    'producto_id'     => $productoId,
+                    'cantidad'        => $cantidad,
+                    'precio_unitario' => $precioUnit,
+                    'subtotal'        => $subtotal,
+                    'sobreprecio'     => $sobreprecio,
+                    'es_regalo'       => $esRegalo ? 1 : 0,
                 ]);
             }
 
-            // Actualizar pagos
+            // ================== PAGOS FINANCIAMIENTO ==================
+            $procesados = false;
             $idsConservados = [];
 
-            if ($request->filled('pagos_json')) {
+            $pf = $request->input('pagos_financiamiento', null);
+
+            if (is_array($pf)) {
+                $procesados = true;
+
+                foreach ($pf as $key => $row) {
+                    if (!is_array($row)) continue;
+
+                    $isNew = str_starts_with((string)$key, 'nuevo_');
+                    $id    = $isNew ? null : (int)$key;
+
+                    $eliminar    = (string)($row['eliminar'] ?? '0') === '1';
+                    $descripcion = (string)($row['descripcion'] ?? '');
+                    $fecha       = (string)($row['fecha_pago'] ?? '');
+                    $monto       = (float)($row['monto'] ?? 0);
+
+                    if ($eliminar && !$isNew && $id) {
+                        PagoFinanciamientoPropuesta::where('propuesta_id', $propuesta->id)
+                            ->where('id', $id)
+                            ->delete();
+                        continue;
+                    }
+
+                    if (!$fecha) continue;
+
+                    if (!$isNew && $id) {
+                        $pagoExistente = PagoFinanciamientoPropuesta::where('propuesta_id', $propuesta->id)
+                            ->where('id', $id)
+                            ->first();
+
+                        if ($pagoExistente) {
+                            $pagoExistente->update([
+                                'descripcion' => $descripcion,
+                                'fecha_pago'  => Carbon::parse($fecha),
+                                'monto'       => $monto,
+                            ]);
+                            $idsConservados[] = $pagoExistente->id;
+                        } else {
+                            $nuevo = PagoFinanciamientoPropuesta::create([
+                                'propuesta_id' => $propuesta->id,
+                                'descripcion'  => $descripcion,
+                                'fecha_pago'   => Carbon::parse($fecha),
+                                'monto'        => $monto,
+                            ]);
+                            $idsConservados[] = $nuevo->id;
+                        }
+                    } else {
+                        $nuevo = PagoFinanciamientoPropuesta::create([
+                            'propuesta_id' => $propuesta->id,
+                            'descripcion'  => $descripcion,
+                            'fecha_pago'   => Carbon::parse($fecha),
+                            'monto'        => $monto,
+                        ]);
+                        $idsConservados[] = $nuevo->id;
+                    }
+                }
+            } elseif ($request->filled('pagos_json')) {
+                $procesados = true;
+
                 $pagos = json_decode($request->pagos_json, true);
-                \Log::info('Pagos decodificados', ['pagos' => $pagos]);
+                \Log::info('Pagos decodificados (fallback pagos_json)', ['pagos' => $pagos]);
 
                 if (is_array($pagos)) {
                     foreach ($pagos as $pago) {
-                        \Log::info('Procesando pago', $pago);
-
                         if (!empty($pago['id'])) {
                             $pagoExistente = PagoFinanciamientoPropuesta::where('propuesta_id', $propuesta->id)
                                 ->where('id', $pago['id'])
@@ -295,7 +453,7 @@ class PropuestaController extends Controller
                                 $pagoExistente->update([
                                     'descripcion' => $pago['descripcion'] ?? '',
                                     'fecha_pago'  => Carbon::parse($pago['mes']),
-                                    'monto'       => $pago['cuota'] ?? 0,
+                                    'monto'       => (float)($pago['cuota'] ?? 0),
                                 ]);
                                 $idsConservados[] = $pagoExistente->id;
                             }
@@ -304,47 +462,76 @@ class PropuestaController extends Controller
                                 'propuesta_id' => $propuesta->id,
                                 'descripcion'  => $pago['descripcion'] ?? '',
                                 'fecha_pago'   => Carbon::parse($pago['mes']),
-                                'monto'        => $pago['cuota'] ?? 0,
+                                'monto'        => (float)($pago['cuota'] ?? 0),
                             ]);
                             $idsConservados[] = $nuevoPago->id;
                         }
                     }
-                } else {
-                    \Log::warning('El campo pagos_json no es un array válido', ['pagos_json' => $request->pagos_json]);
                 }
             } else {
-                \Log::info('Sin cambios en pagos (pagos_json vacío)');
+                \Log::info('Sin cambios en pagos (no llegó pagos_financiamiento ni pagos_json)');
             }
 
-            // Eliminar pagos que no fueron conservados
-            PagoFinanciamientoPropuesta::where('propuesta_id', $propuesta->id)
-                ->whereNotIn('id', $idsConservados)
-                ->delete();
+            if ($procesados && !empty($idsConservados)) {
+                PagoFinanciamientoPropuesta::where('propuesta_id', $propuesta->id)
+                    ->whereNotIn('id', $idsConservados)
+                    ->delete();
+            }
 
-            \Log::info('Pagos actualizados correctamente');
+            \Log::info('Pagos actualizados correctamente', [
+                'procesados' => $procesados,
+                'idsConservados' => $idsConservados,
+            ]);
+
+            // ================== EQUIPOS A CUENTA ==================
+            $propuesta->tradeins()->delete();
+
+            if ($request->filled('equipos_cuenta_json')) {
+                $equiposCuenta = json_decode($request->equipos_cuenta_json, true) ?: [];
+                \Log::info('Equipos a cuenta decodificados (update)', ['equipos_cuenta' => $equiposCuenta]);
+
+                if (is_array($equiposCuenta)) {
+                    foreach ($equiposCuenta as $eq) {
+                        $propuesta->tradeins()->create([
+                            'tipo_equipo'    => $eq['tipo_equipo']    ?? null,
+                            'marca'          => $eq['marca']          ?? null,
+                            'modelo'         => $eq['modelo']         ?? null,
+                            'numero_serie'   => $eq['numero_serie']   ?? null,
+                            'valor_a_cuenta' => $eq['valor_a_cuenta'] ?? 0,
+                        ]);
+                    }
+                }
+            }
+
+            DB::commit();
 
             return redirect()
                 ->route('propuestas.show', $propuesta->id)
                 ->with('success', 'Propuesta actualizada exitosamente.');
         } catch (\Throwable $e) {
+            DB::rollBack();
+
             \Log::error('Error actualizando propuesta', [
                 'error'   => $e->getMessage(),
                 'trace'   => $e->getTraceAsString(),
                 'request' => $request->all(),
             ]);
+
             return back()->withErrors('Ocurrió un error al actualizar la propuesta.');
         }
     }
 
     /* ======================= PDF PARA WHATSAPP ======================= */
 
-    /**
-     * Renderiza + concatena la propuesta y la ficha técnica (si existe)
-     * en un PDF final y devuelve [ruta absoluta, nombre de archivo].
-     */
     private function buildPropuestaPdf(Propuesta $propuesta): array
     {
-        $propuesta->load(['cliente', 'usuario', 'productos.producto', 'fichaTecnica']);
+        $propuesta->load([
+            'cliente',
+            'usuario',
+            'productos.producto',
+            'fichaTecnica',
+            'tradeins',
+        ]);
 
         $url = route('propuestas.show', $propuesta->id);
         $qr  = base64_encode(\QrCode::format('svg')->size(120)->generate($url));
@@ -389,20 +576,13 @@ class PropuestaController extends Controller
         return [$rutaFinal, $filename];
     }
 
-    /* ================== ENVÍO POR WHATSAPP · PLANTILLA ================= */
-
-    /**
-     * Envía por plantilla de WhatsApp con HEADER documento (PDF) y BODY flexible.
-     * Nota: No forzamos valores por defecto en BODY/URL; si llegan vacíos no se envían
-     * para evitar el error 132000 cuando la plantilla tiene menos variables.
-     */
     public function sendWhatsappTemplateRemision(Propuesta $propuesta, Request $request, WhatsAppService $wa)
     {
         $request->validate([
             'frase'         => ['nullable', 'string', 'max:200'],
             'site_suffix'   => ['nullable', 'string', 'max:200'],
-            'template_name' => ['required', 'string', 'max:128'], // p. ej. doc_pdf_utility_v1
-            'template_lang' => ['required', 'string', 'max:12'],  // p. ej. es_MX
+            'template_name' => ['required', 'string', 'max:128'],
+            'template_lang' => ['required', 'string', 'max:12'],
         ]);
 
         $propuesta->load('cliente');
@@ -412,7 +592,6 @@ class PropuestaController extends Controller
             return back()->with('wa_info', 'El cliente no tiene teléfono válido.');
         }
 
-        // 1) Generar PDF final
         try {
             [$path, $filename] = $this->buildPropuestaPdf($propuesta);
         } catch (\Throwable $e) {
@@ -420,7 +599,6 @@ class PropuestaController extends Controller
             return back()->with('wa_info', 'No se pudo generar el PDF.');
         }
 
-        // 2) Subir a /media
         $upload  = $wa->uploadMediaPath($path, $filename, 'application/pdf');
         $uJson   = $upload->json();
         $mediaId = data_get($uJson, 'id');
@@ -432,18 +610,16 @@ class PropuestaController extends Controller
                 ->with('wa_fail', [$uJson]);
         }
 
-        // 3) Enviar plantilla (parámetros dinámicos, sin defaults forzados)
-        $templateName  = (string) $request->input('template_name'); // ej. doc_pdf_utility_v1
-        $langCode      = (string) $request->input('template_lang'); // ej. es_MX
+        $templateName  = (string) $request->input('template_name');
+        $langCode      = (string) $request->input('template_lang');
 
         $clienteNombre = trim((string) $propuesta->cliente->nombre . ' ' . (string) ($propuesta->cliente->apellido ?? ''));
 
-        // Si vienen vacíos en el form, NO se envían (evita 132000 si la plantilla tiene sólo {{1}})
         $fraseInput = trim((string) $request->input('frase', ''));
         $frase      = ($fraseInput === '') ? null : $fraseInput;
 
         $siteInput  = trim((string) $request->input('site_suffix', ''));
-        $siteSuffix = ($siteInput === '') ? null : $siteInput; // solo si la plantilla tiene botón URL dinámico
+        $siteSuffix = ($siteInput === '') ? null : $siteInput;
 
         $resp  = $wa->sendTemplateWithDocument(
             to: $to,
@@ -451,9 +627,9 @@ class PropuestaController extends Controller
             langCode: $langCode,
             mediaId: $mediaId,
             filename: $filename,
-            clienteNombre: $clienteNombre, // {{1}}
-            frase: $frase,                 // {{2}} (solo si no es null)
-            btn0UrlSuffix: $siteSuffix,    // botón URL index 0 (solo si no es null)
+            clienteNombre: $clienteNombre,
+            frase: $frase,
+            btn0UrlSuffix: $siteSuffix,
             btn1UrlSuffix: null
         );
 
@@ -468,7 +644,6 @@ class PropuestaController extends Controller
                 'lang'  => $langCode
             ]);
 
-            // (Opcional) Registrar seguimiento
             try {
                 if (method_exists($propuesta, 'seguimientos')) {
                     $propuesta->seguimientos()->create([
@@ -483,7 +658,6 @@ class PropuestaController extends Controller
             return back()->with('wa_success', "Plantilla enviada por WhatsApp ✅ ({$templateName} · {$langCode})");
         }
 
-        // Si error (132000/132001/etc), devolvemos info + sugerencias
         $code   = data_get($json, 'error.code');
         $detail = data_get($json, 'error.message') ?: data_get($json, 'error.error_data.details');
 
@@ -509,22 +683,19 @@ class PropuestaController extends Controller
             ->with('wa_templates_grouped', $suggestions);
     }
 
-    /* =========== API para UI (llenar select con plantillas) =========== */
-
     public function whatsappTemplates(WhatsAppService $wa)
     {
-        $tpls  = $wa->fetchTemplatesSmart(200);    // combinadas (WABA + PHONE_ID)
-        $group = $wa->groupTemplatesByName($tpls); // name => [langs...]
+        $tpls  = $wa->fetchTemplatesSmart(200);
+        $group = $wa->groupTemplatesByName($tpls);
 
         return response()->json([
             'ok'        => true,
             'count'     => count($tpls),
             'grouped'   => $group,
-            'templates' => $tpls, // lista plana (debug)
+            'templates' => $tpls,
         ]);
     }
 
-    /* (Opcional) Debug: confirma a qué WABA pertenece tu phone_id */
     public function whatsappDebug(WhatsAppService $wa)
     {
         return response()->json([
@@ -533,4 +704,75 @@ class PropuestaController extends Controller
             'note'             => 'Confirma que whatsapp_business_account.id == WHATSAPP_BUSINESS_ACCOUNT_ID en tu .env',
         ]);
     }
+
+public function destroy(Request $request, $id)
+{
+    // ✅ Validar que venga el PIN
+    $request->validate([
+        'aprobacion_pin' => ['required', 'string'],
+    ]);
+
+    // ✅ PIN esperado desde .env
+    $expected = (string) config('app.aprobacion_pin', env('APROBACION_PIN'));
+    $pin      = (string) $request->input('aprobacion_pin');
+
+    // ✅ Comparación segura
+    if ($expected === '' || !hash_equals($expected, $pin)) {
+        return redirect()
+            ->route('propuestas.index')
+            ->with('error', 'PIN incorrecto. No se eliminó la cotización.');
+    }
+
+    try {
+        DB::beginTransaction();
+
+        $propuesta = Propuesta::with([
+            'productos',
+            'pagos',
+            'pagosFinanciamiento',
+            'tradeins',
+        ])->findOrFail($id);
+
+        if (method_exists($propuesta, 'productos')) {
+            $propuesta->productos()->delete();
+        }
+
+        if (method_exists($propuesta, 'pagos')) {
+            $propuesta->pagos()->delete();
+        }
+
+        if (method_exists($propuesta, 'pagosFinanciamiento')) {
+            $propuesta->pagosFinanciamiento()->delete();
+        }
+
+        if (method_exists($propuesta, 'tradeins')) {
+            $propuesta->tradeins()->delete();
+        }
+
+        $propuesta->delete();
+
+        DB::commit();
+
+        \Log::info('Propuesta eliminada correctamente', [
+            'id' => $id,
+        ]);
+
+        return redirect()
+            ->route('propuestas.index')
+            ->with('success', 'La cotización se eliminó correctamente.');
+
+    } catch (\Throwable $e) {
+        DB::rollBack();
+
+        \Log::error('Error al eliminar propuesta', [
+            'id' => $id,
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+        ]);
+
+        return redirect()
+            ->route('propuestas.index')
+            ->with('error', 'No se pudo eliminar la cotización.');
+    }
+}
 }

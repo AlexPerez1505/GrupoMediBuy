@@ -53,14 +53,5 @@ class Cotizacion extends Model
         return $this->belongsTo(FichaTecnica::class);
     }
 
-    public function paquetes()
-    {
-        return $this->hasMany(Paquete::class);
-    }
-    
-    public function productos()
-    {
-        return $this->hasMany(Producto::class);
-    }
 
 }

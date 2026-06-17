@@ -7,13 +7,12 @@ use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
-
+use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {
     public function store(Request $request)
     {
-        // Validación de los campos
         $request->validate([
             'nomina' => 'required|string|unique:users,nomina',
             'password' => 'required|string|min:6',
@@ -30,13 +29,11 @@ class UserController extends Controller
             'imagen' => 'nullable|image|max:2048',
         ]);
 
-        // Subir la imagen si existe
         $imagenPath = null;
         if ($request->hasFile('imagen')) {
             $imagenPath = $request->file('imagen')->store('imagenes', 'public');
         }
 
-        // Crear el usuario y asignar valores, con valores predeterminados para los campos nulos
         User::create([
             'nomina' => $request->nomina,
             'password' => Hash::make($request->password),
@@ -46,57 +43,89 @@ class UserController extends Controller
             'cargo' => $request->cargo,
             'puesto' => $request->puesto,
             'vacaciones_disponibles' => $request->vacaciones_disponibles,
-            'vacaciones_utilizadas' => $request->vacaciones_utilizadas ?? 0, // Si no se pasa valor, se asigna 0
-            'permisos' => $request->permisos ?? 0, // Si no se pasa valor, se asigna 0
-            'retardos' => $request->retardos ?? 0, // Si no se pasa valor, se asigna 0
+            'vacaciones_utilizadas' => $request->vacaciones_utilizadas ?? 0,
+            'permisos' => $request->permisos ?? 0,
+            'retardos' => $request->retardos ?? 0,
             'role' => $request->role,
             'imagen' => $imagenPath,
         ]);
 
-        // Retornar vista de éxito
         return redirect()->route('users.create')->with('success', 'Usuario registrado exitosamente');
     }
-  
-public function showChangePasswordForm()
-{
-    return view('auth.change-password'); // Asegúrate de que esta vista exista
-}
 
-/**
- * Actualizar la contraseña del usuario.
- */
-public function updatePassword(Request $request)
-{
-    $request->validate([
-        'current_password' => ['required'],
-        'new_password' => [
-            'required',
-            'string',
-            'min:8',
-            'regex:/[a-z]/', // Al menos una letra minúscula
-            'regex:/[A-Z]/', // Al menos una letra mayúscula
-            'regex:/[0-9]/', // Al menos un número
-            'regex:/[@$!%*?&]/', // Al menos un carácter especial
-            'confirmed' // Debe coincidir con new_password_confirmation
-        ],
-    ], [
-        'new_password.min' => 'La contraseña debe tener al menos 8 caracteres.',
-        'new_password.regex' => 'La contraseña debe contener al menos una mayúscula, una minúscula, un número y un carácter especial (@$!%*?&).',
-        'new_password.confirmed' => 'Las contraseñas no coinciden.',
-    ]);
-
-    $user = Auth::user();
-
-    // Verificar que la contraseña actual sea correcta
-    if (!Hash::check($request->current_password, $user->password)) {
-        return back()->withErrors(['current_password' => 'La contraseña actual es incorrecta.']);
+    public function showChangePasswordForm()
+    {
+        return view('auth.change-password');
     }
 
-    // Actualizar la contraseña
-    $user->password = Hash::make($request->new_password);
-    $user->save();
+    public function updatePassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => ['required'],
+            'new_password' => [
+                'required',
+                'string',
+                'min:8',
+                'regex:/[a-z]/',
+                'regex:/[A-Z]/',
+                'regex:/[0-9]/',
+                'regex:/[@$!%*?&]/',
+                'confirmed'
+            ],
+        ], [
+            'new_password.min' => 'La contraseña debe tener al menos 8 caracteres.',
+            'new_password.regex' => 'La contraseña debe contener al menos una mayúscula, una minúscula, un número y un carácter especial (@$!%*?&).',
+            'new_password.confirmed' => 'Las contraseñas no coinciden.',
+        ]);
 
-    return redirect()->back()->with('success', '¡Contraseña actualizada correctamente!');
-}
+        $user = Auth::user();
 
+        if (!Hash::check($request->current_password, $user->password)) {
+            return back()->withErrors(['current_password' => 'La contraseña actual es incorrecta.']);
+        }
+
+        $user->password = Hash::make($request->new_password);
+        $user->save();
+
+        return redirect()->back()->with('success', '¡Contraseña actualizada correctamente!');
+    }
+
+    public function destroy($id)
+    {
+        DB::beginTransaction();
+
+        try {
+            $user = User::findOrFail($id);
+
+            // Evita que te borres a ti mismo si no lo quieres permitir
+            // Si sí quieres permitirlo, elimina este bloque.
+            if (Auth::id() == $user->id) {
+                return redirect()->back()->with('error', 'No puedes eliminar tu propio usuario.');
+            }
+
+            // 1) Romper relaciones que impiden borrar al usuario
+            DB::table('cash_transactions')
+                ->where('counterparty_id', $user->id)
+                ->update(['counterparty_id' => null]);
+
+            // Si tienes otras tablas relacionadas, agrega más bloques así:
+            // DB::table('otra_tabla')->where('user_id', $user->id)->update(['user_id' => null]);
+
+            // 2) Eliminar imagen si existe
+            if ($user->imagen && Storage::disk('public')->exists($user->imagen)) {
+                Storage::disk('public')->delete($user->imagen);
+            }
+
+            // 3) Eliminar usuario
+            $user->delete();
+
+            DB::commit();
+
+            return redirect()->back()->with('success', 'Usuario eliminado correctamente.');
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return redirect()->back()->with('error', 'No se pudo eliminar el usuario: ' . $e->getMessage());
+        }
+    }
 }

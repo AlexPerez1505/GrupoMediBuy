@@ -28,21 +28,28 @@ class CashTransactionController extends Controller
 
     // Dashboard con filtros (gráfica, KPIs, tabla) - AJAX
     public function index(Request $r)
-    {
-        $filters = [
-            'from'       => $r->input('from') ?: now()->subDays(30)->toDateString(),
-            'to'         => $r->input('to')   ?: now()->toDateString(),
-            'type'       => $r->input('type'),
-            'manager_id' => $r->input('manager_id'),
-            'user_id'    => $r->input('user_id'),
-        ];
+{
+    // Si no vienen fechas, usa el primer movimiento como 'from'
+    $first = CashTransaction::min('created_at');
+    $defaultFrom = $first ? \Carbon\Carbon::parse($first)->toDateString()
+                          : now()->subDays(30)->toDateString();
 
-        return view('transactions.index', [
-            'filters'  => $filters,
-            'managers' => User::where('role','admin')->orderBy('name')->get(['id','name']), // jefas/encargados (solo ADMIN)
-            'people'   => User::orderBy('name')->get(['id','name']),
-        ]);
-    }
+    $filters = [
+        'from'       => $r->input('from') ?: $defaultFrom,
+        'to'         => $r->input('to')   ?: now()->toDateString(),
+        'type'       => $r->input('type'),
+        'manager_id' => $r->input('manager_id'),
+        'user_id'    => $r->input('user_id'),
+        // nuevo: per_page UI (opcional, default 20)
+        'per_page'   => (int) $r->input('per_page', 20),
+    ];
+
+    return view('transactions.index', [
+        'filters'  => $filters,
+        'managers' => User::where('role','admin')->orderBy('name')->get(['id','name']),
+        'people'   => User::orderBy('name')->get(['id','name']),
+    ]);
+}
 
     // Vista "tabs" SPA (3 pestañas en una sola pantalla)
     public function create()
@@ -445,60 +452,71 @@ class CashTransactionController extends Controller
         ]);
     }
 
-    public function apiTransactions(Request $r)
-    {
-        [$from, $to, $fromDT, $toDT] = $this->dateRange($r);
-        $q = $this->baseFilteredQuery($r, $fromDT, $toDT)->latest();
+   public function apiTransactions(Request $r)
+{
+    [$from, $to, $fromDT, $toDT] = $this->dateRange($r);
+    $q = $this->baseFilteredQuery($r, $fromDT, $toDT)->latest();
 
-        $page = (int)($r->input('page', 1));
-        $per  = (int)($r->input('per_page', 20));
-        $p    = $q->paginate($per, ['*'], 'page', $page);
+    // per_page controlado (10..200)
+    $per  = (int) $r->input('per_page', 20);
+    $per  = max(10, min($per, 200));
 
-        $items = collect($p->items())->map(function($t){
-            return [
-                'id'           => $t->id,
-                'type'         => $t->type,
-                'amount'       => (float)$t->amount,
-                'purpose'      => $t->purpose,
-                'date'         => $t->created_at->format('Y-m-d H:i'),
-                'manager'      => $t->manager?->name,
-                'counterparty' => $t->counterparty?->name,
-                // Link a la acción que sirve (y genera si hace falta) el PDF
-                'pdf'          => route('transactions.receipt', ['transaction'=>$t->id], false),
-                'ack'          => (bool)$t->acknowledged_at,
-            ];
-        });
+    $page = (int) $r->input('page', 1);
+    $p    = $q->paginate($per, ['*'], 'page', $page);
 
-        return response()->json([
-            'data' => $items,
-            'meta' => [
-                'page'      => $p->currentPage(),
-                'last_page' => $p->lastPage(),
-                'total'     => $p->total(),
-            ]
-        ]);
-    }
+    $items = collect($p->items())->map(function($t){
+        return [
+            'id'           => $t->id,
+            'type'         => $t->type,
+            'amount'       => (float)$t->amount,
+            'purpose'      => $t->purpose,
+            'date'         => $t->created_at->timezone(config('app.timezone'))->format('Y-m-d H:i'),
+            'manager'      => $t->manager?->name,
+            'counterparty' => $t->counterparty?->name,
+            'pdf'          => route('transactions.receipt', ['transaction'=>$t->id], false),
+            'ack'          => (bool)$t->acknowledged_at,
+        ];
+    });
+
+    return response()->json([
+        'data' => $items,
+        'meta' => [
+            'page'      => $p->currentPage(),
+            'last_page' => $p->lastPage(),
+            'total'     => $p->total(),
+            'per_page'  => $p->perPage(),
+        ]
+    ]);
+}
+
 
     /** ---------------- HELPERS ---------------- */
 
-    private function baseFilteredQuery(Request $r, Carbon $fromDT, Carbon $toDT)
-    {
-        return CashTransaction::query()
-            ->when($r->filled('manager_id'), fn($qq)=>$qq->where('manager_id', $r->manager_id))
-            ->when($r->filled('user_id'),    fn($qq)=>$qq->where('counterparty_id', $r->user_id))
-            ->when($r->filled('type'),       fn($qq)=>$qq->where('type', $r->type))
-            ->whereBetween('created_at', [$fromDT, $toDT])
-            ->with(['manager:id,name','counterparty:id,name']);
-    }
+private function baseFilteredQuery(Request $r, \Carbon\Carbon $fromDT, \Carbon\Carbon $toDT)
+{
+    return CashTransaction::query()
+        ->when($r->filled('manager_id'), fn($qq)=>$qq->where('manager_id', $r->manager_id))
+        ->when($r->filled('user_id'),    fn($qq)=>$qq->where('counterparty_id', $r->user_id))
+        ->when($r->filled('type'),       fn($qq)=>$qq->where('type', $r->type))
+        // IMPORTANTE: filtra en UTC (coherente con cómo se guardan los timestamps)
+        ->whereBetween('created_at', [$fromDT, $toDT])
+        ->with(['manager:id,name','counterparty:id,name']);
+}
 
-    private function dateRange(Request $r): array
-    {
-        $from   = $r->input('from') ?: now()->subDays(30)->toDateString();
-        $to     = $r->input('to')   ?: now()->toDateString();
-        $fromDT = Carbon::parse($from)->startOfDay();
-        $toDT   = Carbon::parse($to)->endOfDay();
-        return [$from, $to, $fromDT, $toDT];
-    }
+private function dateRange(Request $r): array
+{
+    // Entradas del usuario en TZ de la app
+    $appTz = config('app.timezone', 'UTC');
+
+    $from = $r->input('from') ?: now($appTz)->subDays(30)->toDateString();
+    $to   = $r->input('to')   ?: now($appTz)->toDateString();
+
+    // Constrúyelos en TZ de la app y conviértelos a UTC para la consulta
+    $fromDT = \Carbon\Carbon::parse($from, $appTz)->startOfDay()->utc();
+    $toDT   = \Carbon\Carbon::parse($to,   $appTz)->endOfDay()->utc();
+
+    return [$from, $to, $fromDT, $toDT];
+}
 
     private function storeDataUrl(?string $dataUrl, string $folder): ?string
     {

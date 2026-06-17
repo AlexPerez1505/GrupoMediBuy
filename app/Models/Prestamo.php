@@ -47,7 +47,18 @@ class Prestamo extends Model
     /** Registros (equipos) incluidos en el paquete */
     public function registros(): BelongsToMany
     {
-        return $this->belongsToMany(Registro::class, 'prestamo_registro')->withTimestamps();
+        // Exponemos columnas de la pivote usadas en salida/devolución/vendido
+        return $this->belongsToMany(Registro::class, 'prestamo_registro')
+            ->withTimestamps()
+            ->withPivot([
+                'salida_scanned_at',
+                'salida_scanned_by',
+                'devolucion_scanned_at',
+                'devolucion_scanned_by',
+                'vendido_scanned_at',
+                'vendido_scanned_by',
+                'estado_item', // si la tienes en DB
+            ]);
     }
 
     /** Cliente destinatario del paquete */
@@ -72,6 +83,24 @@ class Prestamo extends Model
         return $query->where('estado', self::ESTADO_ACTIVO);
     }
 
+    /** Solo retrasados */
+    public function scopeRetrasados($query)
+    {
+        return $query->where('estado', self::ESTADO_RETRASADO);
+    }
+
+    /** Devueltos (cerrados) */
+    public function scopeDevueltos($query)
+    {
+        return $query->where('estado', self::ESTADO_DEVUELTO);
+    }
+
+    /** Vendidos (cerrados por venta de al menos un ítem) */
+    public function scopeVendidos($query)
+    {
+        return $query->where('estado', self::ESTADO_VENDIDO);
+    }
+
     /* =========================
      | Helpers / Accessors
      ==========================*/
@@ -92,5 +121,20 @@ class Prestamo extends Model
     public function getEsDevueltoAttribute(): bool
     {
         return $this->estado === self::ESTADO_DEVUELTO;
+    }
+
+    public function getEsVendidoAttribute(): bool
+    {
+        return $this->estado === self::ESTADO_VENDIDO;
+    }
+
+    public function getEsRetrasadoAttribute(): bool
+    {
+        return $this->estado === self::ESTADO_RETRASADO;
+    }
+
+    public function getEsCanceladoAttribute(): bool
+    {
+        return $this->estado === self::ESTADO_CANCELADO;
     }
 }

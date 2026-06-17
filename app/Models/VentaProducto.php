@@ -3,8 +3,10 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Producto;
+use App\Models\Venta;
+use App\Models\Registro;
 
-// app/Models/VentaProducto.php
 class VentaProducto extends Model
 {
     protected $fillable = [
@@ -14,7 +16,14 @@ class VentaProducto extends Model
         'precio_unitario',
         'subtotal',
         'sobreprecio',
-        'registro_id' // 👈 ¡Esto faltaba!
+        'registro_id',
+
+        // ✅ NUEVO (para regalos por renglón)
+        'is_regalo',
+    ];
+
+    protected $casts = [
+        'is_regalo' => 'boolean',
     ];
 
     public function producto()
@@ -32,4 +41,3 @@ class VentaProducto extends Model
         return $this->belongsTo(Registro::class, 'registro_id');
     }
 }
-

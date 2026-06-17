@@ -3,12 +3,14 @@
 
 namespace App\Services;
 
+use App\Models\Evento; // <-- agregado (para el atajo desde Evento)
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Carbon\Carbon; // <-- agregado (para formatear fecha)
 
 class WhatsAppService
 {
@@ -253,7 +255,7 @@ class WhatsAppService
 
         $from      = data_get($msg, 'from');
         $wamid     = data_get($msg, 'id');
-               $timestamp = data_get($msg, 'timestamp');
+        $timestamp = data_get($msg, 'timestamp');
 
         $itype = data_get($msg, 'interactive.type');
         if ($itype === 'button_reply') {
@@ -288,6 +290,78 @@ class WhatsAppService
     /* -------------------------------------------------------------
      |            ENVÍOS CON PLANTILLA (TEMPLATES)
      * ------------------------------------------------------------*/
+
+    /**
+     * Plantilla GENÉRICA (soporta HEADER TEXT opcional y botones URL).
+     * Ej: $wa->sendTemplate($to, 'pago_recordatorio_v1', 'es_MX', $body, $header, $urls);
+     */
+    public function sendTemplate(
+        string $to,
+        string $templateName,
+        string $langCode,
+        array $bodyParams = [],
+        array $headerTextParams = [],     // si tu template tiene HEADER TEXT con variables
+        array $urlButtonsSuffixes = []    // si tu template tiene botones URL
+    ): Response {
+        $components = [];
+
+        // HEADER TEXT (variables)
+        if (!empty($headerTextParams)) {
+            $hp = [];
+            foreach ($headerTextParams as $p) {
+                $hp[] = ['type' => 'text', 'text' => (string)$p];
+            }
+            $components[] = ['type' => 'header', 'parameters' => $hp];
+        }
+
+        // BODY
+        if (!empty($bodyParams)) {
+            $bp = [];
+            foreach ($bodyParams as $p) {
+                $bp[] = ['type' => 'text', 'text' => (string)$p];
+            }
+            $components[] = ['type' => 'body', 'parameters' => $bp];
+        }
+
+        // Botones URL (opcionales)
+        foreach ($urlButtonsSuffixes as $index => $suffix) {
+            $components[] = [
+                'type' => 'button',
+                'sub_type' => 'url',
+                'index' => (string) $index,
+                'parameters' => [['type' => 'text', 'text' => (string) $suffix]],
+            ];
+        }
+
+        $payload = [
+            'messaging_product' => 'whatsapp',
+            'to' => $to,
+            'type' => 'template',
+            'template' => [
+                'name' => $templateName,
+                'language' => ['code' => $langCode ?: 'es_MX'],
+                'components' => $components,
+            ],
+        ];
+
+        $res = $this->httpJson()->post($this->endpoint(), $payload);
+        if ($res->failed()) {
+            Log::error('WA_TEMPLATE_SEND_FAIL', [
+                'template' => $templateName,
+                'to'       => $to,
+                'status'   => $res->status(),
+                'resp'     => $res->json(),
+                'payload'  => $payload,
+            ]);
+        } else {
+            Log::info('WA_TEMPLATE_SEND_OK', [
+                'template' => $templateName,
+                'to'       => $to,
+                'resp'     => $res->json(),
+            ]);
+        }
+        return $res;
+    }
 
     /**
      * Plantilla flexible con HEADER DOCUMENT + BODY (0..n params) + botones URL opcionales.
@@ -404,11 +478,33 @@ class WhatsAppService
     }
 
     /**
+     * Atajo (opcional) para la plantilla de servicio al admin con botón a detalle.
+     * Plantilla: alerta_solicitud_admin_svc_v1 (es_MX)
+     * Vars: {{1}} ID, {{2}} Solicitante, {{3}} Detalle, {{4}} Fecha
+     * Botón URL base configurado en Meta: .../solicitudes/admin/ + {{1}}
+     */
+    public function sendAdminAlertTemplate(
+        string $to,
+        int|string $id,
+        string $solicitante,
+        string $detalle,
+        string $fecha,
+        ?string $langCode = null
+    ): Response {
+        $tpl  = 'alerta_solicitud_admin_svc_v1';
+        $lang = $langCode ?: ($this->pickTemplateLanguage($tpl) ?? 'es_MX');
+
+        return $this->sendTemplateText(
+            $to,
+            $tpl,
+            $lang,
+            [$id, $solicitante, $detalle, $fecha],
+            [$id] // sufijo para el botón URL index 0
+        );
+    }
+
+    /**
      * Plantilla de TEXTO (sin header) con variables en el BODY.
-     * Útil para csat_soporte_postchat ({{1}} = cliente, {{2}} = asesor) con botones de respuesta rápida.
-     *
-     * Ej:
-     *   $wa->sendTemplateText($to, 'csat_soporte_postchat', 'es_MX', [$cliente, $asesor]);
      */
     public function sendTemplateText(
         string $to,
@@ -466,26 +562,11 @@ class WhatsAppService
         return $res;
     }
 
-    /**
-     * Atajo específico para la plantilla de CSAT:
-     * name: csat_soporte_postchat
-     * body: Hola {{1}} ... con {{2}} ...
-     */
-    public function sendCsatPostChat(string $to, string $clienteNombre, string $asesorNombre, ?string $langCode = null): Response
-    {
-        $tpl  = 'csat_soporte_postchat';
-        $lang = $langCode ?: ($this->pickTemplateLanguage($tpl) ?? 'es_MX');
-        return $this->sendTemplateText($to, $tpl, $lang, [$clienteNombre, $asesorNombre]);
-    }
-
     /* -------------------------------------------------------------
      |        ENVÍOS CON PLANTILLA: HEADER IMAGEN (promo_todo)
      * ------------------------------------------------------------*/
 
-    /**
-     * Plantilla con HEADER IMAGEN + BODY (0..n params).
-     * Útil para templates como "promo_todo" que llevan imagen en el encabezado.
-     */
+    /** Plantilla con HEADER IMAGEN + BODY */
     public function sendTemplateWithImage(
         string $to,
         string $templateName,
@@ -527,11 +608,7 @@ class WhatsAppService
         return $res;
     }
 
-    /**
-     * Atajo específico para tu plantilla "promo_todo" (spanish mex).
-     * - {{1}} = nombre (ej. Juan Pérez)
-     * - {{2}} = frase (ej. "En promoción videocolonoscopio fujinon")
-     */
+    /** Atajo para tu plantilla "promo_todo" */
     public function sendPromoTodo(string $to, string $mediaId, string $nombre, string $frase): Response
     {
         $lang = $this->pickTemplateLanguage('promo_todo') ?? 'es_MX';
@@ -559,9 +636,7 @@ class WhatsAppService
         return $res->json();
     }
 
-    /**
-     * Lista plantillas (WABA + Phone) y devuelve sólo aprobadas en español.
-     */
+    /** Lista plantillas (WABA + Phone) y devuelve sólo aprobadas en español. */
     public function fetchTemplatesSmart(int $limit = 200): array
     {
         $items = [];
@@ -580,7 +655,7 @@ class WhatsAppService
             }
         }
 
-        // Por Phone Number ID
+        // (Algunas cuentas exponen también por Phone Number ID)
         $r2 = Http::withToken($this->token)
             ->acceptJson()
             ->get("https://graph.facebook.com/{$this->version}/{$this->phoneId}/message_templates", [
@@ -670,5 +745,79 @@ class WhatsAppService
             'message_id' => $wamid,
         ];
         return $this->httpJson()->post($this->endpoint(), $payload);
+    }
+
+    /* =============================================================
+     |   *** AÑADIDOS SIN ROMPER TUS PLANTILLAS EXISTENTES ***
+     * ============================================================*/
+
+    /**
+     * Envía una plantilla de SERVICIO (texto, sin botones).
+     * Útil para recordatorios. Si no pasas idioma, intenta elegir uno válido.
+     * $vars: por ejemplo [nombre, titulo, fecha, ubicacion, notas, anticipacion]
+     */
+    public function sendServiceReminder(
+        string $to,
+        string $templateName,
+        ?string $langCode,
+        array $vars
+    ): Response {
+        $lang = $langCode ?: ($this->pickTemplateLanguage($templateName) ?? (config('services.whatsapp.service_template_lang') ?: 'es_MX'));
+        $to   = self::normalizeMsisdn($to);
+
+        return $this->sendTemplateText(
+            $to,
+            $templateName,
+            $lang,
+            $vars,
+            /* sin botones */ []
+        );
+    }
+
+    /**
+     * Atajo: arma las 6 variables desde un Evento.
+     * Vars esperadas por tu plantilla de servicio (ajústala en Meta):
+     *   {{1}} nombre, {{2}} título, {{3}} fecha, {{4}} ubicación, {{5}} notas, {{6}} anticipación
+     *
+     * $templateName por defecto toma services.whatsapp.service_template_name o 'servicio_recordatorio_evento'
+     * $anticipacion: "3 días", "2 días", "1 día" o "hoy"
+     */
+    public function sendServiceReminderFromEvento(
+        string $to,
+        Evento $evento,
+        string $destinatarioNombre,
+        string $anticipacion,
+        ?string $templateName = null,
+        ?string $langCode = null,
+        ?string $timezone = null
+    ): Response {
+        $tplName = $templateName ?: (config('services.whatsapp.service_template_name') ?: 'servicio_recordatorio_evento');
+        $fecha   = $this->formatFechaEs($evento->start, $timezone);
+
+        $vars = [
+            $destinatarioNombre ?: '¡Hola!',
+            (string)($evento->title ?? 'Evento'),
+            $fecha,
+            (string)($evento->location ?? '-'),
+            (string)($evento->notes ?? '-'),
+            $anticipacion ?: 'hoy',
+        ];
+
+        return $this->sendServiceReminder($to, $tplName, $langCode, $vars);
+    }
+
+    /**
+     * Fecha/hora en español legible: "vie 05 sep 2025, 09:00"
+     */
+    protected function formatFechaEs($dateTime, ?string $tz = null): string
+    {
+        try {
+            $dt = Carbon::parse($dateTime);
+            if ($tz) $dt->setTimezone($tz);
+            else     $dt->setTimezone(config('app.timezone'));
+            return $dt->locale('es')->translatedFormat('D d MMM yyyy, HH:mm');
+        } catch (\Throwable $e) {
+            return (string)$dateTime;
+        }
     }
 }

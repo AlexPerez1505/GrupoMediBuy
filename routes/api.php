@@ -8,7 +8,8 @@ use App\Http\Controllers\WhatsappWebhookController;
 
 Route::get('/webhooks/whatsapp', [WhatsappWebhookController::class, 'verify']);
 Route::post('/webhooks/whatsapp', [WhatsappWebhookController::class, 'receive']);
-
+Route::post('/whatsapp/close/{msisdn}', [WhatsappWebhookController::class, 'closeByAgent'])
+     ->name('wa.chat.close');
 
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -20,3 +21,4 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 Route::post('/login', [AuthController::class, 'login']);
 Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);
+

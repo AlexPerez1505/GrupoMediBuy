@@ -12,6 +12,7 @@ class Producto extends Model
 
     protected $fillable = [
         'tipo_equipo',
+        'subtipo_equipo',
         'modelo',
         'marca',
         'stock',
@@ -26,19 +27,23 @@ class Producto extends Model
                     ->withTimestamps();
     }
 
-    // NUEVO: Familias del producto (NO usamos la tabla 'categoria')
-    public function familias(): BelongsToMany
-    {
-        return $this->belongsToMany(
-            Familia::class,
-            'familia_producto',
-            'producto_id',
-            'familia_id'
-        );
-    }
-
     public function paquetes(): BelongsToMany
     {
-        return $this->belongsToMany(Paquete::class, 'paquete_producto', 'producto_id', 'paquete_id');
+        return $this->belongsToMany(
+                Paquete::class,
+                'paquete_producto',
+                'producto_id',
+                'paquete_id'
+            )
+            ->using(PaqueteProducto::class)
+            ->withPivot('orden');
     }
+
+    public function up()
+{
+    Schema::table('clientes', function (Blueprint $table) {
+        $table->string('origen')->nullable()->default('manual')->after('categoria_id');
+        // Valores posibles: 'cotizacion', 'remision', 'manual'
+    });
+}
 }

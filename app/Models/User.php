@@ -3,12 +3,10 @@ namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens; // ✅ AÑADE ESTA LÍNEA
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, Notifiable, HasFactory; // ✅ AGREGA HasApiTokens AQUÍ
+    use Notifiable;
 
     protected $fillable = [
         'nomina', 'password', 'email', 'name', 'imagen', 'phone',
@@ -22,13 +20,15 @@ class User extends Authenticatable
         return $this->role === $role;
     }
 
+    // Relación uno a muchos con Asistencia
     public function asistencias()
     {
         return $this->hasMany(Asistencia::class);
     }
-
     public function solicitudes()
     {
         return $this->hasMany(SolicitudMaterial::class);
     }
+    
+    
 }
